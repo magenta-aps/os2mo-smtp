@@ -3,7 +3,6 @@ from email.mime.text import MIMEText
 
 import structlog
 from aiosmtplib import SMTP
-from email_validator import validate_email
 
 logger = structlog.get_logger()
 
@@ -46,10 +45,6 @@ async def send_email(
         testing: Whether the function is being run in a testing environment
             Example: True
     """
-    # Validate emails
-    validate_email(sender, test_environment=testing)
-    for email in {*receiver, *cc, *bcc}:
-        validate_email(email, test_environment=testing)
 
     msg = MIMEText(body, texttype, _charset="iso-8859-10")
     msg["Subject"] = subject
