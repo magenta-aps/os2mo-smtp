@@ -50,7 +50,7 @@ async def listen_to_create(context: dict, payload: PayloadType, **kwargs: Any) -
     subject = "Registrering i MO"
     message_body = (
         f"Denne besked er sendt som bekræftelse på at {user_data['name']} "
-        + "er registreret"
+        + "er registreret i "
     )
     try:
         email_addresses = set(
@@ -75,7 +75,7 @@ async def listen_to_create(context: dict, payload: PayloadType, **kwargs: Any) -
 
         # Add units to message body
         if len(org_unit_data) > 1:
-            message_body += " i de følgende enheder:\n"
+            message_body += "de følgende enheder:\n"
             for org_unit in org_unit_data[:-1]:
                 message_body += org_unit["objects"][0]["name"] + ",\n"
         message_body += org_unit_data[-1]["objects"][0]["name"]
