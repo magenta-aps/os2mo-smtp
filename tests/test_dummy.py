@@ -1,13 +1,13 @@
 from mo_smtp.smtp_agent import settings
 from ramqp.mo import MORouter
-from ramqp.mo.models import MORoutingKey                                                
-from ramqp.mo.models import ObjectType                                                  
-from ramqp.mo.models import RequestType                                                 
-from ramqp.mo.models import ServiceType                                                                                             
-from ramqp.mo.models import PayloadType                                                 
-from fastapi import FastAPI                                                             
-                                                                                        
-settings = Settings() 
+from ramqp.mo.models import MORoutingKey
+from ramqp.mo.models import ObjectType
+from ramqp.mo.models import RequestType
+from ramqp.mo.models import ServiceType
+from ramqp.mo.models import PayloadType
+from fastapi import FastAPI
+
+settings = Settings()
 
 
 def test_initial() -> None:

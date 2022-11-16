@@ -1,5 +1,6 @@
 from pydantic import AmqpDsn, BaseSettings, parse_obj_as, Field, AnyHttpUrl, SecretStr
-#from fastramqpi import FastRAMQPISettings
+
+# from fastramqpi import FastRAMQPISettings
 from fastramqpi.config import Settings as FastRAMQPISettings
 
 
@@ -9,8 +10,7 @@ class Settings(BaseSettings):
         env_nested_delimiter = "__"
 
     fastramqpi: FastRAMQPISettings = Field(
-        default_factory = FastRAMQPISettings,
-        description="FastRAMQPI settings"
+        default_factory=FastRAMQPISettings, description="FastRAMQPI settings"
     )
 
     amqp_url: AmqpDsn = parse_obj_as(AmqpDsn, "amqp://guest:guest@localhost:5672")
@@ -31,4 +31,3 @@ class Settings(BaseSettings):
     auth_realm: str = Field("mo", description="Realm to authenticate against")
 
     graphql_timeout: int = 120
-
