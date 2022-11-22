@@ -5,15 +5,16 @@ from aiosmtplib import SMTP
 
 
 async def send_email(
-    receiver: [str] = {"receive@example.net"},
+    receiver: set[str] = {"receive@example.net"},
     sender: str = "send@example.net",
     subject: str = "Subject line",
     body: str = "This is a test message",
-    textType: str = "plain",
+    texttype: str = "plain",
     hostname: str = "172.17.0.1",
     port: int = 2525,
     cc: [str] = [],
     bcc: [str] = [],
+    run_test: bool = False,
 ) -> None:
     """
     Sends outgoing email given parameters
@@ -29,11 +30,29 @@ async def send_email(
         cc: List of CC'ed email addresses
         bcc: List of BCC'ed email addresses
     """
-    msg = MIMEText(body)
+    msg = MIMEText(body, texttype)
+    print(msg)
     msg["Subject"] = subject
     msg["From"] = sender
     msg["CC"] = ", ".join(cc)
+    msg["BCC"] = ", ".join(bcc)
     msg["To"] = ", ".join(receiver)
+
+    print(msg)
+    print(dir(msg))
+    print(msg.values())
+    print(msg.get_payload(decode=True))
+    #print(msg.as_string())
+    #print(msg.items())
+    #for item in msg.raw_items():
+    #    print(item)
+    #print(msg.raw_items())
+    #print(msg.get_content_maintype())
+    #for item in msg.walk():
+    #    print(item)
+    #print(msg.walk())
+    if run_test:
+        return msg
 
     async with SMTP(hostname, port) as smtp:
         await smtp.send_message(msg)

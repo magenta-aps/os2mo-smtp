@@ -31,3 +31,5 @@ class Settings(BaseSettings):
     auth_realm: str = Field("mo", description="Realm to authenticate against")
 
     graphql_timeout: int = 120
+    
+    routing_keys: list[str] = ["employee.employee.create"]
