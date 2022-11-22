@@ -12,10 +12,10 @@ async def send_email(
     texttype: str = "plain",
     hostname: str = "172.17.0.1",
     port: int = 2525,
-    cc: list[str|None] = [],
-    bcc: list[str|None] = [],
+    cc: list[str | None] = [],
+    bcc: list[str | None] = [],
     run_test: bool = False,
-) -> None|object:
+) -> None | object:
     """
     Sends outgoing email given parameters
 
@@ -39,10 +39,10 @@ async def send_email(
         msg["BCC"] = ", ".join(bcc)
     msg["To"] = ", ".join(receiver)
 
-    #print(msg)
-    #print(dir(msg))
-    #print(msg.values())
-    #print(msg.get_payload(decode=True))
+    # print(msg)
+    # print(dir(msg))
+    # print(msg.values())
+    # print(msg.get_payload(decode=True))
     # print(msg.as_string())
     # print(msg.items())
     # for item in msg.raw_items():
