@@ -15,7 +15,7 @@ async def send_email(
     cc: list[str|None] = [],
     bcc: list[str|None] = [],
     run_test: bool = False,
-) -> (None|type(MIMEText)):
+) -> type[None|type(MIMEText)]:
     """
     Sends outgoing email given parameters
 
@@ -57,4 +57,4 @@ async def send_email(
     async with SMTP(hostname, port) as smtp:
         await smtp.send_message(msg)
 
-    return
+    return None
