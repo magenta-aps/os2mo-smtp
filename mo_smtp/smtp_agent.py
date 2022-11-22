@@ -14,14 +14,15 @@ from raclients.modelclient.mo import ModelClient
 from .config import Settings
 
 # Possibly deprecated
-#from ramqp import Router
-#from ramqp.config import ConnectionSettings
-#from ramqp.mo import MORouter, MOAMQPSystem
-#from ramqp.mo.models import MORoutingKey
-#from ramqp.mo.models import ObjectType
-#from ramqp.mo.models import RequestType
-#from ramqp.mo.models import ServiceType
-#from ramqp.mo.models import PayloadType
+# from ramqp import Router
+# from ramqp.config import ConnectionSettings
+from ramqp.mo import MORouter, MOAMQPSystem
+
+# from ramqp.mo.models import MORoutingKey
+# from ramqp.mo.models import ObjectType
+# from ramqp.mo.models import RequestType
+# from ramqp.mo.models import ServiceType
+# from ramqp.mo.models import PayloadType
 
 # from starlette.requests import Request
 
