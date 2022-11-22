@@ -1,6 +1,6 @@
 # Sends an email
 from email.mime.text import MIMEText
-import asyncio
+#import asyncio
 from aiosmtplib import SMTP
 
 

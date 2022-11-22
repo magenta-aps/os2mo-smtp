@@ -1,12 +1,12 @@
 # Opret en agent der modtager amqp-events og importerer og eksporterer til LDAP
-import asyncio
+#import asyncio
 import structlog
 from collections.abc import AsyncIterator
 from typing import Any, Tuple
 from contextlib import asynccontextmanager
 
 
-from fastapi import FastAPI, APIRouter, Query
+from fastapi import FastAPI, APIRouter #, Query
 from fastramqpi.main import FastRAMQPI
 from raclients.graph.client import PersistentGraphQLClient
 from raclients.modelclient.mo import ModelClient
@@ -16,7 +16,7 @@ from .config import Settings
 # Possibly deprecated
 # from ramqp import Router
 # from ramqp.config import ConnectionSettings
-from ramqp.mo import MORouter, MOAMQPSystem
+from ramqp.mo import MORouter #, MOAMQPSystem
 
 # from ramqp.mo.models import MORoutingKey
 # from ramqp.mo.models import ObjectType
@@ -30,7 +30,7 @@ from ramqp.mo.models import PayloadType
 # Testing
 from .send_email import send_email
 from .dataloaders import configure_dataloaders
-from uuid import UUID
+#from uuid import UUID
 
 
 # help(MORouter)
@@ -47,24 +47,25 @@ async def listen_to_create(context: dict, payload: PayloadType, **kwargs: Any) -
     """
     Create a router, which listens to all "creation" requests,
     takes a context and a payload, and returns None.
-    In time, it may be wise to limit the input to more specfic creation events, but that is a problem for another time
+    In time, it may be wise to limit the input to more specfic creation events,
+    but that is a problem for another time
 
     Args:
         context: dictionary with context from FastRAMQPI
         payload: Payload of the AMQP message
     """
 
-    graphql_session = context["graphql_session"]
-    program_settings = context["user_context"]["settings"]
+    #graphql_session = context["graphql_session"]
+    #program_settings = context["user_context"]["settings"]
 
     # Prepare dictionary to store email arguments
     email_args = {}
 
-    # Ignore all Create messages except the primary object creation to avoid sending duplicate emails
+    # Ignore all Create messages except the primary object
     # if not payload.uuid == payload.object_uuid:
     #    return
 
-    # Payload only includes user UUID, so query to graphql necessary to retreive user data
+    # Payload only includes user UUID; query to graphql necessary to retreive user data
     user_data = (
         await context["user_context"]["dataloaders"].mo_user_loader.load_many(
             [payload.uuid]

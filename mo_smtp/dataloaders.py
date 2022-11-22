@@ -102,7 +102,7 @@ async def load_mo_org_unit_data(
                   name
                 }
               }
-            }   
+            }
             """
             % [str(uuid) for uuid in uuids]
         ).replace(
@@ -138,7 +138,7 @@ def configure_dataloaders(context: Context) -> Dataloader:
         for key, value in gql_loader_functions.items()
     }
 
-    settings = context["user_context"]["settings"]
+    #settings = context["user_context"]["settings"]
 
     return Dataloader(
         **gql_dataloaders,
