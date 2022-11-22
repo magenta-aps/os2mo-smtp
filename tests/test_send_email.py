@@ -13,7 +13,7 @@ class EmailTest(unittest.TestCase):
         with self.assertRaises(ValueError):
             send_email.send_email(sender="")
 
-    def test_send_message(self) -> None;
+    def test_send_message(self) -> None:
         """
         Test that sent email reflects input accurately
         """
