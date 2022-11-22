@@ -15,7 +15,7 @@ async def send_email(
     cc: list[str|None] = [],
     bcc: list[str|None] = [],
     run_test: bool = False,
-) -> type[None|type(MIMEText)]:
+) -> None|object:
     """
     Sends outgoing email given parameters
 
@@ -31,11 +31,12 @@ async def send_email(
         bcc: List of BCC'ed email addresses
     """
     msg = MIMEText(body, texttype)
-    print(msg)
     msg["Subject"] = subject
     msg["From"] = sender
-    msg["CC"] = ", ".join(cc)
-    msg["BCC"] = ", ".join(bcc)
+    if cc:
+        msg["CC"] = ", ".join(cc)
+    if bcc:
+        msg["BCC"] = ", ".join(bcc)
     msg["To"] = ", ".join(receiver)
 
     #print(msg)

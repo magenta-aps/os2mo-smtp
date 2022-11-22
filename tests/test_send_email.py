@@ -3,23 +3,23 @@ import unittest
 
 
 class EmailTest(unittest.TestCase):
-    super().setUp()
+    setUp()
 
     def test_empty_address(self) -> None:
         """
         For an empty receiver or sender address, should return ValueError
         """
         with self.assertRaises(ValueError):
-            send_email.send_email(receiver="")
+            await send_email.send_email(receiver=[""])
         with self.assertRaises(ValueError):
-            send_email.send_email(sender="")
+            await send_email.send_email(sender=[""])
 
     def test_send_message(self) -> None:
         """
         Test that sent email reflects input accurately
         """
         message_args = {
-            "receiver": ["jens@jens.jens", "mads@mads.mads"],
+            "receiver": {"jens@jens.jens", "mads@mads.mads"},
             "sender": "sine@sine.sine",
             "cc": ["anders@and.rap", "fedt@mule.hydr"],
             "bcc": ["rip@rap.rup", "snip@snap.snude"],
