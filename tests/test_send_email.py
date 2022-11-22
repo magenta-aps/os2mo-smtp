@@ -4,6 +4,7 @@ import unittest
 
 class EmailTest(unittest.TestCase):
     super().setUp()
+
     def test_empty_address(self) -> None:
         """
         For an empty receiver or sender address, should return ValueError
@@ -36,4 +37,3 @@ class EmailTest(unittest.TestCase):
         self.assertEqual(message["CC"], message_args["cc"])
         self.assertEqual(message["BCC"], message_args["bcc"])
         self.assertEqual(message["Subject"], message_args["subject"])
-

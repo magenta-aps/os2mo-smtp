@@ -12,10 +12,10 @@ async def send_email(
     texttype: str = "plain",
     hostname: str = "172.17.0.1",
     port: int = 2525,
-    cc: [str] = [],
-    bcc: [str] = [],
+    cc: list[str, None] = [],
+    bcc: list[str, None] = [],
     run_test: bool = False,
-) -> None:
+) -> None|type(MIMEText):
     """
     Sends outgoing email given parameters
 
@@ -38,19 +38,19 @@ async def send_email(
     msg["BCC"] = ", ".join(bcc)
     msg["To"] = ", ".join(receiver)
 
-    print(msg)
-    print(dir(msg))
-    print(msg.values())
-    print(msg.get_payload(decode=True))
-    #print(msg.as_string())
-    #print(msg.items())
-    #for item in msg.raw_items():
+    #print(msg)
+    #print(dir(msg))
+    #print(msg.values())
+    #print(msg.get_payload(decode=True))
+    # print(msg.as_string())
+    # print(msg.items())
+    # for item in msg.raw_items():
     #    print(item)
-    #print(msg.raw_items())
-    #print(msg.get_content_maintype())
-    #for item in msg.walk():
+    # print(msg.raw_items())
+    # print(msg.get_content_maintype())
+    # for item in msg.walk():
     #    print(item)
-    #print(msg.walk())
+    # print(msg.walk())
     if run_test:
         return msg
 
