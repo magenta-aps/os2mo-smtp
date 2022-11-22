@@ -6,8 +6,7 @@ ENV PYTHONUNBUFFERED=1 \
     POETRY_NO_INTERACTION=1
 SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 
-COPY requirements.txt .
-RUN pip install --no-cache-dir -r poetry==1.2.0
+RUN pip install --no-cache-dir poetry==1.2.0
 
 WORKDIR /opt
 COPY poetry.lock pyproject.toml ./

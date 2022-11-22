@@ -56,6 +56,7 @@ async def send_email(
         return msg
 
     async with SMTP(hostname, port) as smtp:
+        print(dir(smtp))
         await smtp.send_message(msg)
 
     return None
