@@ -130,7 +130,7 @@ def configure_dataloaders(context: Context) -> Dataloader:
     }
 
     graphql_session = context["user_context"]["gql_client"]
-    gql_dataloaders = {  # type: dict[Any]
+    gql_dataloaders = {
         key: DataLoader(
             load_fn=partial(value, graphql_session=graphql_session),
             cache=False,
