@@ -22,7 +22,7 @@ class Dataloader(BaseModel):
 
 async def load_mo_user_data(
     uuids: list[UUID], graphql_session: AsyncClientSession
-) -> dict[str, Any]:
+) ->  Any:
     """
     Loads a user's data
 
@@ -69,7 +69,7 @@ async def load_mo_user_data(
 
 async def load_mo_org_unit_data(
     uuids: list[UUID], graphql_session: AsyncClientSession
-) -> dict[str, Any]:
+) -> Any:
     """
     Loads a user's data
 
@@ -130,7 +130,7 @@ def configure_dataloaders(context: Context) -> Dataloader:
     }
 
     graphql_session = context["user_context"]["gql_client"]
-    gql_dataloaders = {
+    gql_dataloaders = { # type: dict[Any]
         key: DataLoader(
             load_fn=partial(value, graphql_session=graphql_session),
             cache=False,
