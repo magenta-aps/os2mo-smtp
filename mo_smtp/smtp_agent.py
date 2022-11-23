@@ -1,5 +1,4 @@
 # Opret en agent der modtager amqp-events og importerer og eksporterer til LDAP
-#import asyncio
 import structlog
 from collections.abc import AsyncIterator
 from typing import Any, Tuple
@@ -14,29 +13,17 @@ from raclients.modelclient.mo import ModelClient
 from .config import Settings
 
 # Possibly deprecated
-# from ramqp import Router
-# from ramqp.config import ConnectionSettings
-from ramqp.mo import MORouter #, MOAMQPSystem
+from ramqp.mo import MORouter
 
-# from ramqp.mo.models import MORoutingKey
-# from ramqp.mo.models import ObjectType
-# from ramqp.mo.models import RequestType
-# from ramqp.mo.models import ServiceType
 from ramqp.mo.models import PayloadType
 
-# from starlette.requests import Request
 
 
 # Testing
 from .send_email import send_email
 from .dataloaders import configure_dataloaders
-#from uuid import UUID
 
 
-# help(MORouter)
-# help(ServiceType)
-# help(ObjectType)
-# help(RequestType)
 
 logger = structlog.get_logger()
 amqp_router = MORouter()
