@@ -1,28 +1,24 @@
 # Opret en agent der modtager amqp-events og importerer og eksporterer til LDAP
-import structlog
 from collections.abc import AsyncIterator
-from typing import Any, Tuple
 from contextlib import asynccontextmanager
+from typing import Any
+from typing import Tuple
 
-
-from fastapi import FastAPI, APIRouter #, Query
+import structlog
+from fastapi import APIRouter
+from fastapi import FastAPI
 from fastramqpi.main import FastRAMQPI
 from raclients.graph.client import PersistentGraphQLClient
 from raclients.modelclient.mo import ModelClient
-
-from .config import Settings
-
-# Possibly deprecated
 from ramqp.mo import MORouter
-
 from ramqp.mo.models import PayloadType
 
-
-
-# Testing
-from .send_email import send_email
+from .config import Settings
 from .dataloaders import configure_dataloaders
+from .send_email import send_email
 
+# Possibly deprecated
+# Testing
 
 
 logger = structlog.get_logger()
@@ -42,11 +38,12 @@ async def listen_to_create(context: dict, payload: PayloadType, **kwargs: Any) -
         payload: Payload of the AMQP message
     """
 
-    #graphql_session = context["graphql_session"]
-    #program_settings = context["user_context"]["settings"]
+    # graphql_session = context["graphql_session"]
+    # program_settings = context["user_context"]["settings"]
 
     # Prepare dictionary to store email arguments
-    email_args = {}
+    # NOTE: Use and assignments too dynamic for mypy, so Any-hint ued as workaround
+    email_args: dict[str, Any] = dict()
 
     # Ignore all Create messages except the primary object
     # if not payload.uuid == payload.object_uuid:
@@ -101,13 +98,14 @@ async def listen_to_create(context: dict, payload: PayloadType, **kwargs: Any) -
                 ]
             )
 
-        email_args["cc"] = list(manager_emails)
+        email_args["cc"] = manager_emails
 
     # Generate subject string
     subject = "Registrering i MO"
     message_body = (
-        "Denne besked er sendt som bekræftelse på at %s er oprettet i MO"
-        % user_data["name"]
+        "Denne besked er sendt som bekræftelse på at {0} er oprettet i MO".format(
+            user_data["name"]
+        )
     )
 
     email_args["subject"] = subject

@@ -1,7 +1,12 @@
-from pydantic import AmqpDsn, BaseSettings, parse_obj_as, Field, AnyHttpUrl, SecretStr
+from fastramqpi.config import Settings as FastRAMQPISettings
+from pydantic import AmqpDsn
+from pydantic import AnyHttpUrl
+from pydantic import BaseSettings
+from pydantic import Field
+from pydantic import parse_obj_as
+from pydantic import SecretStr
 
 # from fastramqpi import FastRAMQPISettings
-from fastramqpi.config import Settings as FastRAMQPISettings
 
 
 class Settings(BaseSettings):

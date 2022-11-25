@@ -1,24 +1,26 @@
-import mo_smtp.send_email as send_email
 import unittest
+
+import mo_smtp.send_email as send_email
 
 
 class EmailTest(unittest.TestCase):
     def setUp(self):
-        super(self).setUp()
+        super().setUp()
 
-    def test_empty_address(self) -> None:
+    async def test_empty_address(self) -> None:
         """
         For an empty receiver or sender address, should return ValueError
         """
         with self.assertRaises(ValueError):
-            send_email.send_email(receiver=[""])
+            await send_email.send_email(receiver={""})
         with self.assertRaises(ValueError):
-            send_email.send_email(sender=[""])
+            await send_email.send_email(sender="")
 
-    def test_send_message(self) -> None:
+    async def test_send_message(self) -> None:
         """
         Test that sent email reflects input accurately
         """
+
         message_args = {
             "receiver": {"jens@jens.jens", "mads@mads.mads"},
             "sender": "sine@sine.sine",
@@ -30,7 +32,14 @@ class EmailTest(unittest.TestCase):
         }
 
         # Retrieve MIMEText object from send_email
-        message = send_email.send_email(**message_args)
+        message = await send_email.send_email(
+            receiver={"jens@jens.jens", "mads@mads.mads"},
+            sender="sine@sine.sine",
+            cc={"anders@and.rap", "fedt@mule.hydr"},
+            bcc={"rip@rap.rup", "snip@snap.snude"},
+            subject="En meget vigtig besked",
+            body="Brødteksten på den meget vigtige besked",
+        )
 
         # Assert correct field mapping
         self.assertEqual(message["To"], message_args["receiver"])

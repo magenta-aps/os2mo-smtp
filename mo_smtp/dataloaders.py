@@ -1,11 +1,12 @@
-from typing import Any
 from functools import partial
+from typing import Any
+from uuid import UUID
+
 from fastramqpi.context import Context
 from gql import gql
 from gql.client import AsyncClientSession
 from pydantic import BaseModel
 from strawberry.dataloader import DataLoader
-from uuid import UUID
 
 
 class Dataloader(BaseModel):
@@ -138,7 +139,7 @@ def configure_dataloaders(context: Context) -> Dataloader:
         for key, value in gql_loader_functions.items()
     }
 
-    #settings = context["user_context"]["settings"]
+    # settings = context["user_context"]["settings"]
 
     return Dataloader(
         **gql_dataloaders,

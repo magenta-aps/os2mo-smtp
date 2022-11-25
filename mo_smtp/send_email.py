@@ -1,6 +1,6 @@
 # Sends an email
 from email.mime.text import MIMEText
-#import asyncio
+
 from aiosmtplib import SMTP
 
 
@@ -12,10 +12,9 @@ async def send_email(
     texttype: str = "plain",
     hostname: str = "172.17.0.1",
     port: int = 2525,
-    cc: list[str | None] = [],
-    bcc: list[str | None] = [],
-    run_test: bool = False,
-) -> None | object:
+    cc: set[str] = {""},
+    bcc: set[str] = {""},
+) -> MIMEText:
     """
     Sends outgoing email given parameters
 
@@ -33,10 +32,8 @@ async def send_email(
     msg = MIMEText(body, texttype)
     msg["Subject"] = subject
     msg["From"] = sender
-    if cc:
-        msg["CC"] = ", ".join(cc)
-    if bcc:
-        msg["BCC"] = ", ".join(bcc)
+    msg["CC"] = ", ".join(iter(cc))
+    msg["BCC"] = ", ".join(iter(bcc))
     msg["To"] = ", ".join(receiver)
 
     # print(msg)
@@ -52,11 +49,8 @@ async def send_email(
     # for item in msg.walk():
     #    print(item)
     # print(msg.walk())
-    if run_test:
-        return msg
 
     async with SMTP(hostname, port) as smtp:
         print(dir(smtp))
         await smtp.send_message(msg)
-
-    return None
+    return msg
