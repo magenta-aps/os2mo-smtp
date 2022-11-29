@@ -44,6 +44,7 @@ async def send_email(
         cc: List of CC'ed email addresses
         bcc: List of BCC'ed email addresses
     """
+
     msg = MIMEText(body, texttype)
     msg["Subject"] = subject
     msg["From"] = sender

@@ -1,4 +1,5 @@
 import unittest
+from email.mime.text import MIMEText
 
 import mo_smtp.send_email as send_email
 
@@ -40,6 +41,9 @@ class EmailTest(unittest.TestCase):
             subject="En meget vigtig besked",
             body="Brødteksten på den meget vigtige besked",
         )
+
+        # Assert correct return type
+        self.assertIsInstance(message, MIMEText)
 
         # Assert correct field mapping
         self.assertEqual(message["To"], message_args["receiver"])
