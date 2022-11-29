@@ -3,6 +3,21 @@ from email.mime.text import MIMEText
 
 from aiosmtplib import SMTP
 
+"""
+from typing import runtime_checkable
+@runtime_checkable
+class SMTP_obj(SMTP):
+    async def send_message(msg):
+        super().send_message(msg)
+"""
+
+"""
+Use:
+Servarname: localhost
+ServerAdmin: sysadmins@magenta.dk
+
+"""
+
 
 async def send_email(
     receiver: set[str] = {"receive@example.net"},
@@ -36,21 +51,6 @@ async def send_email(
     msg["BCC"] = ", ".join(iter(bcc))
     msg["To"] = ", ".join(receiver)
 
-    # print(msg)
-    # print(dir(msg))
-    # print(msg.values())
-    # print(msg.get_payload(decode=True))
-    # print(msg.as_string())
-    # print(msg.items())
-    # for item in msg.raw_items():
-    #    print(item)
-    # print(msg.raw_items())
-    # print(msg.get_content_maintype())
-    # for item in msg.walk():
-    #    print(item)
-    # print(msg.walk())
-
     async with SMTP(hostname, port) as smtp:
-        print(dir(smtp))
         await smtp.send_message(msg)
     return msg

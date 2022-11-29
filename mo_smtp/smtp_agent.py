@@ -12,6 +12,7 @@ from raclients.graph.client import PersistentGraphQLClient
 from raclients.modelclient.mo import ModelClient
 from ramqp.mo import MORouter
 from ramqp.mo.models import PayloadType
+from ramqp.utils import RejectMessage
 
 from .config import Settings
 from .dataloaders import configure_dataloaders
@@ -38,88 +39,101 @@ async def listen_to_create(context: dict, payload: PayloadType, **kwargs: Any) -
         payload: Payload of the AMQP message
     """
 
-    # graphql_session = context["graphql_session"]
-    # program_settings = context["user_context"]["settings"]
+    try:
+        # Prepare dictionary to store email arguments
+        # NOTE: Use and assignments too dynamic for mypy, so Any-hint ued as workaround
+        email_args: dict[str, Any] = dict()
 
-    # Prepare dictionary to store email arguments
-    # NOTE: Use and assignments too dynamic for mypy, so Any-hint ued as workaround
-    email_args: dict[str, Any] = dict()
+        # Ignore all Create messages except the primary object
+        # if not payload.uuid == payload.object_uuid:
+        #    return
 
-    # Ignore all Create messages except the primary object
-    # if not payload.uuid == payload.object_uuid:
-    #    return
-
-    # Payload only includes user UUID; query to graphql necessary to retreive user data
-    user_data = (
-        await context["user_context"]["dataloaders"].mo_user_loader.load_many(
-            [payload.uuid]
-        )
-    )[0]["objects"][0]
-
-    email_addresses = set(
-        [
-            address["name"]
-            for address in user_data["addresses"]
-            if address["address_type"]["name"] == "Email"
-        ]
-    )
-
-    if email_addresses:
-        email_args["receiver"] = email_addresses
-
-    # If engagements (or possibly or_unit) is present, add manager's email to receive
-    if user_data["engagements"]:
-        org_unit_uuids = set()
-        for engagement in user_data["engagements"]:
-            org_unit_uuids.add(engagement["org_unit_uuid"])
-
-        org_unit_data = await context["user_context"][
-            "dataloaders"
-        ].mo_org_unit_loader.load_many(list(org_unit_uuids))
-
-        # Retrieve manager uuids from org_unit_data
-        manager_uuids = set()
-        for org_unit in org_unit_data:
-            for obj in org_unit["objects"]:
-                for manager in obj["managers"]:
-                    manager_uuids.add(manager["employee_uuid"])
-
-        manager_data = await context["user_context"][
-            "dataloaders"
-        ].mo_user_loader.load_many(list(manager_uuids))
-
-        manager_emails = set()
-        for manager in manager_data:
-            manager_emails.update(
-                [
-                    address["name"]
-                    for address in manager["objects"][0]["addresses"]
-                    if address["address_type"]["name"] == "Email"
-                ]
+        # Payload only includes user UUID
+        # Query to graphql necessary to retreive user data
+        user_data = (
+            await context["user_context"]["dataloaders"].mo_user_loader.load_many(
+                [payload.uuid]
             )
+        )[0]["objects"][0]
 
-        email_args["cc"] = manager_emails
-
-    # Generate subject string
-    subject = "Registrering i MO"
-    message_body = (
-        "Denne besked er sendt som bekræftelse på at {0} er oprettet i MO".format(
+        # Generate subject string
+        subject = "Registrering i MO"
+        message_body = "Denne besked er sendt som bekræftelse på at \
+                {0} er registreret i MO".format(
             user_data["name"]
         )
-    )
 
-    email_args["subject"] = subject
-    email_args["body"] = message_body
+        email_addresses = set(
+            [
+                address["name"]
+                for address in user_data["addresses"]
+                if address["address_type"]["name"] == "Email"
+            ]
+        )
 
-    # Send email to relevant addresses
-    await send_email(**email_args)
+        if email_addresses:
+            email_args["receiver"] = email_addresses
 
-    # NOTE: Currently not working
-    # Clear dataloader caches
-    # context["user_context"]["dataloaders"].mo_user_loader.clear_all()
-    # context["user_context"]["dataloaders"].mo_org_unit_loader.clear_all()
+        # If engagements (or possibly or_unit) is present,
+        # add manager's email to receive
+        if user_data["engagements"]:
+            org_unit_uuids = set()
+            for engagement in user_data["engagements"]:
+                org_unit_uuids.add(engagement["org_unit_uuid"])
 
-    return
+            org_unit_data = await context["user_context"][
+                "dataloaders"
+            ].mo_org_unit_loader.load_many(list(org_unit_uuids))
+
+            print(org_unit_data)
+            print(org_unit_data[0])
+            print(org_unit_data[0]["objects"])
+            # Amend message_body
+            message_body = message_body[:-2]
+            if len(org_unit_data) > 1:
+                message_body += "følgende enheder:\n"
+                for ou in org_unit_data[:-1]:
+                    message_body += ou["objects"][0]["name"] + ",\n"
+            message_body += org_unit_data[-1]["objects"][0]["name"]
+
+            # Retrieve manager uuids from org_unit_data
+            manager_uuids = set()
+            for org_unit in org_unit_data:
+                for obj in org_unit["objects"]:
+                    for manager in obj["managers"]:
+                        manager_uuids.add(manager["employee_uuid"])
+
+            manager_data = await context["user_context"][
+                "dataloaders"
+            ].mo_user_loader.load_many(list(manager_uuids))
+
+            manager_emails = set()
+            for manager in manager_data:
+                manager_emails.update(
+                    [
+                        address["name"]
+                        for address in manager["objects"][0]["addresses"]
+                        if address["address_type"]["name"] == "Email"
+                    ]
+                )
+
+            email_args["cc"] = manager_emails
+
+        email_args["subject"] = subject
+        email_args["body"] = message_body
+
+        # Send email to relevant addresses
+        await send_email(**email_args)
+
+        # NOTE: Currently not working
+        # Clear dataloader caches
+        # context["user_context"]["dataloaders"].mo_user_loader.clear_all()
+        # context["user_context"]["dataloaders"].mo_org_unit_loader.clear_all()
+
+        return
+    except Exception:
+        print("Life sucks")
+        RejectMessage("Something's wrong")
 
 
 for routing_key in Settings().routing_keys:
