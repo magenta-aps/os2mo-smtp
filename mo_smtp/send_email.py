@@ -52,5 +52,5 @@ async def send_email(
     msg["To"] = ", ".join(receiver)
 
     async with SMTP(hostname, port) as smtp:
-        await smtp.send_message(msg)
+        await smtp.send_message(msg)  # type: ignore
     return msg
