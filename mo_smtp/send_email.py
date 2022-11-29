@@ -52,8 +52,6 @@ async def send_email(
     msg["BCC"] = ", ".join(iter(bcc))
     msg["To"] = ", ".join(receiver)
 
-    print(msg)
-
     async with SMTP(hostname, port) as smtp:
         await smtp.send_message(msg)  # type: ignore
     return msg

@@ -53,10 +53,6 @@ class EmailTest(unittest.TestCase):
 
         # Assert correct field mapping
         self.assertEqual(message, expected_message)
-        """
-        self.assertEqual(message["To"], receiver)
-        self.assertEqual(message["From"], message_args["sender"])
-        self.assertEqual(message["CC"], message_args["cc"])
-        self.assertEqual(message["BCC"], message_args["bcc"])
-        self.assertEqual(message["Subject"], message_args["subject"])
-        """
+
+
+unittest.main()
