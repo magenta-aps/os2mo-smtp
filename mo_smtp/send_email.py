@@ -2,6 +2,7 @@
 from email.mime.text import MIMEText
 
 from aiosmtplib import SMTP
+from email_validator import validate_email
 
 """
 from typing import runtime_checkable
@@ -29,6 +30,7 @@ async def send_email(
     port: int = 2525,
     cc: set[str] = {""},
     bcc: set[str] = {""},
+    testing: bool = False,
 ) -> MIMEText:
     """
     Sends outgoing email given parameters
@@ -44,6 +46,11 @@ async def send_email(
         cc: List of CC'ed email addresses
         bcc: List of BCC'ed email addresses
     """
+
+    # Validate emails
+    validate_email(sender, test_environment=testing)
+    for email in {*receiver, *cc, *bcc}:
+        validate_email(email, test_environment=testing)
 
     msg = MIMEText(body, texttype)
     msg["Subject"] = subject

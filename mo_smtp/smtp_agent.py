@@ -85,9 +85,6 @@ async def listen_to_create(context: dict, payload: PayloadType, **kwargs: Any) -
                 "dataloaders"
             ].mo_org_unit_loader.load_many(list(org_unit_uuids))
 
-            print(org_unit_data)
-            print(org_unit_data[0])
-            print(org_unit_data[0]["objects"])
             # Amend message_body
             message_body = message_body[:-2]
             if len(org_unit_data) > 1:
