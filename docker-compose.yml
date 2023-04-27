@@ -11,6 +11,8 @@ services:
       - ./mo_smtp:/opt/app/
     networks:
       - os2mo_default
+    env_file:
+      ./dev-environment/mo_smtp.env
 
 networks:
   os2mo_default:
