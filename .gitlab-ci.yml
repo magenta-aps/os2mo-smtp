@@ -13,8 +13,10 @@ stages:
   - lint
   - test
   - coverage
+  - build
   - release
   - deploy
+
 
 workflow:
   rules:
