@@ -1,3 +1,4 @@
 .cache/**
 **/.cache/**
-
+.coverage
+docker-compose.override.yml

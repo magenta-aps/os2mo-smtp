@@ -4,11 +4,17 @@ services:
 
   mo_smtp:
     build: .
-    command: "poetry run python -m mo_smtp.ldap_agent next-events-to-queue"
+    command: [ "uvicorn", "--factory", "app.smtp_agent:create_app", "--host", "0.0.0.0", "--reload" ]
+    #command: "poetry run python -m mo_smtp.smtp_agent"
     environment:
-      amqp_url: amqp://guest:guest@msg_broker
+      amqp_url: "amqp://guest:guest@msg_broker:5672/"
+      AUTH_SERVER: "http://keycloak:8080/auth"
+      MO_URL: "http://mo"
+      CLIENT_ID: "dipex"
+      CLIENT_SECRET: "603f1c82-d012-4d04-9382-dbe659c533fb"
+
     volumes:
-      - ./mo_smtp:/opt/app/
+      - ./mo_smtp:/opt/app/mo_smtp
     networks:
       - os2mo_default
     env_file:
@@ -17,3 +23,4 @@ services:
 networks:
   os2mo_default:
     external: true
+
