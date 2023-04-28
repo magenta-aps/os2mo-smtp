@@ -79,18 +79,18 @@ Deploy to Dev:
   extends: .release-to-dev
   needs: ["Build", "Release version"]
   variables:
-    ENDPOINT: os2mo/salt/ldapimportexport/update-dev
+    ENDPOINT: os2mo/salt/smtp/update-dev
 
 # Kører config-updater for test. Kører kun scheduleret
 Deploy to Test:
   extends: .release-to-test
   variables:
-    ENDPOINT: os2mo/salt/ldapimportexport/update-test
+    ENDPOINT: os2mo/salt/smtp/update-test
 
 # Kører config-updater for prod. Kører kun scheduleret
 Deploy to Prod:
   extends: .release-to-prod
   variables:
-    ENDPOINT: os2mo/salt/ldapimportexport/update-prod
+    ENDPOINT: os2mo/salt/smtp/update-prod
 
 
