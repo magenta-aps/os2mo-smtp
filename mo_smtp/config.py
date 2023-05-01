@@ -54,5 +54,5 @@ class EmailSettings(BaseSettings):
     sender: str = "noreply@saa-mo.gl"
     smtp_port: int = 25
     smtp_host: str = "10.240.75.202"
-    testing: bool = True
+    testing: bool = False
     texttype: str = "plain"
