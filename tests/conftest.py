@@ -16,6 +16,7 @@ def settings_overrides() -> Iterator[dict[str, Any]]:
     overrides = {
         "client_id": "Foo",
         "client_secret": "bar",
+        "testing": "True",
     }
     yield overrides
 

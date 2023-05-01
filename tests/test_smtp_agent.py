@@ -30,6 +30,7 @@ def settings(monkeypatch: pytest.MonkeyPatch) -> Settings:
 
     monkeypatch.setenv("client_id", "foo")
     monkeypatch.setenv("client_secret", "bar")
+    monkeypatch.setenv("testing", "True")
 
     return Settings()
 
