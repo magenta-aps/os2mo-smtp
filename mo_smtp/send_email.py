@@ -55,5 +55,7 @@ async def send_email(
 
     logger.info(msg)
     if not testing:
-        await SMTP(smtp_host, smtp_port).send_message(msg)  # type: ignore
+        smtp = SMTP(smtp_host, smtp_port)
+        await smtp.send_message(msg)  # type: ignore
+        await smtp.quit()
     return msg
