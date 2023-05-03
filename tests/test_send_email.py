@@ -42,7 +42,7 @@ async def test_send_message() -> None:
             testing=testing,
         )
 
-        expected_message = MIMEText(body, texttype, _charset="iso-8859-10")
+        expected_message = MIMEText(body, texttype, _charset="utf-8")
         expected_message["Subject"] = subject
         expected_message["From"] = sender
         expected_message["To"] = ", ".join(receiver)
@@ -88,7 +88,7 @@ async def test_send_message_testing_true() -> None:
             testing=testing,
         )
 
-        expected_message = MIMEText(body, texttype, _charset="iso-8859-10")
+        expected_message = MIMEText(body, texttype, _charset="utf-8")
         expected_message["Subject"] = subject
         expected_message["From"] = sender
         expected_message["To"] = ", ".join(receiver)

@@ -46,7 +46,7 @@ async def send_email(
             Example: True
     """
 
-    msg = MIMEText(body, texttype, _charset="iso-8859-10")
+    msg = MIMEText(body, texttype, _charset="utf-8")
     msg["Subject"] = subject
     msg["From"] = sender
     msg["CC"] = ", ".join(cc)
