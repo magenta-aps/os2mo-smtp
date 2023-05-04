@@ -105,7 +105,7 @@ async def listen_to_create(context: dict, payload: PayloadType, **kwargs: Any) -
     email_args["body"] = message_body
 
     # Send email to relevant addresses
-    await send_email(**email_args)
+    send_email(**email_args)
 
 
 def update_amqp_router_registry(routing_keys: dict[str, str]):
