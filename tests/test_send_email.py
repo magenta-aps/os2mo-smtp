@@ -18,7 +18,7 @@ async def test_send_message() -> None:
     cc = {"cc1@test.net", "cc2@test.net"}
     bcc = {"bcc1@test.net", "bcc2@test.net"}
     subject = "A very important message"
-    body = "The body of the very important message"
+    body = "The body of the very important message with æ, ø and å"
     texttype = "plain"
     testing = False
 
