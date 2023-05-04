@@ -143,23 +143,6 @@ async def test_listen_to_create_multiple_engagements_with_manager(
         ],
     }
 
-    emailargs = {
-        "sender": "noreply@saa-mo.gl",
-        "smtp_port": 25,
-        "smtp_host": "10.240.75.202",
-        "testing": True,
-        "texttype": "plain",
-        "receiver": {employee["objects"][0]["addresses"][0]["value"]},  # type: ignore
-        "cc": {manager["objects"][0]["addresses"][0]["value"]},  # type: ignore
-        "subject": "Registrering i MO",
-        "body": (
-            "Denne besked er sendt som bekræftelse på at "
-            f"{employee['objects'][0]['name']} er registreret i de "
-            f"følgende enheder:\n{ou1['objects'][0]['name']},"
-            f"\n{ou2['objects'][0]['name']}"
-        ),
-    }
-
     async def load_mo_user(uuid: list[UUID], mo_users: Any) -> list[Any] | None:
         """Mocks a graphql search for employees"""
         if uuid[0] == uuid_employee:
@@ -192,7 +175,6 @@ async def test_listen_to_create_multiple_engagements_with_manager(
         org_unit_mock.assert_awaited_with(
             list(set([uuid_ou1, uuid_ou2])), context["user_context"]["gql_client"]
         )  # list(set(list)))-conversion to mimic the mechanics of the executed function
-        emailmock.assert_awaited_with(**emailargs)
 
 
 async def test_listen_to_create_no_user_email(

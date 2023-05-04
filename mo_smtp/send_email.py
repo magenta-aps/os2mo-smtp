@@ -1,13 +1,13 @@
 # Sends an email
 from email.mime.text import MIMEText
+from smtplib import SMTP
 
 import structlog
-from aiosmtplib import SMTP
 
 logger = structlog.get_logger()
 
 
-async def send_email(
+def send_email(
     receiver: set[str],
     sender: str,
     subject: str,
@@ -56,6 +56,8 @@ async def send_email(
     logger.info(msg)
     if not testing:
         smtp = SMTP(smtp_host, smtp_port)
-        await smtp.send_message(msg)  # type: ignore
-        await smtp.quit()
+        smtp.ehlo()
+        smtp.starttls()
+        smtp.send_message(msg)  # type: ignore
+        smtp.quit()
     return msg

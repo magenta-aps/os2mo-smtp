@@ -1,9 +1,7 @@
 from email.mime.text import MIMEText
 from smtpd import SMTPServer
+from unittest.mock import MagicMock
 from unittest.mock import patch
-
-import pytest
-from aiosmtplib.errors import SMTPServerDisconnected
 
 import mo_smtp.send_email as send_email
 
@@ -25,11 +23,15 @@ async def test_send_message() -> None:
     testing = False
 
     # Retrieve MIMEText object from send_email
-    with patch("aiosmtplib.SMTP.send_message", return_value=None), pytest.raises(
-        SMTPServerDisconnected
+    with patch("mo_smtp.send_email.SMTP.send_message", return_value=None), patch(
+        "mo_smtp.send_email.SMTP", return_value=MagicMock()
+    ), patch("mo_smtp.send_email.SMTP.ehlo", return_value=None), patch(
+        "mo_smtp.send_email.SMTP.starttls", return_value=None
+    ), patch(
+        "mo_smtp.send_email.SMTP.quit", return_value=None
     ):
         SMTPServer((smtp_host, smtp_port), (smtp_host, smtp_port))
-        message = await send_email.send_email(
+        message = send_email.send_email(
             receiver=receiver,
             sender=sender,
             smtp_host=smtp_host,
@@ -74,8 +76,14 @@ async def test_send_message_testing_true() -> None:
     testing = True
 
     # Retrieve MIMEText object from send_email
-    with patch("aiosmtplib.SMTP.send_message", return_value=None):
-        message = await send_email.send_email(
+    with patch("mo_smtp.send_email.SMTP.send_message", return_value=None), patch(
+        "mo_smtp.send_email.SMTP", return_value=MagicMock()
+    ), patch("mo_smtp.send_email.SMTP.ehlo", return_value=None), patch(
+        "mo_smtp.send_email.SMTP.starttls", return_value=None
+    ), patch(
+        "mo_smtp.send_email.SMTP.quit", return_value=None
+    ):
+        message = send_email.send_email(
             receiver=receiver,
             sender=sender,
             smtp_host=smtp_host,
