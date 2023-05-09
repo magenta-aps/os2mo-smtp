@@ -55,7 +55,7 @@ def send_email(
 
     # Print message content to log
     for key in msg.keys():
-        logger.info(key + ": " + msg[key])
+        logger.info(f"{key}: {msg[key]}" )
     logger.info(msg.get_payload(decode=True).decode())
 
     if not testing:
