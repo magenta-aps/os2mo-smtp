@@ -1,4 +1,3 @@
-# Opret en agent der modtager amqp-events og importerer og eksporterer til LDAP
 from typing import Any
 from typing import Tuple
 
@@ -58,7 +57,7 @@ async def listen_to_create(context: dict, payload: PayloadType, **kwargs: Any) -
                 address["value"]
                 for address in user_data["addresses"]
                 if address["address_type"]["scope"] == "EMAIL"
-                and not (address["value"].isspace() or address["value"] == "")
+                and "@" in address["value"]  # Rudimentary email validator
             ]
         )
     except KeyError:
