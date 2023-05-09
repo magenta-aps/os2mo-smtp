@@ -53,7 +53,13 @@ def send_email(
     msg["BCC"] = ", ".join(bcc)
     msg["To"] = ", ".join(receiver)
 
-    logger.info(msg)
+    # Print message content to log
+    for key in msg.keys():
+        logger.info(f"{key}: {msg[key]}")
+    # 1st decode seems to decode from email-encoding to binary string
+    # 2nd decode decodes from binary string to human-readable (including special chars)
+    logger.info(msg.get_payload(decode=True).decode())
+
     if not testing:
         smtp = SMTP(smtp_host, smtp_port)
         smtp.ehlo()
