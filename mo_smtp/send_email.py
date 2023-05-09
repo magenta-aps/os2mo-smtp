@@ -53,7 +53,11 @@ def send_email(
     msg["BCC"] = ", ".join(bcc)
     msg["To"] = ", ".join(receiver)
 
-    logger.info(msg)
+    # Print message content to log
+    for key in msg.keys():
+        logger.info(key + ": " + msg[key])
+    logger.info(msg.get_payload(decode=True).decode())
+
     if not testing:
         smtp = SMTP(smtp_host, smtp_port)
         smtp.ehlo()

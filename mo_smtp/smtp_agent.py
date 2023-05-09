@@ -57,16 +57,20 @@ async def listen_to_create(context: dict, payload: PayloadType, **kwargs: Any) -
             [
                 address["value"]
                 for address in user_data["addresses"]
-                if address["address_type"]["scope"] == "EMAIL"
+                if (address["address_type"]["scope"] == "EMAIL")
+                and not (address["value"].isspace() or address["value"] == "")
             ]
         )
     except KeyError:
         raise RejectMessage(f"User {user_data['name']} does not have an email")
         return
+    if not email_addresses:
+        raise RejectMessage(f"User {user_data['name']} does not have an email")
+        return
 
     email_args["receiver"] = email_addresses
 
-    # If engagements is present, add manager's email to receive
+    # If engagements are present, add manager's email to receive
     if user_data["engagements"]:
         org_unit_uuids = set()
         for engagement in user_data["engagements"]:
