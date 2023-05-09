@@ -66,7 +66,7 @@ async def listen_to_create(context: dict, payload: PayloadType, **kwargs: Any) -
 
     email_args["receiver"] = email_addresses
 
-    # If engagements is present, add manager's email to receive
+    # If engagements are present, add manager's email to receive
     if user_data["engagements"]:
         org_unit_uuids = set()
         for engagement in user_data["engagements"]:
