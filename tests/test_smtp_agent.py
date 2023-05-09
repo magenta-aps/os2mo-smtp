@@ -7,6 +7,7 @@ from collections.abc import Iterator
 from datetime import datetime
 from typing import Any
 from unittest.mock import AsyncMock
+from unittest.mock import MagicMock
 from unittest.mock import patch
 from uuid import UUID
 from uuid import uuid4
@@ -158,12 +159,11 @@ async def test_listen_to_create_multiple_engagements_with_manager(
 
     usermock = AsyncMock(side_effect=load_mo_user)
     org_unit_mock = AsyncMock(side_effect=load_mo_ou)
-    emailmock = AsyncMock()
     payload = PayloadType(uuid=uuid_employee, object_uuid=uuid4(), time=datetime.now())
 
     with patch("mo_smtp.smtp_agent.load_mo_user_data", usermock), patch(
         "mo_smtp.smtp_agent.load_mo_org_unit_data", org_unit_mock
-    ), patch("mo_smtp.smtp_agent.send_email", emailmock):
+    ), patch("mo_smtp.smtp_agent.send_email", MagicMock):
         await asyncio.gather(listen_to_create(context, payload))
         usermock.assert_any_await(
             [uuid_employee], context["user_context"]["gql_client"]
@@ -212,3 +212,49 @@ async def test_listen_to_create_no_user_email(
         usermock.assert_awaited_once_with(
             [uuid_employee], context["user_context"]["gql_client"]
         )
+
+
+async def test_listen_to_create_invalid_user_email(
+    context: dict[str, Any],
+) -> None:
+    """
+    Tests that listen_to_create rejects messages where the employee does not have an
+    email
+    """
+
+    for invalid_email in ["", "   "]:
+
+        uuid_employee = uuid4()
+        employee = {
+            "objects": [
+                {
+                    "name": "Test McTesterson",
+                    "uuid": str(uuid_employee),
+                    "addresses": [
+                        {
+                            "value": invalid_email,
+                            "address_type": {
+                                "scope": "EMAIL",
+                            },
+                        },
+                    ],
+                }
+            ],
+        }
+
+        async def load_mo_user(uuid: list[UUID], mo_users: Any) -> list[Any] | None:
+            """Mocks a graphql search for employees"""
+            return [employee]
+
+        usermock = AsyncMock(side_effect=load_mo_user)
+        payload = PayloadType(
+            uuid=uuid_employee, object_uuid=uuid4(), time=datetime.now()
+        )
+
+        with patch("mo_smtp.smtp_agent.load_mo_user_data", usermock), pytest.raises(
+            RejectMessage
+        ):
+            await asyncio.gather(listen_to_create(context, payload))
+            usermock.assert_awaited_once_with(
+                [uuid_employee], context["user_context"]["gql_client"]
+            )
