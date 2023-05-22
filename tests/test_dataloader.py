@@ -18,14 +18,8 @@ async def graphql_session_execute() -> AsyncGenerator:
     """
 
     yield {
-        "employees": {
-            "employee1": "employee1",
-            "employee2": "employee2",
-        },
-        "org_units": {
-            "org_unit1": "org_unit1",
-            "org_unit2": "org:unit2",
-        },
+        "employees": [{"objects": [{"name": "Jack"}]}],
+        "org_units": [{"objects": [{"name": "Jack's organisation"}]}],
     }
 
 
@@ -36,8 +30,8 @@ async def test_load_mo_user_data(graphql_session_execute: dict) -> None:
     graphql_session = AsyncMock()
     graphql_session.execute.return_value = graphql_session_execute
 
-    result = await load_mo_user_data([uuid], graphql_session)
-    assert graphql_session_execute["employees"] == result
+    result = await load_mo_user_data(uuid, graphql_session)
+    assert graphql_session_execute["employees"][0]["objects"][0] == result
 
 
 async def test_load_mo_org_unit_data(graphql_session_execute: dict) -> None:
@@ -47,5 +41,5 @@ async def test_load_mo_org_unit_data(graphql_session_execute: dict) -> None:
     graphql_session = AsyncMock()
     graphql_session.execute.return_value = graphql_session_execute
 
-    result = await load_mo_org_unit_data([uuid], graphql_session)
-    assert graphql_session_execute["org_units"] == result
+    result = await load_mo_org_unit_data(uuid, graphql_session)
+    assert graphql_session_execute["org_units"][0]["objects"][0] == result

@@ -79,77 +79,61 @@ async def test_listen_to_create_multiple_engagements_with_manager(
     uuid_manager = uuid4()
 
     employee = {
-        "objects": [
+        "name": "Test McTesterson",
+        "uuid": str(uuid_employee),
+        "addresses": [
             {
-                "name": "Test McTesterson",
-                "uuid": str(uuid_employee),
-                "addresses": [
-                    {
-                        "value": "employee@test",
-                        "address_type": {
-                            "scope": "EMAIL",
-                        },
-                    },
-                ],
-                "engagements": [
-                    {
-                        "name": "ou1",
-                        "org_unit_uuid": uuid_ou1,
-                    },
-                    {
-                        "name": "ou2",
-                        "org_unit_uuid": uuid_ou2,
-                    },
-                ],
-            }
+                "value": "employee@test",
+                "address_type": {
+                    "scope": "EMAIL",
+                },
+            },
+        ],
+        "engagements": [
+            {
+                "name": "ou1",
+                "org_unit_uuid": uuid_ou1,
+            },
+            {
+                "name": "ou2",
+                "org_unit_uuid": uuid_ou2,
+            },
         ],
     }
     manager = {
-        "objects": [
+        "name": "Manny O'ager",
+        "uuid": str(uuid_manager),
+        "addresses": [
             {
-                "name": "Manny O'ager",
-                "uuid": str(uuid_manager),
-                "addresses": [
-                    {
-                        "value": "manager@test",
-                        "address_type": {
-                            "scope": "EMAIL",
-                        },
-                    },
-                ],
-            }
+                "value": "manager@test",
+                "address_type": {
+                    "scope": "EMAIL",
+                },
+            },
         ],
     }
     ou1 = {
-        "objects": [
+        "name": "ou1",
+        "uuid": str(uuid_ou1),
+        "managers": [
             {
-                "name": "ou1",
-                "uuid": str(uuid_ou1),
-                "managers": [
-                    {
-                        "employee_uuid": uuid_manager,
-                        "name": "Manny O'ager",
-                    },
-                ],
-            }
+                "employee_uuid": uuid_manager,
+                "name": "Manny O'ager",
+            },
         ],
     }
     ou2 = {
-        "objects": [
-            {
-                "name": "ou2",
-                "uuid": str(uuid_ou2),
-                "managers": [],
-            }
-        ],
+        "name": "ou2",
+        "uuid": str(uuid_ou2),
+        "managers": [],
     }
 
-    async def load_mo_user(uuid: list[UUID], mo_users: Any) -> list[Any] | None:
+    async def load_mo_user(uuid: UUID, mo_users: Any) -> Any:
         """Mocks a graphql search for employees"""
-        if uuid[0] == uuid_employee:
-            return [employee]
-        elif uuid[0] == uuid_manager:
-            return [manager]
+        if uuid == uuid_employee:
+            return employee
+        elif uuid == uuid_manager:
+            return manager
         else:
             return None
 
@@ -158,23 +142,19 @@ async def test_listen_to_create_multiple_engagements_with_manager(
         return [ou1, ou2]
 
     usermock = AsyncMock(side_effect=load_mo_user)
-    org_unit_mock = AsyncMock(side_effect=load_mo_ou)
+    org_unit_mock = AsyncMock(side_effect=[ou1, ou2])
     payload = PayloadType(uuid=uuid_employee, object_uuid=uuid4(), time=datetime.now())
 
     with patch("mo_smtp.smtp_agent.load_mo_user_data", usermock), patch(
         "mo_smtp.smtp_agent.load_mo_org_unit_data", org_unit_mock
     ), patch("mo_smtp.smtp_agent.send_email", MagicMock):
         await asyncio.gather(listen_to_create(context, payload))
-        usermock.assert_any_await(
-            [uuid_employee], context["user_context"]["gql_client"]
-        )
+        usermock.assert_any_await(uuid_employee, context["user_context"]["gql_client"])
         usermock.assert_awaited_with(
-            [uuid_manager], context["user_context"]["gql_client"]
+            uuid_manager, context["user_context"]["gql_client"]
         )
-        org_unit_mock.assert_awaited_once()
-        org_unit_mock.assert_awaited_with(
-            list(set([uuid_ou1, uuid_ou2])), context["user_context"]["gql_client"]
-        )  # list(set(list)))-conversion to mimic the mechanics of the executed function
+        org_unit_mock.assert_any_await(uuid_ou1, context["user_context"]["gql_client"])
+        org_unit_mock.assert_any_await(uuid_ou2, context["user_context"]["gql_client"])
 
 
 async def test_listen_to_create_no_user_email(
@@ -187,20 +167,16 @@ async def test_listen_to_create_no_user_email(
 
     uuid_employee = uuid4()
     employee = {
-        "objects": [
-            {
-                "name": "Test McTesterson",
-                "uuid": str(uuid_employee),
-                "addresses": [
-                    {},
-                ],
-            }
+        "name": "Test McTesterson",
+        "uuid": str(uuid_employee),
+        "addresses": [
+            {},
         ],
     }
 
-    async def load_mo_user(uuid: list[UUID], mo_users: Any) -> list[Any] | None:
+    async def load_mo_user(uuid: UUID, mo_users: Any) -> Any:
         """Mocks a graphql search for employees"""
-        return [employee]
+        return employee
 
     usermock = AsyncMock(side_effect=load_mo_user)
     payload = PayloadType(uuid=uuid_employee, object_uuid=uuid4(), time=datetime.now())
@@ -210,7 +186,7 @@ async def test_listen_to_create_no_user_email(
     ):
         await asyncio.gather(listen_to_create(context, payload))
         usermock.assert_awaited_once_with(
-            [uuid_employee], context["user_context"]["gql_client"]
+            uuid_employee, context["user_context"]["gql_client"]
         )
 
 
@@ -226,25 +202,21 @@ async def test_listen_to_create_invalid_user_email(
 
         uuid_employee = uuid4()
         employee = {
-            "objects": [
+            "name": "Test McTesterson",
+            "uuid": str(uuid_employee),
+            "addresses": [
                 {
-                    "name": "Test McTesterson",
-                    "uuid": str(uuid_employee),
-                    "addresses": [
-                        {
-                            "value": invalid_email,
-                            "address_type": {
-                                "scope": "EMAIL",
-                            },
-                        },
-                    ],
-                }
+                    "value": invalid_email,
+                    "address_type": {
+                        "scope": "EMAIL",
+                    },
+                },
             ],
         }
 
-        async def load_mo_user(uuid: list[UUID], mo_users: Any) -> list[Any] | None:
+        async def load_mo_user(uuid: UUID, mo_users: Any) -> Any:
             """Mocks a graphql search for employees"""
-            return [employee]
+            return employee
 
         usermock = AsyncMock(side_effect=load_mo_user)
         payload = PayloadType(
@@ -256,5 +228,5 @@ async def test_listen_to_create_invalid_user_email(
         ):
             await asyncio.gather(listen_to_create(context, payload))
             usermock.assert_awaited_once_with(
-                [uuid_employee], context["user_context"]["gql_client"]
+                uuid_employee, context["user_context"]["gql_client"]
             )
