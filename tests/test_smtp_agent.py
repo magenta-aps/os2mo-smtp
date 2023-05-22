@@ -137,10 +137,6 @@ async def test_listen_to_create_multiple_engagements_with_manager(
         else:
             return None
 
-    async def load_mo_ou(uuid: list[UUID], mo_users: Any) -> list[Any]:
-        """Mocks a graphql search for organisation units"""
-        return [ou1, ou2]
-
     usermock = AsyncMock(side_effect=load_mo_user)
     org_unit_mock = AsyncMock(side_effect=[ou1, ou2])
     payload = PayloadType(uuid=uuid_employee, object_uuid=uuid4(), time=datetime.now())
