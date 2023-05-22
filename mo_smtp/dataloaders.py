@@ -5,9 +5,7 @@ from gql import gql
 from gql.client import AsyncClientSession
 
 
-async def load_mo_user_data(
-    uuids: list[UUID], graphql_session: AsyncClientSession
-) -> Any:
+async def load_mo_user_data(uuid: UUID, graphql_session: AsyncClientSession) -> Any:
     """
     Loads a user's data
 
@@ -23,7 +21,7 @@ async def load_mo_user_data(
         (
             """
             query getData {
-              employees(uuids: %s) {
+              employees(uuids: "%s") {
                 objects {
                   name
                   addresses {
@@ -39,18 +37,14 @@ async def load_mo_user_data(
               }
             }
             """
-            % [str(uuid) for uuid in uuids]
-        ).replace(
-            "'", '"'
-        )  # Hack necessary, since graphql can't read single quotes
+            % uuid
+        )
     )
     result = await graphql_session.execute(query)
-    return result["employees"]
+    return result["employees"][0]["objects"][0]
 
 
-async def load_mo_org_unit_data(
-    uuids: list[UUID], graphql_session: AsyncClientSession
-) -> Any:
+async def load_mo_org_unit_data(uuid: UUID, graphql_session: AsyncClientSession) -> Any:
     """
     Loads a user's data
 
@@ -65,7 +59,7 @@ async def load_mo_org_unit_data(
         (
             """
             query getData {
-              org_units(uuids: %s) {
+              org_units(uuids: "%s") {
                 objects {
                   name
                   managers {
@@ -75,10 +69,8 @@ async def load_mo_org_unit_data(
               }
             }
             """
-            % [str(uuid) for uuid in uuids]
-        ).replace(
-            "'", '"'
-        )  # Hack necessary, since graphql can't read single quotes
+            % uuid
+        )
     )
     result = await graphql_session.execute(query)
-    return result["org_units"]
+    return result["org_units"][0]["objects"][0]

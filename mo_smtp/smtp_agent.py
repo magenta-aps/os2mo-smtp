@@ -42,9 +42,7 @@ async def listen_to_create(context: dict, payload: PayloadType, **kwargs: Any) -
     gql_client = context["user_context"]["gql_client"]
 
     # Payload only includes user UUID. Query to graphql necessary to retreive user data
-    user_data = (await load_mo_user_data([payload.uuid], gql_client,))[0][
-        "objects"
-    ][0]
+    user_data = await load_mo_user_data(payload.uuid, gql_client)
     # Subject string
     subject = "Registrering i MO"
     message_body = (
@@ -74,30 +72,32 @@ async def listen_to_create(context: dict, payload: PayloadType, **kwargs: Any) -
         org_unit_uuids = set()
         for engagement in user_data["engagements"]:
             org_unit_uuids.add(engagement["org_unit_uuid"])
-        org_unit_data = await load_mo_org_unit_data(list(org_unit_uuids), gql_client)
+
+        org_unit_data = [
+            await load_mo_org_unit_data(uuid, gql_client)
+            for uuid in list(org_unit_uuids)
+        ]
 
         # Add units to message body
         if len(org_unit_data) > 1:
             message_body += "de følgende enheder:\n"
             for org_unit in org_unit_data[:-1]:
-                message_body += org_unit["objects"][0]["name"] + ",\n"
-        message_body += org_unit_data[-1]["objects"][0]["name"]
+                message_body += org_unit["name"] + ",\n"
+        message_body += org_unit_data[-1]["name"]
 
         # Retrieve manager uuids from org_unit_data
         manager_uuids = set()
-        for org_unit in org_unit_data:
-            for obj in org_unit["objects"]:
-                for manager in obj["managers"]:
-                    manager_uuids.add(manager["employee_uuid"])
-
-        manager_data = await load_mo_user_data(list(manager_uuids), gql_client)
+        for obj in org_unit_data:
+            for manager in obj["managers"]:
+                manager_uuids.add(manager["employee_uuid"])
 
         manager_emails = set()
-        for manager in manager_data:
+        for manager_uuid in manager_uuids:
+            manager = await load_mo_user_data(manager_uuid, gql_client)
             manager_emails.update(
                 [
                     address["value"]
-                    for address in manager["objects"][0]["addresses"]
+                    for address in manager["addresses"]
                     if address["address_type"]["scope"] == "EMAIL"
                 ]
             )
