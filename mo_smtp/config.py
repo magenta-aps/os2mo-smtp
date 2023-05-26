@@ -53,6 +53,6 @@ class EmailSettings(BaseSettings):
 
     sender: str = "noreply@nanoq.gl"
     smtp_port: int = 25
-    smtp_host: str = "10.240.75.202"
+    smtp_host: str = "smtp4dev"
     testing: bool = False
     texttype: str = "plain"
