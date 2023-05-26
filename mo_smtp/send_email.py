@@ -64,11 +64,8 @@ def send_email(
     if not testing:
         smtp = SMTP(host=smtp_host, port=smtp_port)
         try:
-            print("PUNY SMALL FISHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHH")
             smtp.starttls()
-            print("AVERAGE MEDIUM FISHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHH")
             smtp.ehlo_or_helo_if_needed()
-            print("GREAT BIG FISHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHH")
         except SMTPNotSupportedError:
             logger.info("SMTP server doesn't use TLS. TLS ignored")
         smtp.send_message(msg)  # type: ignore
