@@ -1,6 +1,7 @@
 # Sends an email
 from email.mime.text import MIMEText
 from smtplib import SMTP
+from smtplib import SMTPNotSupportedError
 
 import structlog
 
@@ -61,9 +62,12 @@ def send_email(
     logger.info(msg.get_payload(decode=True).decode())
 
     if not testing:
-        smtp = SMTP(smtp_host, smtp_port)
-        smtp.ehlo()
-        smtp.starttls()
+        smtp = SMTP(host=smtp_host, port=smtp_port)
+        try:
+            smtp.starttls()
+            smtp.ehlo_or_helo_if_needed()
+        except SMTPNotSupportedError:
+            logger.info("SMTP server doesn't use TLS. TLS ignored")
         smtp.send_message(msg)  # type: ignore
         smtp.quit()
     return msg
