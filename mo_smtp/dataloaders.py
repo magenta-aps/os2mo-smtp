@@ -53,7 +53,7 @@ async def load_mo_org_unit_data(uuid: UUID, graphql_session: AsyncClientSession)
         graphql_session: The GraphQL session to run queries on
 
     Return:
-        Dictionary with queried user data
+        Dictionary with queried org unit data
     """
     query = gql(
         (
@@ -74,3 +74,35 @@ async def load_mo_org_unit_data(uuid: UUID, graphql_session: AsyncClientSession)
     )
     result = await graphql_session.execute(query)
     return result["org_units"][0]["objects"][0]
+
+
+async def load_mo_address_data(uuid: UUID, graphql_session: AsyncClientSession) -> Any:
+    """
+    Loads information concerning an employee's address
+
+    Args:
+        key: User UUID
+        graphql_session: The GraphQL session to run queries on
+
+    Return:
+        Dictionary with queried address data
+    """
+    query = gql(
+        (
+            """
+            query getData {
+              addresses(uuids: "%s") {
+                current {
+                  name
+                  address_type {
+                    scope
+                  }
+                }
+              }
+            }
+            """
+            % uuid
+        )
+    )
+    result = await graphql_session.execute(query)
+    return result["addresses"][0]["current"]

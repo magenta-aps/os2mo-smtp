@@ -14,6 +14,7 @@ from ramqp.utils import RejectMessage
 from .config import EmailSettings
 from .config import RoutingKeys
 from .config import Settings
+from .dataloaders import load_mo_address_data
 from .dataloaders import load_mo_org_unit_data
 from .dataloaders import load_mo_user_data
 from .send_email import send_email
@@ -24,7 +25,9 @@ amqp_router = MORouter()
 fastapi_router = APIRouter()
 
 
-async def listen_to_create(context: dict, payload: PayloadType, **kwargs: Any) -> None:
+async def listen_to_address_create(
+    context: dict, payload: PayloadType, **kwargs: Any
+) -> None:
     """
     Create a router, which listens to all "creation" requests,
     takes a context and a payload, and returns None.
@@ -35,32 +38,50 @@ async def listen_to_create(context: dict, payload: PayloadType, **kwargs: Any) -
         context: dictionary with context from FastRAMQPI
         payload: Payload of the AMQP message
     """
+    # When a new employee is created, the AMPQ request corresponds with that of an
+    # address but the payload.object_uuid is always equal to the payload.uuid
+    if payload.uuid == payload.object_uuid:
+        return
 
     # Prepare dictionary to store email arguments
     # NOTE: Use and assignments too dynamic for mypy, so Any-hint used as workaround
     email_args: dict[str, Any] = dict(EmailSettings())
     gql_client = context["user_context"]["gql_client"]
 
+    # NOTE: New material
+    address_data = await load_mo_address_data(payload.object_uuid, gql_client)
+
+    # Sort out all employee.address.create messages, that aren't emails
+    if address_data["address_type"]["scope"] != "EMAIL":
+        return
+
     # Payload only includes user UUID. Query to graphql necessary to retreive user data
     user_data = await load_mo_user_data(payload.uuid, gql_client)
+
+    emails = [
+        email
+        for email in user_data["addresses"]
+        if email["address_type"]["scope"] == "EMAIL"
+    ]
+    # Drop message, if previous email exists
+    if len(emails) > 1:
+        return
+
     # Subject string
     subject = "Registrering i MO"
     message_body = (
         f"Denne besked er sendt som bekræftelse på at {user_data['name']} "
         + "er registreret i "
     )
-    try:
-        email_addresses = set(
-            [
-                address["value"]
-                for address in user_data["addresses"]
-                if address["address_type"]["scope"] == "EMAIL"
-                and "@" in address["value"]  # Rudimentary email validator
-            ]
-        )
-    except KeyError:
-        raise RejectMessage(f"User {user_data['name']} does not have an email")
-        return
+    email_addresses = set(
+        [
+            address["value"]
+            for address in user_data["addresses"]
+            if address["address_type"]["scope"] == "EMAIL"
+            and "@" in address["value"]  # Rudimentary email validator
+        ]
+    )
+    # Sometimes invalid emails may be imported from AD.
     if not email_addresses:
         raise RejectMessage(f"User {user_data['name']} does not have an email")
         return
@@ -103,6 +124,8 @@ async def listen_to_create(context: dict, payload: PayloadType, **kwargs: Any) -
             )
 
         email_args["cc"] = manager_emails
+    else:
+        message_body += "OS2MO."
 
     email_args["subject"] = subject
     email_args["body"] = message_body
@@ -113,7 +136,7 @@ async def listen_to_create(context: dict, payload: PayloadType, **kwargs: Any) -
 
 def update_amqp_router_registry(routing_keys: dict[str, str]):
     for routing_key in routing_keys:
-        amqp_router.register(routing_keys[routing_key])(listen_to_create)
+        amqp_router.register(routing_keys[routing_key])(listen_to_address_create)
 
 
 def construct_gql_client(settings: Settings):
