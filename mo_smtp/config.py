@@ -43,7 +43,7 @@ class RoutingKeys(BaseSettings):
         frozen = True
         env_nested_delimiter = "__"
 
-    employee_create_create: str = "employee.employee.create"
+    employee_address_create: str = "employee.address.create"
 
 
 class EmailSettings(BaseSettings):

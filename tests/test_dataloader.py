@@ -7,6 +7,7 @@ from uuid import uuid4
 
 import pytest
 
+from mo_smtp.dataloaders import load_mo_address_data
 from mo_smtp.dataloaders import load_mo_org_unit_data
 from mo_smtp.dataloaders import load_mo_user_data
 
@@ -20,6 +21,9 @@ async def graphql_session_execute() -> AsyncGenerator:
     yield {
         "employees": [{"objects": [{"name": "Jack"}]}],
         "org_units": [{"objects": [{"name": "Jack's organisation"}]}],
+        "addresses": [
+            {"current": {"name": "jack@place.net", "address_type": {"scope": "EMAIL"}}}
+        ],
     }
 
 
@@ -43,3 +47,14 @@ async def test_load_mo_org_unit_data(graphql_session_execute: dict) -> None:
 
     result = await load_mo_org_unit_data(uuid, graphql_session)
     assert graphql_session_execute["org_units"][0]["objects"][0] == result
+
+
+async def test_load_mo_address_data(graphql_session_execute: dict) -> None:
+
+    uuid = uuid4()
+
+    graphql_session = AsyncMock()
+    graphql_session.execute.return_value = graphql_session_execute
+
+    result = await load_mo_address_data(uuid, graphql_session)
+    assert graphql_session_execute["addresses"][0]["current"] == result
