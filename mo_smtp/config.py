@@ -51,7 +51,7 @@ class EmailSettings(BaseSettings):
         frozen = True
         env_nested_delimiter = "__"
 
-    sender: str = "noreply@nanoq.gl"
+    sender: str = "os2mo@magenta.dk"
     smtp_port: int = 25
     smtp_host: str = "smtp4dev"
     testing: bool = False
