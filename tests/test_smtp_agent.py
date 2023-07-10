@@ -181,8 +181,6 @@ async def test_listen_to_address_create_multiple_engagements_with_manager(
             return employee
         elif uuid == uuid_manager:
             return manager
-        else:
-            return None
 
     async def load_mo_address(uuid: UUID, graphql_client: Any) -> dict[str, Any]:
         """Mocks a graphql search for email address"""
@@ -307,12 +305,6 @@ async def test_listen_to_address_create_invalid_user_email(
             "mo_smtp.smtp_agent.load_mo_address_data", addressmock
         ), pytest.raises(RejectMessage):
             await asyncio.gather(listen_to_address_create(context, payload))
-            usermock.assert_awaited_once_with(
-                uuid_employee, context["user_context"]["gql_client"]
-            )
-            addressmock.assert_awaited_once_with(
-                uuid_address, context["user_context"]["gql_client"]
-            )
 
 
 async def test_listen_to_address_create_multiple_email_addresses(
