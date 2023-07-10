@@ -4,25 +4,23 @@ Python file with agents that send emails
 from typing import Any
 
 import structlog
+from fastramqpi.context import Context
 from ramqp.mo.models import PayloadType
 from ramqp.utils import sleep_on_error
 
 from .config import EmailSettings
-from .dataloaders import load_mo_address_data
-from .dataloaders import load_mo_org_unit_data
-from .dataloaders import load_mo_user_data
 from .send_email import send_email
 
 logger = structlog.get_logger()
 
 
 class Agents:
-    def __init__(self):
-        pass
+    def __init__(self, context: Context):
+        self.dataloader = context["user_context"]["dataloader"]
 
     @sleep_on_error()
     async def inform_manager_on_employee_address_creation(
-        self, context: dict, payload: PayloadType, **kwargs: Any
+        self, payload: PayloadType, **kwargs: Any
     ) -> None:
         """
         Create a router, which listens to all "creation" requests,
@@ -51,10 +49,9 @@ class Agents:
         # Prepare dictionary to store email arguments
         # NOTE: Use and assignments too dynamic for mypy, so Any-hint used as workaround
         email_args: dict[str, Any] = dict(EmailSettings())
-        gql_client = context["user_context"]["gql_client"]
 
         # NOTE: New material
-        address_data = await load_mo_address_data(payload.object_uuid, gql_client)
+        address_data = await self.dataloader.load_mo_address_data(payload.object_uuid)
 
         # Sort out all employee.address.create messages, that aren't emails
         if address_data["address_type"]["scope"] != "EMAIL":
@@ -62,7 +59,7 @@ class Agents:
             return
 
         # Payload only includes user UUID. Query graphql to retrieve user data
-        user_data = await load_mo_user_data(payload.uuid, gql_client)
+        user_data = await self.dataloader.load_mo_user_data(payload.uuid)
 
         emails = [
             email
@@ -102,7 +99,7 @@ class Agents:
                 org_unit_uuids.add(engagement["org_unit_uuid"])
 
             org_unit_data = [
-                await load_mo_org_unit_data(uuid, gql_client)
+                await self.dataloader.load_mo_org_unit_data(uuid)
                 for uuid in list(org_unit_uuids)
             ]
 
@@ -121,7 +118,7 @@ class Agents:
 
             manager_emails = set()
             for manager_uuid in manager_uuids:
-                manager = await load_mo_user_data(manager_uuid, gql_client)
+                manager = await self.dataloader.load_mo_user_data(manager_uuid)
                 manager_emails.update(
                     [
                         address["value"]
