@@ -20,7 +20,7 @@ from structlog.testing import capture_logs
 
 from mo_smtp.config import Settings
 from mo_smtp.smtp_agent import create_app
-from mo_smtp.smtp_agent import listen_to_address_create
+from mo_smtp.smtp_agent import inform_manager_on_employee_address_creation
 
 
 @pytest.fixture
@@ -67,10 +67,12 @@ def test_create_app(
     assert isinstance(app, FastAPI)
 
 
-async def test_listen_to_address_create_no_engagements(
+async def test_inform_manager_on_employee_address_creation_no_engagements(
     context: dict[str, Any],
 ) -> None:
-    """Test that listen_to_address_create method performs correctly"""
+    """
+    Test that inform_manager_on_employee_address_creation method performs correctly
+    """
 
     uuid_employee = uuid4()
     uuid_address = uuid4()
@@ -108,7 +110,9 @@ async def test_listen_to_address_create_no_engagements(
         "mo_smtp.smtp_agent.send_email", MagicMock
     ), patch("mo_smtp.smtp_agent.load_mo_address_data", addressmock):
         mo_routing_key = MORoutingKey.build("employee.address.create")
-        await listen_to_address_create(context, payload, mo_routing_key=mo_routing_key)
+        await inform_manager_on_employee_address_creation(
+            context, payload, mo_routing_key=mo_routing_key
+        )
 
         usermock.assert_any_await(uuid_employee, context["user_context"]["gql_client"])
         addressmock.assert_awaited_with(
@@ -116,10 +120,12 @@ async def test_listen_to_address_create_no_engagements(
         )
 
 
-async def test_listen_to_address_create_multiple_engagements_with_manager(
+async def test_inform_manager_on_employee_address_creation_multiple_engagements(
     context: dict[str, Any],
 ) -> None:
-    """Test that listen_to_address_create method performs correctly"""
+    """
+    Test that inform_manager_on_employee_address_creation method performs correctly
+    """
 
     uuid_employee = uuid4()
     uuid_ou1 = uuid4()
@@ -199,7 +205,9 @@ async def test_listen_to_address_create_multiple_engagements_with_manager(
         "mo_smtp.smtp_agent.load_mo_address_data", addressmock
     ):
         mo_routing_key = MORoutingKey.build("employee.address.create")
-        await listen_to_address_create(context, payload, mo_routing_key=mo_routing_key)
+        await inform_manager_on_employee_address_creation(
+            context, payload, mo_routing_key=mo_routing_key
+        )
 
         usermock.assert_any_await(uuid_employee, context["user_context"]["gql_client"])
         usermock.assert_awaited_with(
@@ -209,12 +217,12 @@ async def test_listen_to_address_create_multiple_engagements_with_manager(
         org_unit_mock.assert_any_await(uuid_ou2, context["user_context"]["gql_client"])
 
 
-async def test_listen_to_address_create_not_email(
+async def test_inform_manager_on_employee_address_creation_not_email(
     context: dict[str, Any],
 ) -> None:
     """
-    Tests that listen_to_address_create rejects amqp messages regarding addresses, that
-    are not emails
+    Tests that inform_manager_on_employee_address_creation rejects amqp
+    messages regarding addresses, that are not emails
     """
 
     uuid_address = uuid4()
@@ -235,7 +243,9 @@ async def test_listen_to_address_create_not_email(
         "mo_smtp.smtp_agent.load_mo_address_data", addressmock
     ):
         mo_routing_key = MORoutingKey.build("employee.address.create")
-        await listen_to_address_create(context, payload, mo_routing_key=mo_routing_key)
+        await inform_manager_on_employee_address_creation(
+            context, payload, mo_routing_key=mo_routing_key
+        )
 
         addressmock.assert_awaited_once_with(
             uuid_address, context["user_context"]["gql_client"]
@@ -243,11 +253,11 @@ async def test_listen_to_address_create_not_email(
         usermock.assert_not_awaited()
 
 
-async def test_listen_to_address_create_object_uuid_is_message_uuid(
+async def test_inform_manager_on_employee_address_creation_object_uuid_is_message_uuid(
     context: dict[str, Any],
 ) -> None:
     """
-    Tests that listen_to_address_create rejects messages where
+    Tests that inform_manager_on_employee_address_creation rejects messages where
     payload.uuid==payload.object_uuid, since that would refer to the creation of the
     employee
     """
@@ -264,17 +274,20 @@ async def test_listen_to_address_create_object_uuid_is_message_uuid(
         "mo_smtp.smtp_agent.load_mo_address_data", addressmock
     ):
         mo_routing_key = MORoutingKey.build("employee.address.create")
-        await listen_to_address_create(context, payload, mo_routing_key=mo_routing_key)
+        await inform_manager_on_employee_address_creation(
+            context, payload, mo_routing_key=mo_routing_key
+        )
 
         usermock.assert_not_awaited()
         addressmock.assert_not_awaited()
 
 
-async def test_listen_to_address_create_invalid_user_email(
+async def test_inform_manager_on_employee_address_creation_invalid_user_email(
     context: dict[str, Any],
 ) -> None:
     """
-    Tests that listen_to_address_create rejects messages with invalid emails
+    Tests that inform_manager_on_employee_address_creation rejects messages with
+    invalid emails
     """
 
     for invalid_email in ["", "   ", "invalidemail"]:
@@ -313,7 +326,7 @@ async def test_listen_to_address_create_invalid_user_email(
             "mo_smtp.smtp_agent.load_mo_address_data", addressmock
         ):
             mo_routing_key = MORoutingKey.build("employee.address.create")
-            await listen_to_address_create(
+            await inform_manager_on_employee_address_creation(
                 context, payload, mo_routing_key=mo_routing_key
             )
 
@@ -325,12 +338,12 @@ async def test_listen_to_address_create_invalid_user_email(
             )
 
 
-async def test_listen_to_address_create_multiple_email_addresses(
+async def test_inform_manager_on_employee_address_creation_multiple_email_addresses(
     context: dict[str, Any],
 ) -> None:
     """
-    Tests that listen_to_address_create rejects messages where there already exists
-    an email address
+    Tests that inform_manager_on_employee_address_creation rejects messages where there
+    already exists an email address
     """
 
     uuid_employee = uuid4()
@@ -363,7 +376,9 @@ async def test_listen_to_address_create_multiple_email_addresses(
     with patch("mo_smtp.smtp_agent.load_mo_user_data", usermock), patch(
         "mo_smtp.smtp_agent.load_mo_address_data", addressmock
     ):
-        await listen_to_address_create(context, payload, mo_routing_key=mo_routing_key)
+        await inform_manager_on_employee_address_creation(
+            context, payload, mo_routing_key=mo_routing_key
+        )
 
         usermock.assert_awaited_once_with(
             uuid_employee, context["user_context"]["gql_client"]
@@ -377,15 +392,17 @@ async def test_listen_to_address_wrong_routing_key(
     context: dict[str, Any],
 ) -> None:
     """
-    Tests that listen_to_address_create rejects amqp messages when routing key is not
-    address.address.create
+    Tests that inform_manager_on_employee_address_creation rejects amqp messages when
+    routing key is not address.address.create
     """
 
     with capture_logs() as cap_logs:
         mo_routing_key = MORoutingKey.build("org_unit.org_unit.edit")
         payload = PayloadType(uuid=uuid4(), object_uuid=uuid4(), time=datetime.now())
         context = {}
-        await listen_to_address_create(context, payload, mo_routing_key=mo_routing_key)
+        await inform_manager_on_employee_address_creation(
+            context, payload, mo_routing_key=mo_routing_key
+        )
 
         messages = [w for w in cap_logs if w["log_level"] == "info"]
         assert "Only listening to 'employee.address.create'" in str(messages)
