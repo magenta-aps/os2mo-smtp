@@ -25,7 +25,7 @@ fastapi_router = APIRouter()
 
 
 @sleep_on_error()
-async def listen_to_address_create(
+async def inform_manager_on_employee_address_creation(
     context: dict, payload: PayloadType, **kwargs: Any
 ) -> None:
     """
@@ -146,7 +146,7 @@ async def listen_to_address_create(
 
 
 def update_amqp_router_registry():
-    amqp_router.register("*.*.*")(listen_to_address_create)
+    amqp_router.register("*.*.*")(inform_manager_on_employee_address_creation)
 
 
 def construct_gql_client(settings: Settings):
