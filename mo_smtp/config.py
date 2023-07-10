@@ -1,3 +1,5 @@
+from typing import List
+
 from fastramqpi.config import Settings as FastRAMQPISettings
 from pydantic import AmqpDsn
 from pydantic import AnyHttpUrl
@@ -36,6 +38,10 @@ class Settings(BaseSettings):
     graphql_timeout: int = 120
 
     application_name: str = "os2mo_email_listener"
+
+    active_agents: List[str] = Field(
+        [], description=("Agents which are actively listening and sending mails")
+    )
 
 
 class EmailSettings(BaseSettings):

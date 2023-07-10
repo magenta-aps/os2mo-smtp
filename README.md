@@ -36,3 +36,14 @@ docker-compose up
 In the development environment we use a mailserver called `smtp4dev`. To use it,
 go to [localhost:3000](http://localhost:3000/) to inspect mails which would be sent out
 by the application if this was a production environment.
+
+
+### Adding agents
+
+To add an email agent, write a function in `agents.py`. The function should be able to:
+- Receive an AMQP message
+- Process the message
+- Send an email
+
+Then activate the agent by adding the function name to the `active_agents` config list
+variable
