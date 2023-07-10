@@ -38,14 +38,6 @@ class Settings(BaseSettings):
     application_name: str = "os2mo_email_listener"
 
 
-class RoutingKeys(BaseSettings):
-    class Config:
-        frozen = True
-        env_nested_delimiter = "__"
-
-    employee_address_create: str = "employee.address.create"
-
-
 class EmailSettings(BaseSettings):
     class Config:
         frozen = True

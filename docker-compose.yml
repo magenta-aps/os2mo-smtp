@@ -14,7 +14,7 @@ services:
       CLIENT_SECRET: "603f1c82-d012-4d04-9382-dbe659c533fb"
 
     volumes:
-      - ./mo_smtp:/opt/app/mo_smtp
+      - ./mo_smtp:/opt/app/
     networks:
       - os2mo_default
     env_file:
