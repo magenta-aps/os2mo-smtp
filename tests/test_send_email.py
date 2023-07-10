@@ -142,7 +142,6 @@ async def test_send_message_tls_error() -> None:
     with patch("mo_smtp.send_email.SMTP.send_message", return_value=None), patch(
         "mo_smtp.send_email.SMTP", return_value=smtpmock
     ):
-        SMTPServer((smtp_host, smtp_port), (smtp_host, smtp_port))
         message = send_email.send_email(
             receiver=receiver,
             sender=sender,

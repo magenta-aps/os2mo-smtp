@@ -2,7 +2,6 @@
 #
 # SPDX-License-Identifier: MPL-2.0
 # WOOHOO, deleted all my tests again, 'cause this sure doesn't make any sense to me
-import asyncio
 from collections.abc import Iterator
 from datetime import datetime
 from typing import Any
@@ -15,8 +14,9 @@ from uuid import uuid4
 import pytest
 from fastapi import FastAPI
 from fastramqpi.context import Context
+from ramqp.mo.models import MORoutingKey
 from ramqp.mo.models import PayloadType
-from ramqp.utils import RejectMessage
+from structlog.testing import capture_logs
 
 from mo_smtp.config import Settings
 from mo_smtp.smtp_agent import create_app
@@ -107,7 +107,9 @@ async def test_listen_to_address_create_no_engagements(
     with patch("mo_smtp.smtp_agent.load_mo_user_data", usermock), patch(
         "mo_smtp.smtp_agent.send_email", MagicMock
     ), patch("mo_smtp.smtp_agent.load_mo_address_data", addressmock):
-        await asyncio.gather(listen_to_address_create(context, payload))
+        mo_routing_key = MORoutingKey.build("employee.address.create")
+        await listen_to_address_create(context, payload, mo_routing_key=mo_routing_key)
+
         usermock.assert_any_await(uuid_employee, context["user_context"]["gql_client"])
         addressmock.assert_awaited_with(
             uuid_address, context["user_context"]["gql_client"]
@@ -196,7 +198,9 @@ async def test_listen_to_address_create_multiple_engagements_with_manager(
     ), patch("mo_smtp.smtp_agent.send_email", MagicMock), patch(
         "mo_smtp.smtp_agent.load_mo_address_data", addressmock
     ):
-        await asyncio.gather(listen_to_address_create(context, payload))
+        mo_routing_key = MORoutingKey.build("employee.address.create")
+        await listen_to_address_create(context, payload, mo_routing_key=mo_routing_key)
+
         usermock.assert_any_await(uuid_employee, context["user_context"]["gql_client"])
         usermock.assert_awaited_with(
             uuid_manager, context["user_context"]["gql_client"]
@@ -230,7 +234,9 @@ async def test_listen_to_address_create_not_email(
     with patch("mo_smtp.smtp_agent.load_mo_user_data", usermock), patch(
         "mo_smtp.smtp_agent.load_mo_address_data", addressmock
     ):
-        await asyncio.gather(listen_to_address_create(context, payload))
+        mo_routing_key = MORoutingKey.build("employee.address.create")
+        await listen_to_address_create(context, payload, mo_routing_key=mo_routing_key)
+
         addressmock.assert_awaited_once_with(
             uuid_address, context["user_context"]["gql_client"]
         )
@@ -257,7 +263,9 @@ async def test_listen_to_address_create_object_uuid_is_message_uuid(
     with patch("mo_smtp.smtp_agent.load_mo_user_data", usermock), patch(
         "mo_smtp.smtp_agent.load_mo_address_data", addressmock
     ):
-        await asyncio.gather(listen_to_address_create(context, payload))
+        mo_routing_key = MORoutingKey.build("employee.address.create")
+        await listen_to_address_create(context, payload, mo_routing_key=mo_routing_key)
+
         usermock.assert_not_awaited()
         addressmock.assert_not_awaited()
 
@@ -303,8 +311,18 @@ async def test_listen_to_address_create_invalid_user_email(
 
         with patch("mo_smtp.smtp_agent.load_mo_user_data", usermock), patch(
             "mo_smtp.smtp_agent.load_mo_address_data", addressmock
-        ), pytest.raises(RejectMessage):
-            await asyncio.gather(listen_to_address_create(context, payload))
+        ):
+            mo_routing_key = MORoutingKey.build("employee.address.create")
+            await listen_to_address_create(
+                context, payload, mo_routing_key=mo_routing_key
+            )
+
+            usermock.assert_awaited_once_with(
+                uuid_employee, context["user_context"]["gql_client"]
+            )
+            addressmock.assert_awaited_once_with(
+                uuid_address, context["user_context"]["gql_client"]
+            )
 
 
 async def test_listen_to_address_create_multiple_email_addresses(
@@ -340,14 +358,34 @@ async def test_listen_to_address_create_multiple_email_addresses(
     payload = PayloadType(
         uuid=uuid_employee, object_uuid=uuid_address, time=datetime.now()
     )
+    mo_routing_key = MORoutingKey.build("employee.address.create")
 
     with patch("mo_smtp.smtp_agent.load_mo_user_data", usermock), patch(
         "mo_smtp.smtp_agent.load_mo_address_data", addressmock
     ):
-        await asyncio.gather(listen_to_address_create(context, payload))
+        await listen_to_address_create(context, payload, mo_routing_key=mo_routing_key)
+
         usermock.assert_awaited_once_with(
             uuid_employee, context["user_context"]["gql_client"]
         )
         addressmock.assert_awaited_once_with(
             uuid_address, context["user_context"]["gql_client"]
         )
+
+
+async def test_listen_to_address_wrong_routing_key(
+    context: dict[str, Any],
+) -> None:
+    """
+    Tests that listen_to_address_create rejects amqp messages when routing key is not
+    address.address.create
+    """
+
+    with capture_logs() as cap_logs:
+        mo_routing_key = MORoutingKey.build("org_unit.org_unit.edit")
+        payload = PayloadType(uuid=uuid4(), object_uuid=uuid4(), time=datetime.now())
+        context = {}
+        await listen_to_address_create(context, payload, mo_routing_key=mo_routing_key)
+
+        messages = [w for w in cap_logs if w["log_level"] == "info"]
+        assert "Only listening to 'employee.address.create'" in str(messages)

@@ -9,10 +9,8 @@ from raclients.graph.client import PersistentGraphQLClient
 from raclients.modelclient.mo import ModelClient
 from ramqp.mo import MORouter
 from ramqp.mo.models import PayloadType
-from ramqp.utils import RejectMessage
 
 from .config import EmailSettings
-from .config import RoutingKeys
 from .config import Settings
 from .dataloaders import load_mo_address_data
 from .dataloaders import load_mo_org_unit_data
@@ -38,9 +36,18 @@ async def listen_to_address_create(
         context: dictionary with context from FastRAMQPI
         payload: Payload of the AMQP message
     """
+    routing_key = kwargs["mo_routing_key"]
+    routing_key_str = str(routing_key)
+    logger.info(f"Obtained message with routing key = {routing_key_str}")
+
+    if routing_key_str != "employee.address.create":
+        logger.info("Only listening to 'employee.address.create'")
+        return
+
     # When a new employee is created, the AMPQ request corresponds with that of an
     # address but the payload.object_uuid is always equal to the payload.uuid
     if payload.uuid == payload.object_uuid:
+        logger.info("payload uuid equals object uuid")
         return
 
     # Prepare dictionary to store email arguments
@@ -53,6 +60,7 @@ async def listen_to_address_create(
 
     # Sort out all employee.address.create messages, that aren't emails
     if address_data["address_type"]["scope"] != "EMAIL":
+        logger.info("The address type is not EMAIL")
         return
 
     # Payload only includes user UUID. Query to graphql necessary to retreive user data
@@ -65,6 +73,7 @@ async def listen_to_address_create(
     ]
     # Drop message, if previous email exists
     if len(emails) > 1:
+        logger.info("A previous email address exists")
         return
 
     # Subject string
@@ -83,7 +92,7 @@ async def listen_to_address_create(
     )
     # Sometimes invalid emails may be imported from AD.
     if not email_addresses:
-        raise RejectMessage(f"User {user_data['name']} does not have an email")
+        logger.info(f"User {user_data['name']} does not have an email")
         return
 
     email_args["receiver"] = email_addresses
@@ -134,9 +143,8 @@ async def listen_to_address_create(
     send_email(**email_args)
 
 
-def update_amqp_router_registry(routing_keys: dict[str, str]):
-    for routing_key in routing_keys:
-        amqp_router.register(routing_keys[routing_key])(listen_to_address_create)
+def update_amqp_router_registry():
+    amqp_router.register("*.*.*")(listen_to_address_create)
 
 
 def construct_gql_client(settings: Settings):
@@ -211,7 +219,7 @@ def create_fastramqpi(**kwargs: Any) -> FastRAMQPI:
 
     logger.info("AMQP router setup")
     amqpsystem = fastramqpi.get_amqpsystem()
-    update_amqp_router_registry(RoutingKeys().dict())
+    update_amqp_router_registry()
     amqpsystem.router.registry.update(amqp_router.registry)
 
     logger.info("Client setup")
