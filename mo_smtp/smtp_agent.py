@@ -9,6 +9,7 @@ from raclients.graph.client import PersistentGraphQLClient
 from raclients.modelclient.mo import ModelClient
 from ramqp.mo import MORouter
 from ramqp.mo.models import PayloadType
+from ramqp.utils import sleep_on_error
 
 from .config import EmailSettings
 from .config import Settings
@@ -23,6 +24,7 @@ amqp_router = MORouter()
 fastapi_router = APIRouter()
 
 
+@sleep_on_error()
 async def listen_to_address_create(
     context: dict, payload: PayloadType, **kwargs: Any
 ) -> None:
