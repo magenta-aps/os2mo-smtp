@@ -40,7 +40,7 @@ class Settings(BaseSettings):
     application_name: str = "os2mo_email_listener"
 
     active_agents: List[str] = Field(
-        [], description=("Agents which are actively listening and sending mails")
+        [], description="Agents which are actively listening and sending mails"
     )
 
 
