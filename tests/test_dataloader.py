@@ -6,10 +6,20 @@ from unittest.mock import AsyncMock
 from uuid import uuid4
 
 import pytest
+from fastramqpi.context import Context
 
-from mo_smtp.dataloaders import load_mo_address_data
-from mo_smtp.dataloaders import load_mo_org_unit_data
-from mo_smtp.dataloaders import load_mo_user_data
+from mo_smtp.dataloaders import DataLoader
+
+
+@pytest.fixture
+async def graphql_session() -> AsyncMock:
+    return AsyncMock()
+
+
+@pytest.fixture
+async def dataloader(graphql_session: AsyncMock) -> DataLoader:
+    context = Context({"user_context": {"gql_client": graphql_session}})
+    return DataLoader(context)
 
 
 @pytest.fixture
@@ -27,34 +37,37 @@ async def graphql_session_execute() -> AsyncGenerator:
     }
 
 
-async def test_load_mo_user_data(graphql_session_execute: dict) -> None:
+async def test_load_mo_user_data(
+    dataloader: DataLoader, graphql_session_execute: dict
+) -> None:
 
     uuid = uuid4()
 
-    graphql_session = AsyncMock()
-    graphql_session.execute.return_value = graphql_session_execute
+    dataloader.gql_client.execute.return_value = graphql_session_execute
 
-    result = await load_mo_user_data(uuid, graphql_session)
+    result = await dataloader.load_mo_user_data(uuid)
     assert graphql_session_execute["employees"][0]["objects"][0] == result
 
 
-async def test_load_mo_org_unit_data(graphql_session_execute: dict) -> None:
+async def test_load_mo_org_unit_data(
+    dataloader: DataLoader, graphql_session_execute: dict
+) -> None:
 
     uuid = uuid4()
 
-    graphql_session = AsyncMock()
-    graphql_session.execute.return_value = graphql_session_execute
+    dataloader.gql_client.execute.return_value = graphql_session_execute
 
-    result = await load_mo_org_unit_data(uuid, graphql_session)
+    result = await dataloader.load_mo_org_unit_data(uuid)
     assert graphql_session_execute["org_units"][0]["objects"][0] == result
 
 
-async def test_load_mo_address_data(graphql_session_execute: dict) -> None:
+async def test_load_mo_address_data(
+    dataloader: DataLoader, graphql_session_execute: dict
+) -> None:
 
     uuid = uuid4()
 
-    graphql_session = AsyncMock()
-    graphql_session.execute.return_value = graphql_session_execute
+    dataloader.gql_client.execute.return_value = graphql_session_execute
 
-    result = await load_mo_address_data(uuid, graphql_session)
+    result = await dataloader.load_mo_address_data(uuid)
     assert graphql_session_execute["addresses"][0]["current"] == result

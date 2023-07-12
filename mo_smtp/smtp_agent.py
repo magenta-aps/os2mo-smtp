@@ -11,6 +11,7 @@ from ramqp.mo import MORouter
 
 from .agents import Agents
 from .config import Settings
+from .dataloaders import DataLoader
 
 logger = structlog.get_logger()
 amqp_router = MORouter()
@@ -97,16 +98,20 @@ def create_fastramqpi(**kwargs: Any) -> FastRAMQPI:
     )
     fastramqpi.add_context(settings=settings)
 
-    logger.info("AMQP router setup")
-    amqpsystem = fastramqpi.get_amqpsystem()
-    register_agents(Agents(), settings.active_agents)
-    amqpsystem.router.registry.update(amqp_router.registry)
-
     logger.info("Client setup")
     gql_client, model_client = construct_clients(settings)
 
     fastramqpi.add_context(model_client=model_client)
     fastramqpi.add_context(gql_client=gql_client)
+
+    logger.info("Initializing dataloaders")
+    dataloader = DataLoader(fastramqpi.get_context())
+    fastramqpi.add_context(dataloader=dataloader)
+
+    logger.info("AMQP router setup")
+    amqpsystem = fastramqpi.get_amqpsystem()
+    register_agents(Agents(fastramqpi.get_context()), settings.active_agents)
+    amqpsystem.router.registry.update(amqp_router.registry)
 
     app = fastramqpi.get_app()
     app.include_router(fastapi_router)

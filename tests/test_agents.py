@@ -1,10 +1,8 @@
 # -*- coding: utf-8 -*-
-from collections.abc import Iterator
 from datetime import datetime
 from typing import Any
 from unittest.mock import AsyncMock
 from unittest.mock import MagicMock
-from unittest.mock import patch
 from uuid import UUID
 from uuid import uuid4
 
@@ -16,31 +14,22 @@ from structlog.testing import capture_logs
 
 from mo_smtp.agents import Agents
 
-agents = Agents()
+
+@pytest.fixture
+def dataloader() -> AsyncMock:
+    return AsyncMock()
 
 
 @pytest.fixture
-def gql_client() -> Iterator[AsyncMock]:
-    yield AsyncMock()
+def agents(dataloader: AsyncMock) -> Agents:
+    context = Context({"user_context": {"dataloader": dataloader}})
 
-
-@pytest.fixture
-def context(
-    gql_client: AsyncMock,
-) -> Context:
-    context = Context(
-        {
-            "user_context": {
-                "gql_client": gql_client,
-            },
-        }
-    )
-
-    return context
+    agents = Agents(context)
+    return agents
 
 
 async def test_inform_manager_on_employee_address_creation_no_engagements(
-    context: dict[str, Any],
+    dataloader: AsyncMock, agents: Agents
 ) -> None:
     """
     Test that agents.inform_manager_on_employee_address_creation method performs
@@ -65,36 +54,24 @@ async def test_inform_manager_on_employee_address_creation_no_engagements(
         "engagements": [],
     }
 
-    async def load_mo_user(uuid: UUID, mo_users: Any) -> Any:
-        """Mocks a graphql search for employees"""
-        return employee
-
-    async def load_mo_address(uuid: UUID, graphql_client: Any) -> dict[str, Any]:
-        """Mocks a graphql search for email address"""
-        return employee_address
-
-    usermock = AsyncMock(side_effect=load_mo_user)
-    addressmock = AsyncMock(side_effect=load_mo_address)
     payload = PayloadType(
         uuid=uuid_employee, object_uuid=uuid_address, time=datetime.now()
     )
+    dataloader.load_mo_address_data.return_value = employee_address
+    dataloader.load_mo_user_data.return_value = employee
+    agents.email_client = MagicMock()
 
-    with patch("mo_smtp.agents.load_mo_user_data", usermock), patch(
-        "mo_smtp.agents.send_email", MagicMock
-    ), patch("mo_smtp.agents.load_mo_address_data", addressmock):
-        mo_routing_key = MORoutingKey.build("employee.address.create")
-        await agents.inform_manager_on_employee_address_creation(
-            context, payload, mo_routing_key=mo_routing_key
-        )
+    mo_routing_key = MORoutingKey.build("employee.address.create")
+    await agents.inform_manager_on_employee_address_creation(
+        payload, mo_routing_key=mo_routing_key
+    )
 
-        usermock.assert_any_await(uuid_employee, context["user_context"]["gql_client"])
-        addressmock.assert_awaited_with(
-            uuid_address, context["user_context"]["gql_client"]
-        )
+    dataloader.load_mo_user_data.assert_any_await(uuid_employee)
+    dataloader.load_mo_address_data.assert_awaited_with(uuid_address)
 
 
 async def test_inform_manager_on_employee_address_creation_multiple_engagements(
-    context: dict[str, Any],
+    agents: Agents, dataloader: AsyncMock
 ) -> None:
     """
     Test that agents.inform_manager_on_employee_address_creation method performs
@@ -157,42 +134,33 @@ async def test_inform_manager_on_employee_address_creation_multiple_engagements(
         "managers": [],
     }
 
-    async def load_mo_user(uuid: UUID, mo_users: Any) -> Any:
+    async def load_mo_user(uuid: UUID) -> Any:
         """Mocks a graphql search for employees"""
         if uuid == uuid_employee:
             return employee
         elif uuid == uuid_manager:
             return manager
 
-    async def load_mo_address(uuid: UUID, graphql_client: Any) -> dict[str, Any]:
-        """Mocks a graphql search for email address"""
-        return employee_address
-
-    usermock = AsyncMock(side_effect=load_mo_user)
-    addressmock = AsyncMock(side_effect=load_mo_address)
-    org_unit_mock = AsyncMock(side_effect=[ou1, ou2])
     payload = PayloadType(uuid=uuid_employee, object_uuid=uuid4(), time=datetime.now())
+    mo_routing_key = MORoutingKey.build("employee.address.create")
 
-    with patch("mo_smtp.agents.load_mo_user_data", usermock), patch(
-        "mo_smtp.agents.load_mo_org_unit_data", org_unit_mock
-    ), patch("mo_smtp.agents.send_email", MagicMock), patch(
-        "mo_smtp.agents.load_mo_address_data", addressmock
-    ):
-        mo_routing_key = MORoutingKey.build("employee.address.create")
-        await agents.inform_manager_on_employee_address_creation(
-            context, payload, mo_routing_key=mo_routing_key
-        )
+    dataloader.load_mo_user_data = AsyncMock(side_effect=load_mo_user)
+    dataloader.load_mo_address_data.return_value = employee_address
+    dataloader.load_mo_org_unit_data = AsyncMock(side_effect=[ou1, ou2])
+    agents.email_client = MagicMock()
 
-        usermock.assert_any_await(uuid_employee, context["user_context"]["gql_client"])
-        usermock.assert_awaited_with(
-            uuid_manager, context["user_context"]["gql_client"]
-        )
-        org_unit_mock.assert_any_await(uuid_ou1, context["user_context"]["gql_client"])
-        org_unit_mock.assert_any_await(uuid_ou2, context["user_context"]["gql_client"])
+    await agents.inform_manager_on_employee_address_creation(
+        payload, mo_routing_key=mo_routing_key
+    )
+
+    dataloader.load_mo_user_data.assert_any_await(uuid_employee)
+    dataloader.load_mo_user_data.assert_awaited_with(uuid_manager)
+    dataloader.load_mo_org_unit_data.assert_any_await(uuid_ou1)
+    dataloader.load_mo_org_unit_data.assert_any_await(uuid_ou2)
 
 
 async def test_inform_manager_on_employee_address_creation_not_email(
-    context: dict[str, Any],
+    agents: Agents, dataloader: AsyncMock
 ) -> None:
     """
     Tests that agents.inform_manager_on_employee_address_creation rejects amqp
@@ -205,30 +173,26 @@ async def test_inform_manager_on_employee_address_creation_not_email(
         "address_type": {"scope": "DAR"},
     }
 
-    async def load_mo_address(uuid: UUID, graphql_client: Any) -> Any:
+    async def load_mo_address(uuid: UUID) -> Any:
         """Mocks a graphql search for addresses"""
         return employee_address
 
-    addressmock = AsyncMock(side_effect=load_mo_address)
-    usermock = AsyncMock()
     payload = PayloadType(uuid=uuid4(), object_uuid=uuid_address, time=datetime.now())
+    mo_routing_key = MORoutingKey.build("employee.address.create")
 
-    with patch("mo_smtp.agents.load_mo_user_data", usermock), patch(
-        "mo_smtp.agents.load_mo_address_data", addressmock
-    ):
-        mo_routing_key = MORoutingKey.build("employee.address.create")
-        await agents.inform_manager_on_employee_address_creation(
-            context, payload, mo_routing_key=mo_routing_key
-        )
+    dataloader.load_mo_user_data = AsyncMock()
+    dataloader.load_mo_address_data = AsyncMock(side_effect=load_mo_address)
 
-        addressmock.assert_awaited_once_with(
-            uuid_address, context["user_context"]["gql_client"]
-        )
-        usermock.assert_not_awaited()
+    await agents.inform_manager_on_employee_address_creation(
+        payload, mo_routing_key=mo_routing_key
+    )
+
+    dataloader.load_mo_address_data.assert_awaited_once_with(uuid_address)
+    dataloader.load_mo_user_data.assert_not_awaited()
 
 
 async def test_inform_manager_on_employee_address_creation_object_uuid_is_message_uuid(
-    context: dict[str, Any],
+    agents: Agents, dataloader: AsyncMock
 ) -> None:
     """
     Tests that agents.inform_manager_on_employee_address_creation rejects messages where
@@ -238,26 +202,21 @@ async def test_inform_manager_on_employee_address_creation_object_uuid_is_messag
 
     uuid_employee = uuid4()
 
-    addressmock = AsyncMock()
-    usermock = AsyncMock()
     payload = PayloadType(
         uuid=uuid_employee, object_uuid=uuid_employee, time=datetime.now()
     )
+    mo_routing_key = MORoutingKey.build("employee.address.create")
 
-    with patch("mo_smtp.agents.load_mo_user_data", usermock), patch(
-        "mo_smtp.agents.load_mo_address_data", addressmock
-    ):
-        mo_routing_key = MORoutingKey.build("employee.address.create")
-        await agents.inform_manager_on_employee_address_creation(
-            context, payload, mo_routing_key=mo_routing_key
-        )
+    await agents.inform_manager_on_employee_address_creation(
+        payload, mo_routing_key=mo_routing_key
+    )
 
-        usermock.assert_not_awaited()
-        addressmock.assert_not_awaited()
+    dataloader.load_mo_user_data.assert_not_awaited()
+    dataloader.load_mo_address_data.assert_not_awaited()
 
 
 async def test_inform_manager_on_employee_address_creation_invalid_user_email(
-    context: dict[str, Any],
+    agents: Agents, dataloader: AsyncMock
 ) -> None:
     """
     Tests that agents.inform_manager_on_employee_address_creation rejects messages with
@@ -282,38 +241,25 @@ async def test_inform_manager_on_employee_address_creation_invalid_user_email(
             ],
         }
 
-        async def load_mo_user(uuid: UUID, graphql_client: Any) -> Any:
-            """Mocks a graphql search for employees"""
-            return employee
-
-        async def load_mo_address(uuid: UUID, graphql_client: Any) -> Any:
-            """Mocks a graphql search for addresses"""
-            return employee_address
-
-        addressmock = AsyncMock(side_effect=load_mo_address)
-        usermock = AsyncMock(side_effect=load_mo_user)
         payload = PayloadType(
             uuid=uuid_employee, object_uuid=uuid_address, time=datetime.now()
         )
+        mo_routing_key = MORoutingKey.build("employee.address.create")
 
-        with patch("mo_smtp.agents.load_mo_user_data", usermock), patch(
-            "mo_smtp.agents.load_mo_address_data", addressmock
-        ):
-            mo_routing_key = MORoutingKey.build("employee.address.create")
-            await agents.inform_manager_on_employee_address_creation(
-                context, payload, mo_routing_key=mo_routing_key
-            )
+        dataloader.load_mo_user_data.return_value = employee
+        dataloader.load_mo_address_data.return_value = employee_address
 
-            usermock.assert_awaited_once_with(
-                uuid_employee, context["user_context"]["gql_client"]
-            )
-            addressmock.assert_awaited_once_with(
-                uuid_address, context["user_context"]["gql_client"]
-            )
+        await agents.inform_manager_on_employee_address_creation(
+            payload, mo_routing_key=mo_routing_key
+        )
+
+        dataloader.load_mo_user_data.assert_awaited_once_with(uuid_employee)
+        dataloader.load_mo_address_data.assert_awaited_once_with(uuid_address)
+        dataloader.reset_mock()
 
 
 async def test_inform_manager_on_employee_address_creation_multiple_email_addresses(
-    context: dict[str, Any],
+    agents: Agents, dataloader: AsyncMock
 ) -> None:
     """
     Tests that agents.inform_manager_on_employee_address_creation rejects messages
@@ -332,39 +278,23 @@ async def test_inform_manager_on_employee_address_creation_multiple_email_addres
         ],
     }
 
-    async def load_mo_user(uuid: UUID, graphql_client: Any) -> Any:
-        """Mocks a graphql search for employees"""
-        return employee
-
-    async def load_mo_address(uuid: UUID, graphql_client: Any) -> Any:
-        """Mocks a graphql search for addresses"""
-        return employee_address
-
-    addressmock = AsyncMock(side_effect=load_mo_address)
-    usermock = AsyncMock(side_effect=load_mo_user)
     payload = PayloadType(
         uuid=uuid_employee, object_uuid=uuid_address, time=datetime.now()
     )
     mo_routing_key = MORoutingKey.build("employee.address.create")
 
-    with patch("mo_smtp.agents.load_mo_user_data", usermock), patch(
-        "mo_smtp.agents.load_mo_address_data", addressmock
-    ):
-        await agents.inform_manager_on_employee_address_creation(
-            context, payload, mo_routing_key=mo_routing_key
-        )
+    dataloader.load_mo_user_data.return_value = employee
+    dataloader.load_mo_address_data.return_value = employee_address
 
-        usermock.assert_awaited_once_with(
-            uuid_employee, context["user_context"]["gql_client"]
-        )
-        addressmock.assert_awaited_once_with(
-            uuid_address, context["user_context"]["gql_client"]
-        )
+    await agents.inform_manager_on_employee_address_creation(
+        payload, mo_routing_key=mo_routing_key
+    )
+
+    dataloader.load_mo_user_data.assert_awaited_once_with(uuid_employee)
+    dataloader.load_mo_address_data.assert_awaited_once_with(uuid_address)
 
 
-async def test_listen_to_address_wrong_routing_key(
-    context: dict[str, Any],
-) -> None:
+async def test_listen_to_address_wrong_routing_key(agents: Agents) -> None:
     """
     Tests that agents.inform_manager_on_employee_address_creation rejects amqp messages
     when routing key is not address.address.create
@@ -373,9 +303,8 @@ async def test_listen_to_address_wrong_routing_key(
     with capture_logs() as cap_logs:
         mo_routing_key = MORoutingKey.build("org_unit.org_unit.edit")
         payload = PayloadType(uuid=uuid4(), object_uuid=uuid4(), time=datetime.now())
-        context = {}
         await agents.inform_manager_on_employee_address_creation(
-            context, payload, mo_routing_key=mo_routing_key
+            payload, mo_routing_key=mo_routing_key
         )
 
         messages = [w for w in cap_logs if w["log_level"] == "info"]
