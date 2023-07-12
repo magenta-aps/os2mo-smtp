@@ -8,7 +8,6 @@ from fastramqpi.context import Context
 from ramqp.mo.models import PayloadType
 from ramqp.utils import sleep_on_error
 
-from .config import EmailSettings
 from .mail import EmailClient
 
 logger = structlog.get_logger()
@@ -17,7 +16,7 @@ logger = structlog.get_logger()
 class Agents:
     def __init__(self, context: Context):
         self.dataloader = context["user_context"]["dataloader"]
-        self.email_client = EmailClient()
+        self.email_client = EmailClient(context)
 
     @sleep_on_error()
     async def inform_manager_on_employee_address_creation(
@@ -48,8 +47,7 @@ class Agents:
             return
 
         # Prepare dictionary to store email arguments
-        # NOTE: Use and assignments too dynamic for mypy, so Any-hint used as workaround
-        email_args: dict[str, Any] = dict(EmailSettings())
+        email_args: dict[str, Any] = {}
 
         # NOTE: New material
         address_data = await self.dataloader.load_mo_address_data(payload.object_uuid)
@@ -134,6 +132,7 @@ class Agents:
 
         email_args["subject"] = subject
         email_args["body"] = message_body
+        email_args["texttype"] = "plain"
 
         # Send email to relevant addresses
         self.email_client.send_email(**email_args)

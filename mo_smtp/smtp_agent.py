@@ -10,6 +10,7 @@ from raclients.modelclient.mo import ModelClient
 from ramqp.mo import MORouter
 
 from .agents import Agents
+from .config import EmailSettings
 from .config import Settings
 from .dataloaders import DataLoader
 
@@ -91,12 +92,14 @@ def create_fastramqpi(**kwargs: Any) -> FastRAMQPI:
 
     logger.info("Import settings")
     settings = Settings(**kwargs)
+    email_settings = EmailSettings(**kwargs)
 
     logger.info("FastRAMQPI setup")
     fastramqpi = FastRAMQPI(
         application_name=settings.application_name, settings=settings.fastramqpi
     )
     fastramqpi.add_context(settings=settings)
+    fastramqpi.add_context(email_settings=email_settings)
 
     logger.info("Client setup")
     gql_client, model_client = construct_clients(settings)

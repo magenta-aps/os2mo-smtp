@@ -4,26 +4,26 @@ from smtplib import SMTP
 from smtplib import SMTPNotSupportedError
 
 import structlog
+from fastramqpi.context import Context
 
 logger = structlog.get_logger()
 
 
 class EmailClient:
-    def __init__(self):
-        pass
+    def __init__(self, context: Context):
+        email_settings = context["user_context"]["email_settings"]
+        self.smtp = SMTP(host=email_settings.smtp_host, port=email_settings.smtp_port)
+        self.sender = email_settings.sender
+        self.testing = email_settings.testing
 
     def send_email(
         self,
         receiver: set[str],
-        sender: str,
         subject: str,
         body: str,
-        smtp_host: str,
-        smtp_port: int,
         texttype: str = "plain",
         cc: set[str] = {""},
         bcc: set[str] = {""},
-        testing: bool = False,
     ) -> MIMEText:
         """
         Sends outgoing email given parameters
@@ -53,7 +53,7 @@ class EmailClient:
 
         msg = MIMEText(body, texttype, _charset="utf-8")
         msg["Subject"] = subject
-        msg["From"] = sender
+        msg["From"] = self.sender
         msg["CC"] = ", ".join(cc)
         msg["BCC"] = ", ".join(bcc)
         msg["To"] = ", ".join(receiver)
@@ -66,13 +66,11 @@ class EmailClient:
         # (including special chars)
         logger.info("Body: " + msg.get_payload(decode=True).decode())
 
-        if not testing:
-            smtp = SMTP(host=smtp_host, port=smtp_port)
+        if not self.testing:
             try:
-                smtp.starttls()
-                smtp.ehlo_or_helo_if_needed()
+                self.smtp.starttls()
+                self.smtp.ehlo_or_helo_if_needed()
             except SMTPNotSupportedError:
                 logger.info("SMTP server doesn't use TLS. TLS ignored")
-            smtp.send_message(msg)  # type: ignore
-            smtp.quit()
+            self.smtp.send_message(msg)  # type: ignore
         return msg

@@ -53,4 +53,3 @@ class EmailSettings(BaseSettings):
     smtp_port: int = 1025
     smtp_host: str = "mailcatcher"
     testing: bool = False
-    texttype: str = "plain"
