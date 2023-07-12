@@ -4,10 +4,17 @@ from smtplib import SMTPNotSupportedError
 from unittest.mock import MagicMock
 from unittest.mock import patch
 
-import mo_smtp.send_email as send_email
+import pytest
+
+from mo_smtp.mail import EmailClient
 
 
-async def test_send_message_testing_false() -> None:
+@pytest.fixture
+async def email_client() -> EmailClient:
+    return EmailClient()
+
+
+async def test_send_message_testing_false(email_client: EmailClient) -> None:
     """
     Test that sent email reflects input accurately
     """
@@ -23,17 +30,10 @@ async def test_send_message_testing_false() -> None:
     texttype = "plain"
     testing = False
 
-    smtpmock = MagicMock()
-    smtpmock.ehlo_or_helo_if_needed.return_value = None
-    smtpmock.starttls.return_value = None
-    smtpmock.quit.return_value = None
-
     # Retrieve MIMEText object from send_email
-    with patch("mo_smtp.send_email.SMTP.send_message", return_value=None), patch(
-        "mo_smtp.send_email.SMTP", return_value=smtpmock
-    ):
+    with patch("mo_smtp.mail.SMTP", return_value=MagicMock()):
         SMTPServer((smtp_host, smtp_port), (smtp_host, smtp_port))
-        message = send_email.send_email(
+        message = email_client.send_email(
             receiver=receiver,
             sender=sender,
             smtp_host=smtp_host,
@@ -61,7 +61,7 @@ async def test_send_message_testing_false() -> None:
             assert message[key] == expected_message[key]
 
 
-async def test_send_message_testing_true() -> None:
+async def test_send_message_testing_true(email_client: EmailClient) -> None:
     """
     Test that sent email reflects input accurately
     """
@@ -77,16 +77,9 @@ async def test_send_message_testing_true() -> None:
     texttype = "plain"
     testing = True
 
-    smtpmock = MagicMock()
-    smtpmock.ehlo_or_helo_if_needed.return_value = None
-    smtpmock.starttls.return_value = None
-    smtpmock.quit.return_value = None
-
     # Retrieve MIMEText object from send_email
-    with patch("mo_smtp.send_email.SMTP.send_message", return_value=None), patch(
-        "mo_smtp.send_email.SMTP", return_value=smtpmock
-    ):
-        message = send_email.send_email(
+    with patch("mo_smtp.mail.SMTP", return_value=MagicMock()):
+        message = email_client.send_email(
             receiver=receiver,
             sender=sender,
             smtp_host=smtp_host,
@@ -114,7 +107,7 @@ async def test_send_message_testing_true() -> None:
             assert message[key] == expected_message[key]
 
 
-async def test_send_message_tls_error() -> None:
+async def test_send_message_tls_error(email_client: EmailClient) -> None:
     """
     Test that sent email reflects input accurately
     """
@@ -131,18 +124,13 @@ async def test_send_message_tls_error() -> None:
     testing = False
 
     smtpmock = MagicMock()
-    smtpmock.ehlo_or_helo_if_needed.return_value = None
     smtpmock.starttls.side_effect = SMTPNotSupportedError(
         "TLS not supported by SMTP server"
     )
-    smtpmock.starttls.return_value = None
-    smtpmock.quit.return_value = None
 
     # Retrieve MIMEText object from send_email
-    with patch("mo_smtp.send_email.SMTP.send_message", return_value=None), patch(
-        "mo_smtp.send_email.SMTP", return_value=smtpmock
-    ):
-        message = send_email.send_email(
+    with patch("mo_smtp.mail.SMTP", return_value=smtpmock):
+        message = email_client.send_email(
             receiver=receiver,
             sender=sender,
             smtp_host=smtp_host,

@@ -3,7 +3,6 @@ from datetime import datetime
 from typing import Any
 from unittest.mock import AsyncMock
 from unittest.mock import MagicMock
-from unittest.mock import patch
 from uuid import UUID
 from uuid import uuid4
 
@@ -60,15 +59,15 @@ async def test_inform_manager_on_employee_address_creation_no_engagements(
     )
     dataloader.load_mo_address_data.return_value = employee_address
     dataloader.load_mo_user_data.return_value = employee
+    agents.email_client = MagicMock()
 
-    with patch("mo_smtp.agents.send_email", MagicMock):
-        mo_routing_key = MORoutingKey.build("employee.address.create")
-        await agents.inform_manager_on_employee_address_creation(
-            payload, mo_routing_key=mo_routing_key
-        )
+    mo_routing_key = MORoutingKey.build("employee.address.create")
+    await agents.inform_manager_on_employee_address_creation(
+        payload, mo_routing_key=mo_routing_key
+    )
 
-        dataloader.load_mo_user_data.assert_any_await(uuid_employee)
-        dataloader.load_mo_address_data.assert_awaited_with(uuid_address)
+    dataloader.load_mo_user_data.assert_any_await(uuid_employee)
+    dataloader.load_mo_address_data.assert_awaited_with(uuid_address)
 
 
 async def test_inform_manager_on_employee_address_creation_multiple_engagements(
@@ -148,16 +147,16 @@ async def test_inform_manager_on_employee_address_creation_multiple_engagements(
     dataloader.load_mo_user_data = AsyncMock(side_effect=load_mo_user)
     dataloader.load_mo_address_data.return_value = employee_address
     dataloader.load_mo_org_unit_data = AsyncMock(side_effect=[ou1, ou2])
+    agents.email_client = MagicMock()
 
-    with patch("mo_smtp.agents.send_email", MagicMock):
-        await agents.inform_manager_on_employee_address_creation(
-            payload, mo_routing_key=mo_routing_key
-        )
+    await agents.inform_manager_on_employee_address_creation(
+        payload, mo_routing_key=mo_routing_key
+    )
 
-        dataloader.load_mo_user_data.assert_any_await(uuid_employee)
-        dataloader.load_mo_user_data.assert_awaited_with(uuid_manager)
-        dataloader.load_mo_org_unit_data.assert_any_await(uuid_ou1)
-        dataloader.load_mo_org_unit_data.assert_any_await(uuid_ou2)
+    dataloader.load_mo_user_data.assert_any_await(uuid_employee)
+    dataloader.load_mo_user_data.assert_awaited_with(uuid_manager)
+    dataloader.load_mo_org_unit_data.assert_any_await(uuid_ou1)
+    dataloader.load_mo_org_unit_data.assert_any_await(uuid_ou2)
 
 
 async def test_inform_manager_on_employee_address_creation_not_email(

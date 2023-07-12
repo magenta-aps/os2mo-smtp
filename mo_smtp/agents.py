@@ -9,7 +9,7 @@ from ramqp.mo.models import PayloadType
 from ramqp.utils import sleep_on_error
 
 from .config import EmailSettings
-from .send_email import send_email
+from .mail import EmailClient
 
 logger = structlog.get_logger()
 
@@ -17,6 +17,7 @@ logger = structlog.get_logger()
 class Agents:
     def __init__(self, context: Context):
         self.dataloader = context["user_context"]["dataloader"]
+        self.email_client = EmailClient()
 
     @sleep_on_error()
     async def inform_manager_on_employee_address_creation(
@@ -135,4 +136,4 @@ class Agents:
         email_args["body"] = message_body
 
         # Send email to relevant addresses
-        send_email(**email_args)
+        self.email_client.send_email(**email_args)
