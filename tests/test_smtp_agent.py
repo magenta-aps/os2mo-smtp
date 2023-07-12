@@ -3,6 +3,7 @@
 # SPDX-License-Identifier: MPL-2.0
 from typing import Any
 from unittest.mock import MagicMock
+from unittest.mock import patch
 
 from fastapi import FastAPI
 
@@ -16,7 +17,8 @@ def test_create_app(
 ) -> None:
     """Test that we can construct our FastAPI application."""
 
-    app = create_app()
+    with patch("mo_smtp.smtp_agent.Agents", MagicMock()):
+        app = create_app()
     assert isinstance(app, FastAPI)
 
 
