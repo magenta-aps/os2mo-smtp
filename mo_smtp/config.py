@@ -52,4 +52,7 @@ class EmailSettings(BaseSettings):
     sender: str = "os2mo@magenta.dk"
     smtp_port: int = 1025
     smtp_host: str = "mailcatcher"
-    testing: bool = False
+    testing: bool = Field(
+        False,
+        description="When True, will print mails to the console but not send anything",
+    )
