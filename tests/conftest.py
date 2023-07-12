@@ -6,7 +6,7 @@ from typing import Any
 import pytest
 
 
-@pytest.fixture
+@pytest.fixture(scope="module")
 def settings_overrides() -> Iterator[dict[str, Any]]:
     """Fixture to construct dictionary of minimal overrides for valid settings.
 
@@ -21,9 +21,9 @@ def settings_overrides() -> Iterator[dict[str, Any]]:
     yield overrides
 
 
-@pytest.fixture
+@pytest.fixture(scope="module")
 def load_settings_overrides(
-    settings_overrides: dict[str, Any], monkeypatch: pytest.MonkeyPatch
+    settings_overrides: dict[str, Any]
 ) -> Iterator[dict[str, Any]]:
     """Fixture to set happy-path settings overrides as environmental variables.
 
@@ -37,6 +37,7 @@ def load_settings_overrides(
     Yields:
         Minimal set of overrides.
     """
+    monkeypatch = pytest.MonkeyPatch()
     for key, value in settings_overrides.items():
         if os.environ.get(key) is None:
             monkeypatch.setenv(key, value)

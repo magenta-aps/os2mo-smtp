@@ -47,3 +47,15 @@ To add an email agent, write a function in `agents.py`. The function should be a
 
 Then activate the agent by adding the function name to the `active_agents` config list
 variable
+
+### Testing the email functionality
+
+To test the email-functionality: Run the following curl command to send an email to
+yourself
+
+```
+curl -X 'POST' 'http://localhost:8000/send_test_email?receiver=ini%40magenta-aps.dk'
+```
+
+Where you replace `ini` with your own initials. Note that `%40` in the curl command
+translates to `@`. 
