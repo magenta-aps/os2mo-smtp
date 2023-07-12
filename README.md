@@ -33,8 +33,8 @@ docker-compose up
 
 ### inspecting emails using smtp4dev
 
-In the development environment we use a mailserver called `smtp4dev`. To use it,
-go to [localhost:3000](http://localhost:3000/) to inspect mails which would be sent out
+In the development environment we use a mailserver called `mailcatcher`. To use it,
+go to [localhost:1080](http://localhost:1080/) to inspect mails which would be sent out
 by the application if this was a production environment.
 
 

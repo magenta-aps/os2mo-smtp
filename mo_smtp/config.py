@@ -50,7 +50,7 @@ class EmailSettings(BaseSettings):
         env_nested_delimiter = "__"
 
     sender: str = "os2mo@magenta.dk"
-    smtp_port: int = 25
-    smtp_host: str = "smtp4dev"
+    smtp_port: int = 1025
+    smtp_host: str = "mailcatcher"
     testing: bool = False
     texttype: str = "plain"

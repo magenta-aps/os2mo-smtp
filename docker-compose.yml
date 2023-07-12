@@ -5,7 +5,6 @@ services:
   mo_smtp:
     build: .
     command: [ "uvicorn", "--factory", "app.smtp_agent:create_app", "--host", "0.0.0.0", "--reload" ]
-    #command: "poetry run python -m mo_smtp.smtp_agent"
     environment:
       amqp_url: "amqp://guest:guest@msg_broker:5672/"
       AUTH_SERVER: "http://keycloak:8080/auth"
@@ -23,22 +22,14 @@ services:
     extra_hosts:
       - "host.docker.internal:host-gateway"
 
-  smtp4dev:
-    image: rnwood/smtp4dev:v3
-    restart: always
+  mailcatcher:
+    restart: on-failure
+    image: dockage/mailcatcher:0.8.2
     ports:
-      - "3000:80"
-      - "143:143"
-      - "2525:25"
+    - "1080:1080"
+    - "1025:1025"
     networks:
       - os2mo_default
-    volumes:
-      - smtp4dev-data:/smtp4dev
-    environment:
-      - ServerOptions__HostName=smtp4dev
-
-volumes:
-  smtp4dev-data:
 
 networks:
   os2mo_default:
