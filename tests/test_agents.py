@@ -3,7 +3,6 @@ from datetime import datetime
 from typing import Any
 from unittest.mock import AsyncMock
 from unittest.mock import MagicMock
-from unittest.mock import patch
 from uuid import UUID
 from uuid import uuid4
 
@@ -22,11 +21,17 @@ def dataloader() -> AsyncMock:
 
 
 @pytest.fixture
-def agents(dataloader: AsyncMock) -> Agents:
-    context = Context({"user_context": {"dataloader": dataloader}})
+def email_client() -> MagicMock:
+    return MagicMock()
 
-    with patch("mo_smtp.agents.EmailClient", MagicMock()):
-        agents = Agents(context)
+
+@pytest.fixture
+def agents(dataloader: AsyncMock, email_client: MagicMock) -> Agents:
+    context = Context(
+        {"user_context": {"dataloader": dataloader, "email_client": email_client}}
+    )
+
+    agents = Agents(context)
     return agents
 
 

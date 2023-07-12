@@ -21,6 +21,10 @@ services:
 
     extra_hosts:
       - "host.docker.internal:host-gateway"
+    ports:
+      - "8000:8000"
+
+
 
   mailcatcher:
     restart: on-failure

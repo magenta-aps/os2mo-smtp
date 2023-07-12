@@ -8,15 +8,14 @@ from fastramqpi.context import Context
 from ramqp.mo.models import PayloadType
 from ramqp.utils import sleep_on_error
 
-from .mail import EmailClient
-
 logger = structlog.get_logger()
 
 
 class Agents:
     def __init__(self, context: Context):
-        self.dataloader = context["user_context"]["dataloader"]
-        self.email_client = EmailClient(context)
+        user_context = context["user_context"]
+        self.dataloader = user_context["dataloader"]
+        self.email_client = user_context["email_client"]
 
     @sleep_on_error()
     async def inform_manager_on_employee_address_creation(
