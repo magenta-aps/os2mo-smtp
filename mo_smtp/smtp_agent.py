@@ -13,6 +13,7 @@ from .agents import Agents
 from .config import EmailSettings
 from .config import Settings
 from .dataloaders import DataLoader
+from .mail import EmailClient
 
 logger = structlog.get_logger()
 amqp_router = MORouter()
@@ -103,9 +104,12 @@ def create_fastramqpi(**kwargs: Any) -> FastRAMQPI:
 
     logger.info("Client setup")
     gql_client, model_client = construct_clients(settings)
-
     fastramqpi.add_context(model_client=model_client)
     fastramqpi.add_context(gql_client=gql_client)
+
+    logger.info("Initializing email client")
+    email_client = EmailClient(fastramqpi.get_context())
+    fastramqpi.add_context(email_client=email_client)
 
     logger.info("Initializing dataloaders")
     dataloader = DataLoader(fastramqpi.get_context())
@@ -118,6 +122,22 @@ def create_fastramqpi(**kwargs: Any) -> FastRAMQPI:
 
     app = fastramqpi.get_app()
     app.include_router(fastapi_router)
+
+    # Handle bug in fastRAMQP
+    # See https://git.magenta.dk/rammearkitektur/FastRAMQPI/-/merge_requests/91
+    app.contact["email"] = "info@magenta.dk"  # type: ignore
+
+    @app.post("/send_test_email", status_code=202, tags=["Test"])
+    async def send_test_mail(receiver: str):
+        """
+        Send a test email using the settings in config.py
+        """
+        email_client.send_email(
+            receiver={receiver},
+            subject="Test mail from OS2MO-smtp agent",
+            body="If you see this mail, the test has succeeded",
+            texttype="plain",
+        )
 
     return fastramqpi
 
