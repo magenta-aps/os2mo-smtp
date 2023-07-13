@@ -59,8 +59,8 @@ class EmailClient:
             msg["To"] = self.receiver_override
         else:
             msg["To"] = ", ".join(receiver)
-            msg["CC"] = ", ".join(cc)
-            msg["BCC"] = ", ".join(bcc)
+            msg["CC"] = ", ".join(cc) or None
+            msg["BCC"] = ", ".join(bcc) or None
 
         # Print message content to log
         for key in msg.keys():
