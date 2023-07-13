@@ -15,6 +15,7 @@ class EmailClient:
         self.smtp = SMTP(host=email_settings.smtp_host, port=email_settings.smtp_port)
         self.sender = email_settings.sender
         self.testing = email_settings.testing
+        self.receiver_override = email_settings.receiver_override
 
     def send_email(
         self,
@@ -54,9 +55,12 @@ class EmailClient:
         msg = MIMEText(body, texttype, _charset="utf-8")
         msg["Subject"] = subject
         msg["From"] = self.sender
-        msg["CC"] = ", ".join(cc)
-        msg["BCC"] = ", ".join(bcc)
-        msg["To"] = ", ".join(receiver)
+        if self.receiver_override:
+            msg["To"] = self.receiver_override
+        else:
+            msg["To"] = ", ".join(receiver)
+            msg["CC"] = ", ".join(cc)
+            msg["BCC"] = ", ".join(bcc)
 
         # Print message content to log
         for key in msg.keys():
