@@ -5,12 +5,6 @@ services:
   mo_smtp:
     build: .
     command: [ "uvicorn", "--factory", "app.smtp_agent:create_app", "--host", "0.0.0.0", "--reload" ]
-    environment:
-      amqp_url: "amqp://guest:guest@msg_broker:5672/"
-      AUTH_SERVER: "http://keycloak:8080/auth"
-      MO_URL: "http://mo"
-      CLIENT_ID: "dipex"
-      CLIENT_SECRET: "603f1c82-d012-4d04-9382-dbe659c533fb"
 
     volumes:
       - ./mo_smtp:/opt/app/
@@ -23,8 +17,6 @@ services:
       - "host.docker.internal:host-gateway"
     ports:
       - "8000:8000"
-
-
 
   mailcatcher:
     restart: on-failure

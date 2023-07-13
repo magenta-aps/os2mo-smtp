@@ -17,6 +17,8 @@ def settings_overrides() -> Iterator[dict[str, Any]]:
         "client_id": "Foo",
         "client_secret": "bar",
         "testing": "True",
+        "smtp_port": 25,
+        "smtp_host": "smtp.host.com",
     }
     yield overrides
 
