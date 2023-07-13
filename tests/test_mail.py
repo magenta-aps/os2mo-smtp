@@ -63,6 +63,8 @@ async def test_send_message_testing_false(email_client: EmailClient) -> None:
     for key in message.keys():
         assert message[key] == expected_message[key]
 
+    email_client.smtp.send_message.assert_called_once()  # type: ignore
+
 
 async def test_send_message_testing_true(email_client: EmailClient) -> None:
     """
@@ -77,6 +79,7 @@ async def test_send_message_testing_true(email_client: EmailClient) -> None:
     texttype = "plain"
 
     # Retrieve MIMEText object from send_email
+    email_client.testing = True
     message = email_client.send_email(
         receiver=receiver,
         cc=cc,
@@ -99,6 +102,8 @@ async def test_send_message_testing_true(email_client: EmailClient) -> None:
     # Assert correct field mapping
     for key in message.keys():
         assert message[key] == expected_message[key]
+
+    email_client.smtp.send_message.assert_not_called()  # type: ignore
 
 
 async def test_send_message_tls_error(email_client: EmailClient) -> None:
