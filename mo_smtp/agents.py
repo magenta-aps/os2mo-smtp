@@ -1,13 +1,15 @@
 """
 Python file with agents that send emails
 """
+from typing import Annotated
 from typing import Any
 
 import structlog
+from fastapi import Depends
 from fastramqpi.context import Context
-from ramqp.mo.models import MORoutingKey
-from ramqp.mo.models import PayloadType
-from ramqp.utils import sleep_on_error
+from ramqp.depends import rate_limit
+from ramqp.mo import MORoutingKey
+from ramqp.mo import PayloadType
 
 from .config import AgentSettings
 
@@ -16,18 +18,20 @@ logger = structlog.get_logger()
 delay_on_error = AgentSettings().delay_on_error
 
 
+RateLimit = Annotated[None, Depends(rate_limit(delay_on_error))]
+
+
 class Agents:
     def __init__(self, context: Context):
         user_context = context["user_context"]
         self.dataloader = user_context["dataloader"]
         self.email_client = user_context["email_client"]
 
-    @sleep_on_error(delay_on_error)
     async def inform_manager_on_employee_address_creation(
         self,
         payload: PayloadType,
         mo_routing_key: MORoutingKey,
-        **kwargs: Any,
+        _: RateLimit,
     ) -> None:
         """
         Create a router, which listens to all "creation" requests,

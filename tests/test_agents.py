@@ -8,8 +8,8 @@ from uuid import uuid4
 
 import pytest
 from fastramqpi.context import Context
-from ramqp.mo.models import MORoutingKey
-from ramqp.mo.models import PayloadType
+from ramqp.mo import MORoutingKey
+from ramqp.mo import PayloadType
 from structlog.testing import capture_logs
 
 from mo_smtp.agents import Agents
@@ -68,9 +68,9 @@ async def test_inform_manager_on_employee_address_creation_no_engagements(
     dataloader.load_mo_user_data.return_value = employee
     agents.email_client = MagicMock()
 
-    mo_routing_key = MORoutingKey.build("employee.address.create")
+    mo_routing_key: MORoutingKey = "employee.address.create"
     await agents.inform_manager_on_employee_address_creation(
-        payload, mo_routing_key=mo_routing_key
+        payload, mo_routing_key, None
     )
 
     dataloader.load_mo_user_data.assert_any_await(uuid_employee)
@@ -149,7 +149,7 @@ async def test_inform_manager_on_employee_address_creation_multiple_engagements(
             return manager
 
     payload = PayloadType(uuid=uuid_employee, object_uuid=uuid4(), time=datetime.now())
-    mo_routing_key = MORoutingKey.build("employee.address.create")
+    mo_routing_key: MORoutingKey = "employee.address.create"
 
     dataloader.load_mo_user_data = AsyncMock(side_effect=load_mo_user)
     dataloader.load_mo_address_data.return_value = employee_address
@@ -157,7 +157,7 @@ async def test_inform_manager_on_employee_address_creation_multiple_engagements(
     agents.email_client = MagicMock()
 
     await agents.inform_manager_on_employee_address_creation(
-        payload, mo_routing_key=mo_routing_key
+        payload, mo_routing_key, None
     )
 
     dataloader.load_mo_user_data.assert_any_await(uuid_employee)
@@ -185,13 +185,13 @@ async def test_inform_manager_on_employee_address_creation_not_email(
         return employee_address
 
     payload = PayloadType(uuid=uuid4(), object_uuid=uuid_address, time=datetime.now())
-    mo_routing_key = MORoutingKey.build("employee.address.create")
+    mo_routing_key: MORoutingKey = "employee.address.create"
 
     dataloader.load_mo_user_data = AsyncMock()
     dataloader.load_mo_address_data = AsyncMock(side_effect=load_mo_address)
 
     await agents.inform_manager_on_employee_address_creation(
-        payload, mo_routing_key=mo_routing_key
+        payload, mo_routing_key, None
     )
 
     dataloader.load_mo_address_data.assert_awaited_once_with(uuid_address)
@@ -212,10 +212,10 @@ async def test_inform_manager_on_employee_address_creation_object_uuid_is_messag
     payload = PayloadType(
         uuid=uuid_employee, object_uuid=uuid_employee, time=datetime.now()
     )
-    mo_routing_key = MORoutingKey.build("employee.address.create")
+    mo_routing_key: MORoutingKey = "employee.address.create"
 
     await agents.inform_manager_on_employee_address_creation(
-        payload, mo_routing_key=mo_routing_key
+        payload, mo_routing_key, None
     )
 
     dataloader.load_mo_user_data.assert_not_awaited()
@@ -251,13 +251,13 @@ async def test_inform_manager_on_employee_address_creation_invalid_user_email(
         payload = PayloadType(
             uuid=uuid_employee, object_uuid=uuid_address, time=datetime.now()
         )
-        mo_routing_key = MORoutingKey.build("employee.address.create")
+        mo_routing_key: MORoutingKey = "employee.address.create"
 
         dataloader.load_mo_user_data.return_value = employee
         dataloader.load_mo_address_data.return_value = employee_address
 
         await agents.inform_manager_on_employee_address_creation(
-            payload, mo_routing_key=mo_routing_key
+            payload, mo_routing_key, None
         )
 
         dataloader.load_mo_user_data.assert_awaited_once_with(uuid_employee)
@@ -288,13 +288,13 @@ async def test_inform_manager_on_employee_address_creation_multiple_email_addres
     payload = PayloadType(
         uuid=uuid_employee, object_uuid=uuid_address, time=datetime.now()
     )
-    mo_routing_key = MORoutingKey.build("employee.address.create")
+    mo_routing_key: MORoutingKey = "employee.address.create"
 
     dataloader.load_mo_user_data.return_value = employee
     dataloader.load_mo_address_data.return_value = employee_address
 
     await agents.inform_manager_on_employee_address_creation(
-        payload, mo_routing_key=mo_routing_key
+        payload, mo_routing_key, None
     )
 
     dataloader.load_mo_user_data.assert_awaited_once_with(uuid_employee)
@@ -308,10 +308,10 @@ async def test_listen_to_address_wrong_routing_key(agents: Agents) -> None:
     """
 
     with capture_logs() as cap_logs:
-        mo_routing_key = MORoutingKey.build("org_unit.org_unit.edit")
+        mo_routing_key: MORoutingKey = "org_unit.org_unit.edit"
         payload = PayloadType(uuid=uuid4(), object_uuid=uuid4(), time=datetime.now())
         await agents.inform_manager_on_employee_address_creation(
-            payload, mo_routing_key=mo_routing_key
+            payload, mo_routing_key, None
         )
 
         messages = [w for w in cap_logs if w["log_level"] == "info"]
