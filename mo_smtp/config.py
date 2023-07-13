@@ -44,6 +44,14 @@ class Settings(BaseSettings):
     )
 
 
+class AgentSettings(BaseSettings):
+
+    delay_on_error: int = Field(
+        30,
+        description="Amount of seconds to sleep before retrying AMQP messages",
+    )
+
+
 class EmailSettings(BaseSettings):
     class Config:
         frozen = True
