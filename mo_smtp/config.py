@@ -53,6 +53,6 @@ class EmailSettings(BaseSettings):
     smtp_port: int = 1025
     smtp_host: str = "mailcatcher"
     testing: bool = Field(
-        False,
+        True,
         description="When True, will print mails to the console but not send anything",
     )

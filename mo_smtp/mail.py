@@ -73,4 +73,6 @@ class EmailClient:
             except SMTPNotSupportedError:
                 logger.info("SMTP server doesn't use TLS. TLS ignored")
             self.smtp.send_message(msg)  # type: ignore
+        else:
+            logger.info("This was a test run. No message was sent")
         return msg
