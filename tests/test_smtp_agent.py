@@ -52,6 +52,8 @@ def test_register_agents():
 
     agents_to_register = ["agent_1", "agent_2"]
     agents = MagicMock()
+    agents.agent_1.__name__ = "agent_1"
+    agents.agent_2.__name__ = "agent_2"
 
     assert len(amqp_router.registry) == 0
     register_agents(agents, agents_to_register)

@@ -1,12 +1,18 @@
 from typing import List
 
 from fastramqpi.config import Settings as FastRAMQPISettings
-from pydantic import AmqpDsn
 from pydantic import AnyHttpUrl
 from pydantic import BaseSettings
 from pydantic import Field
 from pydantic import parse_obj_as
 from pydantic import SecretStr
+from ramqp.config import AMQPConnectionSettings
+
+
+class SmtpAMQPConnectionSettings(AMQPConnectionSettings):
+    exchange = "smtp"
+    queue_prefix = "smtp"
+    prefetch_count = 1  # MO cannot handle too many requests
 
 
 class Settings(BaseSettings):
@@ -18,8 +24,7 @@ class Settings(BaseSettings):
         default_factory=FastRAMQPISettings, description="FastRAMQPI settings"
     )
 
-    amqp_url: AmqpDsn = parse_obj_as(AmqpDsn, "amqp://guest:guest@localhost:5672")
-    amqp_exchange: str = "os2mo"
+    amqp: SmtpAMQPConnectionSettings
 
     mo_url: AnyHttpUrl = Field(
         parse_obj_as(AnyHttpUrl, "http://mo-service:5000"),
