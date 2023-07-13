@@ -5,6 +5,7 @@ from typing import Any
 
 import structlog
 from fastramqpi.context import Context
+from ramqp.mo.models import MORoutingKey
 from ramqp.mo.models import PayloadType
 from ramqp.utils import sleep_on_error
 
@@ -23,7 +24,10 @@ class Agents:
 
     @sleep_on_error(delay_on_error)
     async def inform_manager_on_employee_address_creation(
-        self, payload: PayloadType, **kwargs: Any
+        self,
+        payload: PayloadType,
+        mo_routing_key: MORoutingKey,
+        **kwargs: Any,
     ) -> None:
         """
         Create a router, which listens to all "creation" requests,
@@ -35,8 +39,7 @@ class Agents:
             context: dictionary with context from FastRAMQPI
             payload: Payload of the AMQP message
         """
-        routing_key = kwargs["mo_routing_key"]
-        routing_key_str = str(routing_key)
+        routing_key_str = str(mo_routing_key)
         logger.info(f"Obtained message with routing key = {routing_key_str}")
 
         if routing_key_str != "employee.address.create":
