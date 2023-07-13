@@ -56,3 +56,10 @@ class EmailSettings(BaseSettings):
         True,
         description="When True, will print mails to the console but not send anything",
     )
+    receiver_override: str = Field(
+        "",
+        description=(
+            "Set to an email address to always send mails to this address. "
+            "Useful for testing purposes."
+        ),
+    )

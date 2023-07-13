@@ -16,6 +16,7 @@ def email_settings() -> MagicMock:
     email_settings.smtp_port = 1025
     email_settings.sender = "sender@test.net"
     email_settings.testing = False
+    email_settings.receiver_override = ""
     return email_settings
 
 
@@ -148,3 +149,28 @@ async def test_send_message_tls_error(email_client: EmailClient) -> None:
     # Assert correct field mapping
     for key in message.keys():
         assert message[key] == expected_message[key]
+
+
+async def test_send_message_receiver_override(email_client: EmailClient):
+
+    receiver = {"receiver1@test.net", "receiver2@test.net"}
+    cc = {"cc1@test.net", "cc2@test.net"}
+    bcc = {"bcc1@test.net", "bcc2@test.net"}
+    subject = "A very important message"
+    body = "The body of the very important message with a, ø, and å"
+    texttype = "plain"
+
+    # Retrieve MIMEText object from send_email
+    email_client.receiver_override = "mail@test.com"
+    message = email_client.send_email(
+        receiver=receiver,
+        cc=cc,
+        bcc=bcc,
+        subject=subject,
+        body=body,
+        texttype=texttype,
+    )
+
+    assert "CC" not in message
+    assert "BCC" not in message
+    assert message["To"] == "mail@test.com"
