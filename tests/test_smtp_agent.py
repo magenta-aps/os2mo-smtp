@@ -9,8 +9,8 @@ from unittest.mock import patch
 import pytest
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
+from ramqp.mo import MORouter
 
-from mo_smtp.smtp_agent import amqp_router
 from mo_smtp.smtp_agent import create_app
 from mo_smtp.smtp_agent import register_agents
 
@@ -21,9 +21,7 @@ def app(
 ) -> Iterator[FastAPI]:
     """Test that we can construct our FastAPI application."""
 
-    with patch("mo_smtp.smtp_agent.Agents", MagicMock()), patch(
-        "mo_smtp.smtp_agent.EmailClient", MagicMock()
-    ):
+    with patch("mo_smtp.smtp_agent.EmailClient", MagicMock()):
         yield create_app()
 
 
@@ -49,20 +47,29 @@ def test_create_app(
 
 
 def test_register_agents():
+    agents_to_register = ["agent_1"]
 
-    agents_to_register = ["agent_1:address", "agent_2:manager"]
-    agents = MagicMock()
-    agents.agent_1.__name__ = "agent_1"
-    agents.agent_2.__name__ = "agent_2"
+    amqp_router = MORouter()
 
-    assert len(amqp_router.registry) == 0
-    register_agents(agents, agents_to_register)
+    @amqp_router.register("address")
+    def agent_1():
+        pass
+
+    @amqp_router.register("manager")
+    def agent_2():
+        pass
+
+    amqpsystem = MagicMock()
+    amqpsystem.router.registry = {}
+
     assert len(amqp_router.registry) == 2
+    register_agents(amqp_router, amqpsystem, agents_to_register)
+    assert len(amqp_router.registry) == 2
+    assert len(amqpsystem.router.registry) == 1
 
-    routing_keys = list(amqp_router.registry.values())
+    routing_keys = list(amqpsystem.router.registry.values())
 
     assert routing_keys[0] == {"address"}
-    assert routing_keys[1] == {"manager"}
 
 
 def test_send_test_mail(test_client: TestClient):

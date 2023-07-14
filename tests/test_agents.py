@@ -9,7 +9,7 @@ import pytest
 from fastramqpi.context import Context
 from structlog.testing import capture_logs
 
-from mo_smtp.agents import Agents
+from mo_smtp.agents import inform_manager_on_employee_address_creation
 
 
 @pytest.fixture
@@ -23,20 +23,17 @@ def email_client() -> MagicMock:
 
 
 @pytest.fixture
-def agents(dataloader: AsyncMock, email_client: MagicMock) -> Agents:
-    context = Context(
+def context(dataloader: AsyncMock, email_client: MagicMock) -> Context:
+    return Context(
         {"user_context": {"dataloader": dataloader, "email_client": email_client}}
     )
 
-    agents = Agents(context)
-    return agents
-
 
 async def test_inform_manager_on_employee_address_creation_no_engagements(
-    dataloader: AsyncMock, agents: Agents
+    dataloader: AsyncMock, context: Context
 ) -> None:
     """
-    Test that agents.inform_manager_on_employee_address_creation method performs
+    Test that inform_manager_on_employee_address_creation method performs
     correctly
     """
 
@@ -65,19 +62,18 @@ async def test_inform_manager_on_employee_address_creation_no_engagements(
 
     dataloader.load_mo_address_data.return_value = employee_address
     dataloader.load_mo_user_data.return_value = employee
-    agents.email_client = MagicMock()
 
-    await agents.inform_manager_on_employee_address_creation(uuid_address, None)
+    await inform_manager_on_employee_address_creation(context, uuid_address, None)
 
     dataloader.load_mo_user_data.assert_any_await(uuid_employee)
     dataloader.load_mo_address_data.assert_awaited_with(uuid_address)
 
 
 async def test_inform_manager_on_employee_address_creation_multiple_engagements(
-    agents: Agents, dataloader: AsyncMock
+    dataloader: AsyncMock, context: Context
 ) -> None:
     """
-    Test that agents.inform_manager_on_employee_address_creation method performs
+    Test that inform_manager_on_employee_address_creation method performs
     correctly
     """
 
@@ -153,9 +149,8 @@ async def test_inform_manager_on_employee_address_creation_multiple_engagements(
     dataloader.load_mo_user_data = AsyncMock(side_effect=load_mo_user)
     dataloader.load_mo_address_data.return_value = employee_address
     dataloader.load_mo_org_unit_data = AsyncMock(side_effect=[ou1, ou2])
-    agents.email_client = MagicMock()
 
-    await agents.inform_manager_on_employee_address_creation(uuid4(), None)
+    await inform_manager_on_employee_address_creation(context, uuid4(), None)
 
     dataloader.load_mo_user_data.assert_any_await(uuid_employee)
     dataloader.load_mo_user_data.assert_awaited_with(uuid_manager)
@@ -164,10 +159,10 @@ async def test_inform_manager_on_employee_address_creation_multiple_engagements(
 
 
 async def test_inform_manager_on_employee_address_creation_not_email(
-    agents: Agents, dataloader: AsyncMock
+    dataloader: AsyncMock, context: Context
 ) -> None:
     """
-    Tests that agents.inform_manager_on_employee_address_creation rejects amqp
+    Tests that inform_manager_on_employee_address_creation rejects amqp
     messages regarding addresses, that are not emails
     """
 
@@ -180,17 +175,17 @@ async def test_inform_manager_on_employee_address_creation_not_email(
     }
 
     dataloader.load_mo_address_data.return_value = employee_address
-    await agents.inform_manager_on_employee_address_creation(uuid_address, None)
+    await inform_manager_on_employee_address_creation(context, uuid_address, None)
 
     dataloader.load_mo_address_data.assert_awaited_once_with(uuid_address)
     dataloader.load_mo_user_data.assert_not_awaited()
 
 
 async def test_inform_manager_on_employee_address_creation_invalid_user_email(
-    agents: Agents, dataloader: AsyncMock
+    dataloader: AsyncMock, context: Context
 ) -> None:
     """
-    Tests that agents.inform_manager_on_employee_address_creation rejects messages with
+    Tests that inform_manager_on_employee_address_creation rejects messages with
     invalid emails
     """
 
@@ -220,7 +215,7 @@ async def test_inform_manager_on_employee_address_creation_invalid_user_email(
         dataloader.load_mo_user_data.return_value = employee
         dataloader.load_mo_address_data.return_value = employee_address
 
-        await agents.inform_manager_on_employee_address_creation(uuid_address, None)
+        await inform_manager_on_employee_address_creation(context, uuid_address, None)
 
         dataloader.load_mo_user_data.assert_awaited_once_with(uuid_employee)
         dataloader.load_mo_address_data.assert_awaited_once_with(uuid_address)
@@ -228,10 +223,10 @@ async def test_inform_manager_on_employee_address_creation_invalid_user_email(
 
 
 async def test_inform_manager_on_employee_address_creation_multiple_email_addresses(
-    agents: Agents, dataloader: AsyncMock
+    dataloader: AsyncMock, context: Context
 ) -> None:
     """
-    Tests that agents.inform_manager_on_employee_address_creation rejects messages
+    Tests that inform_manager_on_employee_address_creation rejects messages
     where there already exists an email address
     """
 
@@ -262,14 +257,14 @@ async def test_inform_manager_on_employee_address_creation_multiple_email_addres
     dataloader.load_mo_user_data.return_value = employee
     dataloader.load_mo_address_data.return_value = employee_address
 
-    await agents.inform_manager_on_employee_address_creation(uuid_address, None)
+    await inform_manager_on_employee_address_creation(context, uuid_address, None)
 
     dataloader.load_mo_user_data.assert_awaited_once_with(uuid_employee)
     dataloader.load_mo_address_data.assert_awaited_once_with(uuid_address)
 
 
 async def test_inform_manager_on_org_unit_address_creation(
-    agents: Agents, dataloader: AsyncMock
+    dataloader: AsyncMock, context: Context
 ):
 
     org_unit_address = {
@@ -281,5 +276,5 @@ async def test_inform_manager_on_org_unit_address_creation(
     dataloader.load_mo_address_data.return_value = org_unit_address
 
     with capture_logs() as cap_logs:
-        await agents.inform_manager_on_employee_address_creation(uuid4(), None)
+        await inform_manager_on_employee_address_creation(context, uuid4(), None)
         assert "The address does not belong to an employee" in str(cap_logs)
