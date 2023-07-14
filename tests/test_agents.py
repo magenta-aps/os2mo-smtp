@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-from datetime import datetime
 from typing import Any
 from unittest.mock import AsyncMock
 from unittest.mock import MagicMock
@@ -8,8 +7,6 @@ from uuid import uuid4
 
 import pytest
 from fastramqpi.context import Context
-from ramqp.mo import MORoutingKey
-from ramqp.mo import PayloadType
 from structlog.testing import capture_logs
 
 from mo_smtp.agents import Agents
@@ -43,9 +40,13 @@ async def test_inform_manager_on_employee_address_creation_no_engagements(
     correctly
     """
 
-    uuid_employee = uuid4()
+    uuid_employee = str(uuid4())
     uuid_address = uuid4()
-    employee_address = {"name": "employee@test", "address_type": {"scope": "EMAIL"}}
+    employee_address = {
+        "name": "employee@test",
+        "employee_uuid": uuid_employee,
+        "address_type": {"scope": "EMAIL"},
+    }
 
     employee = {
         "name": "Test McTesterson",
@@ -53,6 +54,7 @@ async def test_inform_manager_on_employee_address_creation_no_engagements(
         "addresses": [
             {
                 "value": "employee@test",
+                "employee_uuid": uuid_employee,
                 "address_type": {
                     "scope": "EMAIL",
                 },
@@ -61,17 +63,11 @@ async def test_inform_manager_on_employee_address_creation_no_engagements(
         "engagements": [],
     }
 
-    payload = PayloadType(
-        uuid=uuid_employee, object_uuid=uuid_address, time=datetime.now()
-    )
     dataloader.load_mo_address_data.return_value = employee_address
     dataloader.load_mo_user_data.return_value = employee
     agents.email_client = MagicMock()
 
-    mo_routing_key: MORoutingKey = "employee.address.create"
-    await agents.inform_manager_on_employee_address_creation(
-        payload, mo_routing_key, None
-    )
+    await agents.inform_manager_on_employee_address_creation(uuid_address, None)
 
     dataloader.load_mo_user_data.assert_any_await(uuid_employee)
     dataloader.load_mo_address_data.assert_awaited_with(uuid_address)
@@ -85,18 +81,23 @@ async def test_inform_manager_on_employee_address_creation_multiple_engagements(
     correctly
     """
 
-    uuid_employee = uuid4()
-    uuid_ou1 = uuid4()
-    uuid_ou2 = uuid4()
-    uuid_manager = uuid4()
-    employee_address = {"name": "employee@test", "address_type": {"scope": "EMAIL"}}
+    uuid_employee = str(uuid4())
+    uuid_ou1 = str(uuid4())
+    uuid_ou2 = str(uuid4())
+    uuid_manager = str(uuid4())
+    employee_address = {
+        "name": "employee@test",
+        "employee_uuid": uuid_employee,
+        "address_type": {"scope": "EMAIL"},
+    }
 
     employee = {
         "name": "Test McTesterson",
-        "uuid": str(uuid_employee),
+        "uuid": uuid_employee,
         "addresses": [
             {
                 "value": "employee@test",
+                "employee_uuid": uuid_employee,
                 "address_type": {
                     "scope": "EMAIL",
                 },
@@ -115,10 +116,11 @@ async def test_inform_manager_on_employee_address_creation_multiple_engagements(
     }
     manager = {
         "name": "Manny O'ager",
-        "uuid": str(uuid_manager),
+        "uuid": uuid_manager,
         "addresses": [
             {
                 "value": "manager@test",
+                "employee_uuid": uuid_manager,
                 "address_type": {
                     "scope": "EMAIL",
                 },
@@ -127,7 +129,7 @@ async def test_inform_manager_on_employee_address_creation_multiple_engagements(
     }
     ou1 = {
         "name": "ou1",
-        "uuid": str(uuid_ou1),
+        "uuid": uuid_ou1,
         "managers": [
             {
                 "employee_uuid": uuid_manager,
@@ -137,7 +139,7 @@ async def test_inform_manager_on_employee_address_creation_multiple_engagements(
     }
     ou2 = {
         "name": "ou2",
-        "uuid": str(uuid_ou2),
+        "uuid": uuid_ou2,
         "managers": [],
     }
 
@@ -148,17 +150,12 @@ async def test_inform_manager_on_employee_address_creation_multiple_engagements(
         elif uuid == uuid_manager:
             return manager
 
-    payload = PayloadType(uuid=uuid_employee, object_uuid=uuid4(), time=datetime.now())
-    mo_routing_key: MORoutingKey = "employee.address.create"
-
     dataloader.load_mo_user_data = AsyncMock(side_effect=load_mo_user)
     dataloader.load_mo_address_data.return_value = employee_address
     dataloader.load_mo_org_unit_data = AsyncMock(side_effect=[ou1, ou2])
     agents.email_client = MagicMock()
 
-    await agents.inform_manager_on_employee_address_creation(
-        payload, mo_routing_key, None
-    )
+    await agents.inform_manager_on_employee_address_creation(uuid4(), None)
 
     dataloader.load_mo_user_data.assert_any_await(uuid_employee)
     dataloader.load_mo_user_data.assert_awaited_with(uuid_manager)
@@ -175,51 +172,18 @@ async def test_inform_manager_on_employee_address_creation_not_email(
     """
 
     uuid_address = uuid4()
+    uuid_employee = str(uuid4())
     employee_address = {
         "name": "Arbitrary home address",
+        "employee_uuid": uuid_employee,
         "address_type": {"scope": "DAR"},
     }
 
-    async def load_mo_address(uuid: UUID) -> Any:
-        """Mocks a graphql search for addresses"""
-        return employee_address
-
-    payload = PayloadType(uuid=uuid4(), object_uuid=uuid_address, time=datetime.now())
-    mo_routing_key: MORoutingKey = "employee.address.create"
-
-    dataloader.load_mo_user_data = AsyncMock()
-    dataloader.load_mo_address_data = AsyncMock(side_effect=load_mo_address)
-
-    await agents.inform_manager_on_employee_address_creation(
-        payload, mo_routing_key, None
-    )
+    dataloader.load_mo_address_data.return_value = employee_address
+    await agents.inform_manager_on_employee_address_creation(uuid_address, None)
 
     dataloader.load_mo_address_data.assert_awaited_once_with(uuid_address)
     dataloader.load_mo_user_data.assert_not_awaited()
-
-
-async def test_inform_manager_on_employee_address_creation_object_uuid_is_message_uuid(
-    agents: Agents, dataloader: AsyncMock
-) -> None:
-    """
-    Tests that agents.inform_manager_on_employee_address_creation rejects messages where
-    payload.uuid==payload.object_uuid, since that would refer to the creation of the
-    employee
-    """
-
-    uuid_employee = uuid4()
-
-    payload = PayloadType(
-        uuid=uuid_employee, object_uuid=uuid_employee, time=datetime.now()
-    )
-    mo_routing_key: MORoutingKey = "employee.address.create"
-
-    await agents.inform_manager_on_employee_address_creation(
-        payload, mo_routing_key, None
-    )
-
-    dataloader.load_mo_user_data.assert_not_awaited()
-    dataloader.load_mo_address_data.assert_not_awaited()
 
 
 async def test_inform_manager_on_employee_address_creation_invalid_user_email(
@@ -232,15 +196,20 @@ async def test_inform_manager_on_employee_address_creation_invalid_user_email(
 
     for invalid_email in ["", "   ", "invalidemail"]:
 
-        uuid_employee = uuid4()
+        uuid_employee = str(uuid4())
         uuid_address = uuid4()
-        employee_address = {"name": invalid_email, "address_type": {"scope": "EMAIL"}}
+        employee_address = {
+            "name": invalid_email,
+            "employee_uuid": uuid_employee,
+            "address_type": {"scope": "EMAIL"},
+        }
         employee = {
             "name": "Test McTesterson",
             "uuid": str(uuid_employee),
             "addresses": [
                 {
                     "value": invalid_email,
+                    "employee_uuid": uuid_employee,
                     "address_type": {
                         "scope": "EMAIL",
                     },
@@ -248,17 +217,10 @@ async def test_inform_manager_on_employee_address_creation_invalid_user_email(
             ],
         }
 
-        payload = PayloadType(
-            uuid=uuid_employee, object_uuid=uuid_address, time=datetime.now()
-        )
-        mo_routing_key: MORoutingKey = "employee.address.create"
-
         dataloader.load_mo_user_data.return_value = employee
         dataloader.load_mo_address_data.return_value = employee_address
 
-        await agents.inform_manager_on_employee_address_creation(
-            payload, mo_routing_key, None
-        )
+        await agents.inform_manager_on_employee_address_creation(uuid_address, None)
 
         dataloader.load_mo_user_data.assert_awaited_once_with(uuid_employee)
         dataloader.load_mo_address_data.assert_awaited_once_with(uuid_address)
@@ -273,46 +235,51 @@ async def test_inform_manager_on_employee_address_creation_multiple_email_addres
     where there already exists an email address
     """
 
-    uuid_employee = uuid4()
+    uuid_employee = str(uuid4())
     uuid_address = uuid4()
-    employee_address = {"name": "new@email", "address_type": {"scope": "EMAIL"}}
+    employee_address = {
+        "name": "new@email",
+        "employee_uuid": uuid_employee,
+        "address_type": {"scope": "EMAIL"},
+    }
     employee = {
         "name": "Test McTesterson",
-        "uuid": str(uuid_employee),
+        "uuid": uuid_employee,
         "addresses": [
-            {"value": "old@email", "address_type": {"scope": "EMAIL"}},
-            {"value": "new@email", "address_type": {"scope": "EMAIL"}},
+            {
+                "value": "old@email",
+                "employee_uuid": uuid_employee,
+                "address_type": {"scope": "EMAIL"},
+            },
+            {
+                "value": "new@email",
+                "employee_uuid": uuid_employee,
+                "address_type": {"scope": "EMAIL"},
+            },
         ],
     }
-
-    payload = PayloadType(
-        uuid=uuid_employee, object_uuid=uuid_address, time=datetime.now()
-    )
-    mo_routing_key: MORoutingKey = "employee.address.create"
 
     dataloader.load_mo_user_data.return_value = employee
     dataloader.load_mo_address_data.return_value = employee_address
 
-    await agents.inform_manager_on_employee_address_creation(
-        payload, mo_routing_key, None
-    )
+    await agents.inform_manager_on_employee_address_creation(uuid_address, None)
 
     dataloader.load_mo_user_data.assert_awaited_once_with(uuid_employee)
     dataloader.load_mo_address_data.assert_awaited_once_with(uuid_address)
 
 
-async def test_listen_to_address_wrong_routing_key(agents: Agents) -> None:
-    """
-    Tests that agents.inform_manager_on_employee_address_creation rejects amqp messages
-    when routing key is not address.address.create
-    """
+async def test_inform_manager_on_org_unit_address_creation(
+    agents: Agents, dataloader: AsyncMock
+):
+
+    org_unit_address = {
+        "name": "new@email",
+        "employee_uuid": None,
+        "address_type": {"scope": "EMAIL"},
+    }
+
+    dataloader.load_mo_address_data.return_value = org_unit_address
 
     with capture_logs() as cap_logs:
-        mo_routing_key: MORoutingKey = "org_unit.org_unit.edit"
-        payload = PayloadType(uuid=uuid4(), object_uuid=uuid4(), time=datetime.now())
-        await agents.inform_manager_on_employee_address_creation(
-            payload, mo_routing_key, None
-        )
-
-        messages = [w for w in cap_logs if w["log_level"] == "info"]
-        assert "Only listening to 'employee.address.create'" in str(messages)
+        await agents.inform_manager_on_employee_address_creation(uuid4(), None)
+        assert "The address does not belong to an employee" in str(cap_logs)

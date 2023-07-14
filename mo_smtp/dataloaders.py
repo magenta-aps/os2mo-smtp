@@ -96,6 +96,7 @@ class DataLoader:
                   addresses(uuids: "%s") {
                     current {
                       name
+                      employee_uuid
                       address_type {
                         scope
                       }
