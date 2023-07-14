@@ -24,10 +24,10 @@ def register_agents(agents, agents_to_register):
     """
     Register agents so they listen to AMQP messages
     """
-    for agent_to_register in agents_to_register:
+    for agent_to_register, routing_key in [s.split(":") for s in agents_to_register]:
         logger.info(f"Activating {agent_to_register}")
         agent = getattr(agents, agent_to_register)
-        amqp_router.register("*.*.*")(agent)
+        amqp_router.register(routing_key)(agent)
 
 
 def construct_gql_client(settings: Settings):

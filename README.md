@@ -45,8 +45,18 @@ To add an email agent, write a function in `agents.py`. The function should be a
 - Process the message
 - Send an email
 
-Then activate the agent by adding the function name to the `active_agents` config list
-variable
+Then activate the agent by adding the function name along with the amqp topic to the
+`active_agents` config list variable. For example:
+
+```
+ACTIVE_AGENTS = ["agent_1:address", "agent_2:manager"]
+```
+
+Means that there is a function called `agent_1` in `agents.py` which listens to the
+`address` topic. It also means that there is a function called `agent_2` in `agents.py`
+which listens to the `manager` topic. You can find a list of all topics at
+https://rammearkitektur.docs.magenta.dk/os2mo/api-dokumentation/events.html
+
 
 ### Testing the email functionality
 

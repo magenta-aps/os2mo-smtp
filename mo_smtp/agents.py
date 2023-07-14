@@ -6,18 +6,14 @@ from typing import Any
 
 import structlog
 from fastapi import Depends
-from fastramqpi.context import Context
+from ramqp.depends import Context
 from ramqp.depends import rate_limit
-from ramqp.mo import MORoutingKey
-from ramqp.mo import PayloadType
+from ramqp.mo import PayloadUUID
 
 from .config import AgentSettings
 
 logger = structlog.get_logger()
-
 delay_on_error = AgentSettings().delay_on_error
-
-
 RateLimit = Annotated[None, Depends(rate_limit(delay_on_error))]
 
 
@@ -29,46 +25,30 @@ class Agents:
 
     async def inform_manager_on_employee_address_creation(
         self,
-        payload: PayloadType,
-        mo_routing_key: MORoutingKey,
+        uuid: PayloadUUID,
         _: RateLimit,
     ) -> None:
         """
-        Create a router, which listens to all "creation" requests,
-        takes a context and a payload, and returns None.
-        In time, it may be wise to limit the input to more specfic creation events,
-        but that is a problem for another time
-
-        Args:
-            context: dictionary with context from FastRAMQPI
-            payload: Payload of the AMQP message
+        Listen to address creation events and inform the employee as well as his manager
         """
-        routing_key_str = str(mo_routing_key)
-        logger.info(f"Obtained message with routing key = {routing_key_str}")
-
-        if routing_key_str != "employee.address.create":
-            logger.info("Only listening to 'employee.address.create'")
-            return
-
-        # When a new employee is created, the AMPQ request corresponds with that of an
-        # address but the payload.object_uuid is always equal to the payload.uuid
-        if payload.uuid == payload.object_uuid:
-            logger.info("payload uuid equals object uuid")
-            return
+        logger.info(f"Obtained message with uuid = {uuid}")
 
         # Prepare dictionary to store email arguments
         email_args: dict[str, Any] = {}
 
-        # NOTE: New material
-        address_data = await self.dataloader.load_mo_address_data(payload.object_uuid)
+        address_data = await self.dataloader.load_mo_address_data(uuid)
+        employee_uuid = address_data["employee_uuid"]
 
-        # Sort out all employee.address.create messages, that aren't emails
+        if not employee_uuid:
+            logger.info("The address does not belong to an employee")
+            return
+
+        # Sort out all 'address' messages, that aren't emails
         if address_data["address_type"]["scope"] != "EMAIL":
             logger.info("The address type is not EMAIL")
             return
 
-        # Payload only includes user UUID. Query graphql to retrieve user data
-        user_data = await self.dataloader.load_mo_user_data(payload.uuid)
+        user_data = await self.dataloader.load_mo_user_data(employee_uuid)
 
         emails = [
             email

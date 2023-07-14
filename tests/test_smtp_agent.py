@@ -50,7 +50,7 @@ def test_create_app(
 
 def test_register_agents():
 
-    agents_to_register = ["agent_1", "agent_2"]
+    agents_to_register = ["agent_1:address", "agent_2:manager"]
     agents = MagicMock()
     agents.agent_1.__name__ = "agent_1"
     agents.agent_2.__name__ = "agent_2"
@@ -58,6 +58,11 @@ def test_register_agents():
     assert len(amqp_router.registry) == 0
     register_agents(agents, agents_to_register)
     assert len(amqp_router.registry) == 2
+
+    routing_keys = list(amqp_router.registry.values())
+
+    assert routing_keys[0] == {"address"}
+    assert routing_keys[1] == {"manager"}
 
 
 def test_send_test_mail(test_client: TestClient):
