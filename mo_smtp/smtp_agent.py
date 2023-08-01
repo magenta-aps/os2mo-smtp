@@ -7,27 +7,33 @@ from fastapi import FastAPI
 from fastramqpi.main import FastRAMQPI
 from raclients.graph.client import PersistentGraphQLClient
 from raclients.modelclient.mo import ModelClient
+from ramqp.mo import MOAMQPSystem
 from ramqp.mo import MORouter
 
-from .agents import Agents
+from .agents import amqp_router
 from .config import EmailSettings
 from .config import Settings
 from .dataloaders import DataLoader
 from .mail import EmailClient
 
 logger = structlog.get_logger()
-amqp_router = MORouter()
 fastapi_router = APIRouter()
 
 
-def register_agents(agents, agents_to_register):
+def register_agents(
+    amqp_router: MORouter,
+    amqpsystem: MOAMQPSystem,
+    agents_to_register: list[str],
+):
     """
     Register agents so they listen to AMQP messages
+
+    Only registers agents listed in agents_to_register
     """
-    for agent_to_register, routing_key in [s.split(":") for s in agents_to_register]:
-        logger.info(f"Activating {agent_to_register}")
-        agent = getattr(agents, agent_to_register)
-        amqp_router.register(routing_key)(agent)
+    for registry_entry, routing_keys in amqp_router.registry.items():
+        agent_name = registry_entry.__name__
+        if agent_name in agents_to_register:
+            amqpsystem.router.registry.update({registry_entry: routing_keys})
 
 
 def construct_gql_client(settings: Settings):
@@ -117,8 +123,7 @@ def create_fastramqpi(**kwargs: Any) -> FastRAMQPI:
 
     logger.info("AMQP router setup")
     amqpsystem = fastramqpi.get_amqpsystem()
-    register_agents(Agents(fastramqpi.get_context()), settings.active_agents)
-    amqpsystem.router.registry.update(amqp_router.registry)
+    register_agents(amqp_router, amqpsystem, settings.active_agents)
 
     app = fastramqpi.get_app()
     app.include_router(fastapi_router)
