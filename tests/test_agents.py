@@ -9,6 +9,7 @@ import pytest
 from fastramqpi.context import Context
 from structlog.testing import capture_logs
 
+from mo_smtp.agents import inform_data_group_on_manager_removal
 from mo_smtp.agents import inform_manager_on_employee_address_creation
 
 
@@ -278,3 +279,82 @@ async def test_inform_manager_on_org_unit_address_creation(
     with capture_logs() as cap_logs:
         await inform_manager_on_employee_address_creation(context, uuid4(), None)
         assert "The address does not belong to an employee" in str(cap_logs)
+
+
+async def test_inform_data_group_on_manager_removal_currently_employed(
+    dataloader: AsyncMock, context: Context
+):
+    manager = {
+        "employee_uuid": uuid4(),
+        "org_unit_uuid": uuid4(),
+        "validity": {"to": None},
+    }
+
+    dataloader.load_mo_manager_data.return_value = manager
+    with capture_logs() as cap_logs:
+        await inform_data_group_on_manager_removal(context, uuid4(), None)
+        assert "Manager is currently employed" in str(cap_logs)
+
+
+async def test_inform_data_group_on_manager_removal_future_to_date(
+    dataloader: AsyncMock, context: Context
+):
+    manager = {
+        "employee_uuid": uuid4(),
+        "org_unit_uuid": uuid4(),
+        "validity": {"to": "2090-01-01T00:00+02:00"},
+    }
+
+    dataloader.load_mo_manager_data.return_value = manager
+    with capture_logs() as cap_logs:
+        await inform_data_group_on_manager_removal(context, uuid4(), None)
+        assert "to_date is in the future" in str(cap_logs)
+
+
+async def test_inform_data_group_on_manager_removal_past_to_date(
+    dataloader: AsyncMock, context: Context
+):
+    manager = {
+        "employee_uuid": uuid4(),
+        "org_unit_uuid": uuid4(),
+        "validity": {"to": "2000-01-01T00:00+02:00"},
+    }
+
+    dataloader.load_mo_manager_data.return_value = manager
+
+    dataloader.load_mo_user_data.return_value = {"name": "Mick Jagger"}
+    dataloader.load_mo_org_unit_data.return_value = {"user_key": "123stones"}
+    dataloader.get_org_unit_location = AsyncMock()  # type: ignore
+    dataloader.get_org_unit_location.return_value = "Rolling / Stones"
+    await inform_data_group_on_manager_removal(context, uuid4(), None)
+    email_client = context["user_context"]["email_client"]
+    email_client.send_email.assert_called_once()
+
+    call_args = email_client.send_email.call_args_list[0]
+
+    receiver, header, message, _ = call_args.args
+    assert receiver == ["datagruppen@silkeborg.dk"]
+    assert header == "En medarbejder er blevet fjernet fra lederfanen"
+    assert "123stones" in message
+    assert "Mick Jagger" in message
+    assert "Rolling / Stones" in message
+
+
+async def test_inform_data_group_on_manager_removal_unknown_employee(
+    dataloader: AsyncMock, context: Context
+):
+    manager = {
+        "employee_uuid": None,
+        "org_unit_uuid": uuid4(),
+        "validity": {"to": "2000-01-01T00:00+02:00"},
+    }
+
+    dataloader.load_mo_manager_data.return_value = manager
+    dataloader.get_org_unit_location = AsyncMock()  # type: ignore
+    await inform_data_group_on_manager_removal(context, uuid4(), None)
+    email_client = context["user_context"]["email_client"]
+
+    email_client.send_email.assert_called_once()
+    call_args = email_client.send_email.call_args_list[0]
+    receiver, header, message, _ = call_args.args
+    assert "Unknown employee" in message

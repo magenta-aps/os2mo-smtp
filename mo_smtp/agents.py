@@ -1,6 +1,7 @@
 """
 Python file with agents that send emails
 """
+import datetime
 from typing import Annotated
 from typing import Any
 
@@ -128,3 +129,114 @@ async def inform_manager_on_employee_address_creation(
 
     # Send email to relevant addresses
     email_client.send_email(**email_args)
+
+
+@amqp_router.register("manager")
+async def inform_data_group_on_manager_removal(
+    context: Context,
+    uuid: PayloadUUID,
+    _: RateLimit,
+) -> None:
+    """
+    Listen to manager events and inform `datagruppen` when a manager leaves the
+    company
+
+    Developed for Silkeborg Kommune
+    """
+    logger.info(f"Obtained message with uuid = {uuid}")
+
+    user_context = context["user_context"]
+    dataloader = user_context["dataloader"]
+    email_client = user_context["email_client"]
+
+    # Load manager data from MO
+    manager = await dataloader.load_mo_manager_data(uuid)
+    to_date = manager["validity"]["to"]
+    employee_uuid = manager["employee_uuid"]
+    org_unit_uuid = manager["org_unit_uuid"]
+
+    if not to_date:
+        logger.info("Manager is currently employed. No message will be sent")
+        return
+    else:
+        # Format the to-date as a datetime object at UTC+0
+        to_datetime = datetime.datetime.fromisoformat(to_date).replace(tzinfo=None)
+        logger.info(f"to-date (utc+0) = {to_datetime}")
+
+    # Get the current time in UTC+0
+    now = datetime.datetime.utcnow()
+    logger.info(f"now (utc+0) = {now}")
+
+    # Compare the to-date with the current time
+    # Only send a mail if the to-date is in the past
+    if to_datetime > now:
+        logger.info("to_date is in the future. A mail will not be sent")
+        return
+
+    # Load employee data from MO
+    if employee_uuid:
+        employee = await dataloader.load_mo_user_data(employee_uuid)
+    else:
+        employee = {"name": "Unknown employee"}
+
+    # Construct org unit location string
+    org_unit = await dataloader.load_mo_org_unit_data(org_unit_uuid)
+    location = await dataloader.get_org_unit_location(org_unit)
+
+    # Write message
+    message = f"""\
+                    <html>
+                    <head>
+                    <style>
+                    table {{
+                        border-collapse: collapse;
+                        }}
+                    td, th {{
+                      border: 1px solid #dddddd;
+                      text-align: left;
+                      padding: 8px;
+                    }}
+                    </style>
+                    </head>
+                      <body>
+                        <p>
+                           Denne besked er for at gøre opmærksom på, at
+                           følgende medarbejder er blevet fjernet fra lederfanen
+                           i OS2mo:
+                           <br>
+                           <br>
+                           <table>
+                             <tr>
+                               <td>Navn:</td>
+                               <td>{employee["name"]}</td>
+                             </tr>
+                             <tr>
+                               <td>Slutdato på engagement:</td>
+                               <td>{to_datetime.date()}</td>
+                             </tr>
+                             <tr>
+                               <td>Placering:</td>
+                               <td>{location}</td>
+                             </tr>
+                             <tr>
+                               <td>Enhedsnummer:</td>
+                               <td>{org_unit["user_key"]}</td>
+                             </tr>
+                           </table>
+                           <br>
+
+                           Med venlig hilsen,<br>
+                           OS2mo
+                           <br><br>
+                           Denne besked kan ikke besvares.
+                        </p>
+                      </body>
+                    </html>
+                  """
+
+    email_client.send_email(
+        ["datagruppen@silkeborg.dk"],
+        "En medarbejder er blevet fjernet fra lederfanen",
+        message,
+        "html",
+    )
