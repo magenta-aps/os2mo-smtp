@@ -49,14 +49,10 @@ Then activate the agent by adding the function name along with the amqp topic to
 `active_agents` config list variable. For example:
 
 ```
-ACTIVE_AGENTS = ["agent_1:address", "agent_2:manager"]
+ACTIVE_AGENTS = ["agent_1", "agent_2"]
 ```
 
-Means that there is a function called `agent_1` in `agents.py` which listens to the
-`address` topic. It also means that there is a function called `agent_2` in `agents.py`
-which listens to the `manager` topic. You can find a list of all topics at
-https://rammearkitektur.docs.magenta.dk/os2mo/api-dokumentation/events.html
-
+Means that there are two active agents: `agent_1` and `agent_2`.
 
 ### Testing the email functionality
 
