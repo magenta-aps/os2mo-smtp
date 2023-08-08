@@ -71,3 +71,8 @@ async def test_load_mo_address_data(
 
     result = await dataloader.load_mo_address_data(uuid)
     assert graphql_session_execute["addresses"][0]["current"] == result
+
+    dataloader.gql_client.execute.return_value = {"addresses": []}
+
+    result = await dataloader.load_mo_address_data(uuid)
+    assert result is None

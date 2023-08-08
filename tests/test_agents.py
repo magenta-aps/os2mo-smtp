@@ -278,3 +278,14 @@ async def test_inform_manager_on_org_unit_address_creation(
     with capture_logs() as cap_logs:
         await inform_manager_on_employee_address_creation(context, uuid4(), None)
         assert "The address does not belong to an employee" in str(cap_logs)
+
+
+async def test_inform_manager_address_not_found(
+    dataloader: AsyncMock, context: Context
+):
+
+    dataloader.load_mo_address_data.return_value = None
+
+    with capture_logs() as cap_logs:
+        await inform_manager_on_employee_address_creation(context, uuid4(), None)
+        assert "Address not found" in str(cap_logs)

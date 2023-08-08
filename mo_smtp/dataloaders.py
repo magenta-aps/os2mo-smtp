@@ -108,4 +108,7 @@ class DataLoader:
             )
         )
         result = await self.gql_client.execute(query)
-        return result["addresses"][0]["current"]
+        if result["addresses"]:
+            return result["addresses"][0]["current"]
+        else:
+            return
