@@ -39,6 +39,11 @@ async def inform_manager_on_employee_address_creation(
     email_args: dict[str, Any] = {}
 
     address_data = await dataloader.load_mo_address_data(uuid)
+
+    if not address_data:
+        logger.info("Address not found")
+        return
+
     employee_uuid = address_data["employee_uuid"]
 
     if not employee_uuid:
