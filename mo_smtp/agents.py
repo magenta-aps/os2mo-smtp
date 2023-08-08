@@ -1,11 +1,15 @@
 """
 Python file with agents that send emails
 """
+import datetime
+import os
 from typing import Annotated
 from typing import Any
 
 import structlog
 from fastapi import Depends
+from jinja2 import Environment
+from jinja2 import FileSystemLoader
 from ramqp.depends import Context
 from ramqp.depends import rate_limit
 from ramqp.mo import MORouter
@@ -18,6 +22,15 @@ delay_on_error = AgentSettings().delay_on_error
 RateLimit = Annotated[None, Depends(rate_limit(delay_on_error))]
 
 amqp_router = MORouter()
+
+
+def load_template(filename):
+    templates_folder = os.path.join(os.path.dirname(__file__), "email_templates")
+    file_loader = FileSystemLoader(templates_folder)
+    env = Environment(loader=file_loader)
+    template = env.get_template(filename)
+
+    return template
 
 
 @amqp_router.register("address")
@@ -133,3 +146,75 @@ async def inform_manager_on_employee_address_creation(
 
     # Send email to relevant addresses
     email_client.send_email(**email_args)
+
+
+@amqp_router.register("manager")
+async def alert_on_manager_removal(
+    context: Context,
+    uuid: PayloadUUID,
+    _: RateLimit,
+) -> None:
+    """
+    Listen to manager events and inform `datagruppen` when a manager leaves the
+    company
+
+    Developed for Silkeborg Kommune
+    """
+    logger.info(f"Obtained message with uuid = {uuid}")
+
+    user_context = context["user_context"]
+    dataloader = user_context["dataloader"]
+    email_client = user_context["email_client"]
+    email_settings = user_context["email_settings"]
+
+    # Load manager data from MO
+    manager = await dataloader.load_mo_manager_data(uuid)
+    to_date = manager["validity"]["to"]
+    employee_uuid = manager["employee_uuid"]
+    org_unit_uuid = manager["org_unit_uuid"]
+
+    if not to_date:
+        logger.info("Manager is currently employed. No message will be sent")
+        return
+    else:
+        # Format the to-date as a datetime object at UTC+0
+        to_datetime = datetime.datetime.fromisoformat(to_date).replace(tzinfo=None)
+        logger.info(f"to-date (utc+0) = {to_datetime}")
+
+    # Get the current time in UTC+0
+    now = datetime.datetime.utcnow()
+    logger.info(f"now (utc+0) = {now}")
+
+    # Compare the to-date with the current time
+    # Only send a mail if the to-date is in the past
+    if to_datetime > now:
+        logger.info("to_date is in the future. A mail will not be sent")
+        return
+
+    # Load employee data from MO
+    if employee_uuid:
+        employee = await dataloader.load_mo_user_data(employee_uuid)
+    else:
+        employee = {"name": "Unknown employee"}
+
+    # Construct org unit location string
+    org_unit = await dataloader.load_mo_org_unit_data(org_unit_uuid)
+    location = await dataloader.get_org_unit_location(org_unit)
+
+    # Write message
+    context = {
+        "name": employee["name"],
+        "to_date": to_datetime.date(),
+        "location": location,
+        "user_key": org_unit["user_key"],
+    }
+
+    template = load_template("alert_on_manager_termination.html")
+    message = template.render(context=context)
+
+    email_client.send_email(
+        email_settings.receivers,
+        "En medarbejder er blevet fjernet fra lederfanen",
+        message,
+        "html",
+    )
