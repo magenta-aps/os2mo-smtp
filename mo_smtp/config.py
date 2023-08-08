@@ -76,3 +76,4 @@ class EmailSettings(BaseSettings):
             "Useful for testing purposes."
         ),
     )
+    receivers: list[str] = Field([], description="Email addresses to send mail to")
