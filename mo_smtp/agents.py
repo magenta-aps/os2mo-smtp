@@ -132,7 +132,7 @@ async def inform_manager_on_employee_address_creation(
 
 
 @amqp_router.register("manager")
-async def inform_data_group_on_manager_removal(
+async def alert_on_manager_removal(
     context: Context,
     uuid: PayloadUUID,
     _: RateLimit,
@@ -148,6 +148,7 @@ async def inform_data_group_on_manager_removal(
     user_context = context["user_context"]
     dataloader = user_context["dataloader"]
     email_client = user_context["email_client"]
+    email_settings = user_context["email_settings"]
 
     # Load manager data from MO
     manager = await dataloader.load_mo_manager_data(uuid)
@@ -235,7 +236,7 @@ async def inform_data_group_on_manager_removal(
                   """
 
     email_client.send_email(
-        ["datagruppen@silkeborg.dk"],
+        email_settings.receivers,
         "En medarbejder er blevet fjernet fra lederfanen",
         message,
         "html",
