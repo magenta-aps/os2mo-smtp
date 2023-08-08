@@ -2,11 +2,14 @@
 Python file with agents that send emails
 """
 import datetime
+import os
 from typing import Annotated
 from typing import Any
 
 import structlog
 from fastapi import Depends
+from jinja2 import Environment
+from jinja2 import FileSystemLoader
 from ramqp.depends import Context
 from ramqp.depends import rate_limit
 from ramqp.mo import MORouter
@@ -19,6 +22,15 @@ delay_on_error = AgentSettings().delay_on_error
 RateLimit = Annotated[None, Depends(rate_limit(delay_on_error))]
 
 amqp_router = MORouter()
+
+
+def load_template(filename):
+    templates_folder = os.path.join(os.path.dirname(__file__), "email_templates")
+    file_loader = FileSystemLoader(templates_folder)
+    env = Environment(loader=file_loader)
+    template = env.get_template(filename)
+
+    return template
 
 
 @amqp_router.register("address")
@@ -185,55 +197,15 @@ async def alert_on_manager_removal(
     location = await dataloader.get_org_unit_location(org_unit)
 
     # Write message
-    message = f"""\
-                    <html>
-                    <head>
-                    <style>
-                    table {{
-                        border-collapse: collapse;
-                        }}
-                    td, th {{
-                      border: 1px solid #dddddd;
-                      text-align: left;
-                      padding: 8px;
-                    }}
-                    </style>
-                    </head>
-                      <body>
-                        <p>
-                           Denne besked er for at gøre opmærksom på, at
-                           følgende medarbejder er blevet fjernet fra lederfanen
-                           i OS2mo:
-                           <br>
-                           <br>
-                           <table>
-                             <tr>
-                               <td>Navn:</td>
-                               <td>{employee["name"]}</td>
-                             </tr>
-                             <tr>
-                               <td>Slutdato på engagement:</td>
-                               <td>{to_datetime.date()}</td>
-                             </tr>
-                             <tr>
-                               <td>Placering:</td>
-                               <td>{location}</td>
-                             </tr>
-                             <tr>
-                               <td>Enhedsnummer:</td>
-                               <td>{org_unit["user_key"]}</td>
-                             </tr>
-                           </table>
-                           <br>
+    context = {
+        "name": employee["name"],
+        "to_date": to_datetime.date(),
+        "location": location,
+        "user_key": org_unit["user_key"],
+    }
 
-                           Med venlig hilsen,<br>
-                           OS2mo
-                           <br><br>
-                           Denne besked kan ikke besvares.
-                        </p>
-                      </body>
-                    </html>
-                  """
+    template = load_template("alert_on_manager_termination.html")
+    message = template.render(context=context)
 
     email_client.send_email(
         email_settings.receivers,
