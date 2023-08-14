@@ -48,7 +48,7 @@ def construct_gql_client(settings: Settings):
     """
 
     return PersistentGraphQLClient(
-        url=settings.mo_url + "/graphql/v6",
+        url=settings.mo_url + "/graphql/v7",
         client_id=settings.client_id,
         client_secret=settings.client_secret.get_secret_value(),
         auth_server=settings.auth_server,
