@@ -178,6 +178,44 @@ def test_extract_latest_object(dataloader: DataLoader):
         ]
         assert dataloader.extract_current_or_latest_object(objects)["uuid"] == uuid_obj2
 
+        # One of the objects is valid today (without to-date) - return it
+        objects = [
+            {
+                "validity": {
+                    "from": "2022-08-01T00:00:00+02:00",
+                    "to": "2022-08-02T00:00:00+02:00",
+                },
+                "uuid": uuid_obj1,
+            },
+            {
+                "validity": {
+                    "from": "2022-08-02T00:00:00+02:00",
+                    "to": None,
+                },
+                "uuid": uuid_obj2,
+            },
+        ]
+        assert dataloader.extract_current_or_latest_object(objects)["uuid"] == uuid_obj2
+
+        # One of the objects is valid today (without from-date)- return it
+        objects = [
+            {
+                "validity": {
+                    "from": None,
+                    "to": "2022-08-15T00:00:00+02:00",
+                },
+                "uuid": uuid_obj2,
+            },
+            {
+                "validity": {
+                    "from": "2022-08-15T00:00:00+02:00",
+                    "to": None,
+                },
+                "uuid": uuid_obj3,
+            },
+        ]
+        assert dataloader.extract_current_or_latest_object(objects)["uuid"] == uuid_obj2
+
         # No object is valid today - return the latest
         objects = [
             {

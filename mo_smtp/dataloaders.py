@@ -51,6 +51,18 @@ class DataLoader:
                     if now_utc > valid_from_utc and now_utc < valid_to_utc:
                         return obj
 
+                elif not valid_to and valid_from:
+                    valid_from_utc = mo_datestring_to_utc(valid_from)
+                    now_utc = datetime.datetime.utcnow()
+                    if now_utc > valid_from_utc:
+                        return obj
+
+                elif valid_to and not valid_from:
+                    valid_to_utc = mo_datestring_to_utc(valid_to)
+                    now_utc = datetime.datetime.utcnow()
+                    if now_utc < valid_to_utc:
+                        return obj
+
             # If any of the to-dates is None (i.e. valid forever); Return it
             for obj in objects:
                 if obj["validity"]["to"] is None:
