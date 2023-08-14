@@ -33,11 +33,18 @@ async def graphql_session_execute() -> AsyncGenerator:
     """
 
     yield {
-        "employees": [{"objects": [{"name": "Jack"}]}],
-        "org_units": [{"objects": [{"name": "Jack's organisation"}]}],
-        "addresses": [
-            {"current": {"name": "jack@place.net", "address_type": {"scope": "EMAIL"}}}
-        ],
+        "employees": {"objects": [{"objects": [{"name": "Jack"}]}]},
+        "org_units": {"objects": [{"objects": [{"name": "Jack's organisation"}]}]},
+        "addresses": {
+            "objects": [
+                {
+                    "current": {
+                        "name": "jack@place.net",
+                        "address_type": {"scope": "EMAIL"},
+                    }
+                }
+            ]
+        },
     }
 
 
@@ -50,7 +57,7 @@ async def test_load_mo_user_data(
     dataloader.gql_client.execute.return_value = graphql_session_execute
 
     result = await dataloader.load_mo_user_data(uuid)
-    assert graphql_session_execute["employees"][0]["objects"][0] == result
+    assert graphql_session_execute["employees"]["objects"][0]["objects"][0] == result
 
 
 async def test_load_mo_org_unit_data(
@@ -62,7 +69,7 @@ async def test_load_mo_org_unit_data(
     dataloader.gql_client.execute.return_value = graphql_session_execute
 
     result = await dataloader.load_mo_org_unit_data(uuid)
-    assert graphql_session_execute["org_units"][0]["objects"][0] == result
+    assert graphql_session_execute["org_units"]["objects"][0]["objects"][0] == result
 
 
 async def test_load_mo_address_data(
@@ -74,7 +81,7 @@ async def test_load_mo_address_data(
     dataloader.gql_client.execute.return_value = graphql_session_execute
 
     result = await dataloader.load_mo_address_data(uuid)
-    assert graphql_session_execute["addresses"][0]["current"] == result
+    assert graphql_session_execute["addresses"]["objects"][0]["current"] == result
 
     dataloader.gql_client.execute.return_value = {"addresses": []}
 
@@ -88,7 +95,7 @@ async def test_load_mo_manager_data(dataloader: DataLoader):
         "org_unit_uuid": uuid4(),
         "validity": {"to": "2020-01-01T00:00+02:00"},
     }
-    manager_response = {"managers": [{"objects": [manager_dict]}]}
+    manager_response = {"managers": {"objects": [{"objects": [manager_dict]}]}}
     dataloader.gql_client.execute.return_value = manager_response
 
     result = await dataloader.load_mo_manager_data(uuid4())
