@@ -85,11 +85,13 @@ class DataLoader:
                   to_date: null
               ) {
                 objects {
-                  employee_uuid
-                  org_unit_uuid
-                  validity {
-                    to
-                    from
+                  objects {
+                    employee_uuid
+                    org_unit_uuid
+                    validity {
+                      to
+                      from
+                    }
                   }
                 }
               }
@@ -99,7 +101,9 @@ class DataLoader:
         )
 
         result = await self.gql_client.execute(query)
-        return self.extract_current_or_latest_object(result["managers"][0]["objects"])
+        return self.extract_current_or_latest_object(
+            result["managers"]["objects"][0]["objects"]
+        )
 
     async def load_mo_user_data(self, uuid: UUID) -> Any:
         """
@@ -119,15 +123,17 @@ class DataLoader:
                 query getData {
                   employees(uuids: "%s") {
                     objects {
-                      name
-                      addresses {
-                        value
-                        address_type {
-                          scope
+                      objects {
+                        name
+                        addresses {
+                          value
+                          address_type {
+                            scope
+                          }
                         }
-                      }
-                      engagements {
-                        org_unit_uuid
+                        engagements {
+                          org_unit_uuid
+                        }
                       }
                     }
                   }
@@ -137,7 +143,7 @@ class DataLoader:
             )
         )
         result = await self.gql_client.execute(query)
-        return result["employees"][0]["objects"][0]
+        return result["employees"]["objects"][0]["objects"][0]
 
     async def load_mo_root_org_uuid(self):
         query = gql(
@@ -171,11 +177,13 @@ class DataLoader:
                 query getData {
                   org_units(uuids: "%s") {
                     objects {
-                      name
-                      user_key
-                      parent_uuid
-                      managers {
-                        employee_uuid
+                      objects {
+                        name
+                        user_key
+                        parent_uuid
+                        managers {
+                          employee_uuid
+                        }
                       }
                     }
                   }
@@ -185,7 +193,7 @@ class DataLoader:
             )
         )
         result = await self.gql_client.execute(query)
-        return result["org_units"][0]["objects"][0]
+        return result["org_units"]["objects"][0]["objects"][0]
 
     async def load_mo_address_data(self, uuid: UUID) -> Any:
         """
@@ -203,11 +211,13 @@ class DataLoader:
                 """
                 query getData {
                   addresses(uuids: "%s") {
-                    current {
-                      name
-                      employee_uuid
-                      address_type {
-                        scope
+                    objects {
+                      current {
+                        name
+                        employee_uuid
+                        address_type {
+                          scope
+                        }
                       }
                     }
                   }
@@ -218,7 +228,7 @@ class DataLoader:
         )
         result = await self.gql_client.execute(query)
         if result["addresses"]:
-            return result["addresses"][0]["current"]
+            return result["addresses"]["objects"][0]["current"]
         else:
             return
 
