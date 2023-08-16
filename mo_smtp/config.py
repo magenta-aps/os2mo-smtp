@@ -10,9 +10,12 @@ from ramqp.config import AMQPConnectionSettings
 
 
 class SmtpAMQPConnectionSettings(AMQPConnectionSettings):
-    exchange = "smtp"
     queue_prefix = "smtp"
     prefetch_count = 1  # MO cannot handle too many requests
+
+
+class SmtpFastRAMQPISettings(FastRAMQPISettings):
+    amqp: SmtpAMQPConnectionSettings
 
 
 class Settings(BaseSettings):
@@ -20,11 +23,7 @@ class Settings(BaseSettings):
         frozen = True
         env_nested_delimiter = "__"
 
-    fastramqpi: FastRAMQPISettings = Field(
-        default_factory=FastRAMQPISettings, description="FastRAMQPI settings"
-    )
-
-    amqp: SmtpAMQPConnectionSettings
+    fastramqpi: SmtpFastRAMQPISettings
 
     mo_url: AnyHttpUrl = Field(
         parse_obj_as(AnyHttpUrl, "http://mo-service:5000"),
