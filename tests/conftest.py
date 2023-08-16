@@ -19,7 +19,7 @@ def settings_overrides() -> Iterator[dict[str, Any]]:
         "testing": "True",
         "smtp_port": 25,
         "smtp_host": "smtp.host.com",
-        "amqp__url": "amqp://guest:guest@msg_broker:5672/",
+        "fastramqpi__amqp__url": "amqp://guest:guest@msg_broker:5672/",
     }
     yield overrides
 
