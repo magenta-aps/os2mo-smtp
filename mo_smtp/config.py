@@ -65,7 +65,7 @@ class EmailSettings(BaseSettings):
     smtp_port: int = Field(..., description="SMTP port")
     smtp_host: str = Field(..., description="SMTP host. For example 'smtp.gmail.com' ")
     testing: bool = Field(
-        True,
+        False,
         description="When True, will print mails to the console but not send anything",
     )
     receiver_override: str = Field(
