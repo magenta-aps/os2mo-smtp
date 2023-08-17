@@ -141,6 +141,10 @@ async def test_inform_manager_on_employee_address_creation_multiple_engagements(
                 "employee_uuid": uuid_manager,
                 "name": "Manny O'ager",
             },
+            {
+                "employee_uuid": None,  # employee_uuid is optional in MO
+                "name": "Manny O'ager",
+            },
         ],
     }
     ou2 = {
