@@ -127,6 +127,8 @@ async def inform_manager_on_employee_address_creation(
 
         manager_emails = set()
         for manager_uuid in manager_uuids:
+            if not manager_uuid:
+                continue
             manager = await dataloader.load_mo_user_data(manager_uuid)
             manager_emails.update(
                 [
