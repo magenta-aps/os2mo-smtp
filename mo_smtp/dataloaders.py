@@ -3,6 +3,7 @@ from typing import Any
 from typing import Union
 from uuid import UUID
 
+from fastapi.encoders import jsonable_encoder
 from fastramqpi.context import Context
 from gql import gql
 
@@ -78,9 +79,9 @@ class DataLoader:
     async def load_mo_manager_data(self, uuid: UUID) -> Any:
         query = gql(
             """
-            query getManagerData {
+            query getManagerData($uuids: [UUID!]) {
               managers(
-                  uuids: "%s",
+                  uuids: $uuids,
                   from_date: null
                   to_date: null
               ) {
@@ -97,10 +98,10 @@ class DataLoader:
               }
             }
             """
-            % uuid
         )
 
-        result = await self.gql_client.execute(query)
+        variable_values = jsonable_encoder({"uuids": uuid})
+        result = await self.gql_client.execute(query, variable_values=variable_values)
         return self.extract_current_or_latest_object(
             result["managers"]["objects"][0]["objects"]
         )
@@ -118,10 +119,9 @@ class DataLoader:
         """
 
         query = gql(
-            (
-                """
-                query getData {
-                  employees(uuids: "%s") {
+            """
+                query getData($uuids: [UUID!]) {
+                  employees(uuids: $uuids) {
                     objects {
                       objects {
                         name
@@ -139,23 +139,20 @@ class DataLoader:
                   }
                 }
                 """
-                % uuid
-            )
         )
-        result = await self.gql_client.execute(query)
+        variable_values = jsonable_encoder({"uuids": uuid})
+        result = await self.gql_client.execute(query, variable_values=variable_values)
         return result["employees"]["objects"][0]["objects"][0]
 
     async def load_mo_root_org_uuid(self):
         query = gql(
-            (
-                """
+            """
                 query getData {
                   org {
                     uuid
                   }
                 }
                 """
-            )
         )
         result = await self.gql_client.execute(query)
         return result["org"]["uuid"]
@@ -172,10 +169,9 @@ class DataLoader:
             Dictionary with queried org unit data
         """
         query = gql(
-            (
-                """
-                query getData {
-                  org_units(uuids: "%s") {
+            """
+                query getData($uuids: [UUID!]) {
+                  org_units(uuids: $uuids) {
                     objects {
                       objects {
                         name
@@ -189,10 +185,9 @@ class DataLoader:
                   }
                 }
                 """
-                % uuid
-            )
         )
-        result = await self.gql_client.execute(query)
+        variable_values = jsonable_encoder({"uuids": uuid})
+        result = await self.gql_client.execute(query, variable_values=variable_values)
         return result["org_units"]["objects"][0]["objects"][0]
 
     async def load_mo_address_data(self, uuid: UUID) -> Any:
@@ -207,10 +202,9 @@ class DataLoader:
             Dictionary with queried address data
         """
         query = gql(
-            (
-                """
-                query getData {
-                  addresses(uuids: "%s") {
+            """
+                query getData($uuids: [UUID!]) {
+                  addresses(uuids: $uuids) {
                     objects {
                       current {
                         name
@@ -223,10 +217,9 @@ class DataLoader:
                   }
                 }
                 """
-                % uuid
-            )
         )
-        result = await self.gql_client.execute(query)
+        variable_values = jsonable_encoder({"uuids": uuid})
+        result = await self.gql_client.execute(query, variable_values=variable_values)
         if result["addresses"]:
             return result["addresses"]["objects"][0]["current"]
         else:
