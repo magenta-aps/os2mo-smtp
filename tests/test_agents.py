@@ -1,11 +1,14 @@
 # -*- coding: utf-8 -*-
+import datetime
 from typing import Any
 from unittest.mock import AsyncMock
 from unittest.mock import MagicMock
+from unittest.mock import patch
 from uuid import UUID
 from uuid import uuid4
 
 import pytest
+import pytz  # type: ignore
 from fastramqpi.context import Context
 from structlog.testing import capture_logs
 
@@ -16,6 +19,13 @@ from mo_smtp.agents import inform_manager_on_employee_address_creation
 @pytest.fixture
 def dataloader() -> AsyncMock:
     return AsyncMock()
+
+
+@pytest.fixture
+def DataLoader(dataloader: AsyncMock) -> MagicMock:
+    DataLoader = MagicMock()
+    DataLoader.return_value = dataloader
+    return DataLoader
 
 
 @pytest.fixture
@@ -40,7 +50,7 @@ def context(dataloader: AsyncMock, email_client: MagicMock) -> Context:
 
 
 async def test_inform_manager_on_employee_address_creation_no_engagements(
-    dataloader: AsyncMock, context: Context
+    DataLoader: MagicMock, dataloader: AsyncMock, context: Context
 ) -> None:
     """
     Test that inform_manager_on_employee_address_creation method performs
@@ -73,14 +83,17 @@ async def test_inform_manager_on_employee_address_creation_no_engagements(
     dataloader.load_mo_address_data.return_value = employee_address
     dataloader.load_mo_user_data.return_value = employee
 
-    await inform_manager_on_employee_address_creation(context, uuid_address, None)
+    with patch("mo_smtp.agents.DataLoader", DataLoader):
+        await inform_manager_on_employee_address_creation(
+            context, uuid_address, None, None
+        )
 
     dataloader.load_mo_user_data.assert_any_await(uuid_employee)
     dataloader.load_mo_address_data.assert_awaited_with(uuid_address)
 
 
 async def test_inform_manager_on_employee_address_creation_multiple_engagements(
-    dataloader: AsyncMock, context: Context
+    DataLoader: MagicMock, dataloader: AsyncMock, context: Context
 ) -> None:
     """
     Test that inform_manager_on_employee_address_creation method performs
@@ -164,7 +177,8 @@ async def test_inform_manager_on_employee_address_creation_multiple_engagements(
     dataloader.load_mo_address_data.return_value = employee_address
     dataloader.load_mo_org_unit_data = AsyncMock(side_effect=[ou1, ou2])
 
-    await inform_manager_on_employee_address_creation(context, uuid4(), None)
+    with patch("mo_smtp.agents.DataLoader", DataLoader):
+        await inform_manager_on_employee_address_creation(context, uuid4(), None, None)
 
     dataloader.load_mo_user_data.assert_any_await(uuid_employee)
     dataloader.load_mo_user_data.assert_awaited_with(uuid_manager)
@@ -173,7 +187,7 @@ async def test_inform_manager_on_employee_address_creation_multiple_engagements(
 
 
 async def test_inform_manager_on_employee_address_creation_not_email(
-    dataloader: AsyncMock, context: Context
+    DataLoader: MagicMock, dataloader: AsyncMock, context: Context
 ) -> None:
     """
     Tests that inform_manager_on_employee_address_creation rejects amqp
@@ -189,14 +203,18 @@ async def test_inform_manager_on_employee_address_creation_not_email(
     }
 
     dataloader.load_mo_address_data.return_value = employee_address
-    await inform_manager_on_employee_address_creation(context, uuid_address, None)
+
+    with patch("mo_smtp.agents.DataLoader", DataLoader):
+        await inform_manager_on_employee_address_creation(
+            context, uuid_address, None, None
+        )
 
     dataloader.load_mo_address_data.assert_awaited_once_with(uuid_address)
     dataloader.load_mo_user_data.assert_not_awaited()
 
 
 async def test_inform_manager_on_employee_address_creation_invalid_user_email(
-    dataloader: AsyncMock, context: Context
+    DataLoader: MagicMock, dataloader: AsyncMock, context: Context
 ) -> None:
     """
     Tests that inform_manager_on_employee_address_creation rejects messages with
@@ -229,7 +247,10 @@ async def test_inform_manager_on_employee_address_creation_invalid_user_email(
         dataloader.load_mo_user_data.return_value = employee
         dataloader.load_mo_address_data.return_value = employee_address
 
-        await inform_manager_on_employee_address_creation(context, uuid_address, None)
+        with patch("mo_smtp.agents.DataLoader", DataLoader):
+            await inform_manager_on_employee_address_creation(
+                context, uuid_address, None, None
+            )
 
         dataloader.load_mo_user_data.assert_awaited_once_with(uuid_employee)
         dataloader.load_mo_address_data.assert_awaited_once_with(uuid_address)
@@ -237,7 +258,7 @@ async def test_inform_manager_on_employee_address_creation_invalid_user_email(
 
 
 async def test_inform_manager_on_employee_address_creation_multiple_email_addresses(
-    dataloader: AsyncMock, context: Context
+    DataLoader: MagicMock, dataloader: AsyncMock, context: Context
 ) -> None:
     """
     Tests that inform_manager_on_employee_address_creation rejects messages
@@ -271,14 +292,17 @@ async def test_inform_manager_on_employee_address_creation_multiple_email_addres
     dataloader.load_mo_user_data.return_value = employee
     dataloader.load_mo_address_data.return_value = employee_address
 
-    await inform_manager_on_employee_address_creation(context, uuid_address, None)
+    with patch("mo_smtp.agents.DataLoader", DataLoader):
+        await inform_manager_on_employee_address_creation(
+            context, uuid_address, None, None
+        )
 
     dataloader.load_mo_user_data.assert_awaited_once_with(uuid_employee)
     dataloader.load_mo_address_data.assert_awaited_once_with(uuid_address)
 
 
 async def test_inform_manager_on_org_unit_address_creation(
-    dataloader: AsyncMock, context: Context
+    DataLoader: MagicMock, dataloader: AsyncMock, context: Context
 ):
 
     org_unit_address = {
@@ -290,12 +314,15 @@ async def test_inform_manager_on_org_unit_address_creation(
     dataloader.load_mo_address_data.return_value = org_unit_address
 
     with capture_logs() as cap_logs:
-        await inform_manager_on_employee_address_creation(context, uuid4(), None)
+        with patch("mo_smtp.agents.DataLoader", DataLoader):
+            await inform_manager_on_employee_address_creation(
+                context, uuid4(), None, None
+            )
         assert "The address does not belong to an employee" in str(cap_logs)
 
 
 async def test_alert_on_manager_removal_currently_employed(
-    dataloader: AsyncMock, context: Context
+    DataLoader: MagicMock, dataloader: AsyncMock, context: Context
 ):
     manager = {
         "employee_uuid": uuid4(),
@@ -305,32 +332,42 @@ async def test_alert_on_manager_removal_currently_employed(
 
     dataloader.load_mo_manager_data.return_value = manager
     with capture_logs() as cap_logs:
-        await alert_on_manager_removal(context, uuid4(), None)
+        with patch("mo_smtp.agents.DataLoader", DataLoader):
+            await alert_on_manager_removal(context, uuid4(), None, None)
         assert "Manager is currently employed" in str(cap_logs)
 
 
 async def test_alert_on_manager_removal_future_to_date(
-    dataloader: AsyncMock, context: Context
+    DataLoader: MagicMock, dataloader: AsyncMock, context: Context
 ):
     manager = {
         "employee_uuid": uuid4(),
         "org_unit_uuid": uuid4(),
-        "validity": {"to": "2090-01-01T00:00+02:00"},
+        "validity": {
+            "to": datetime.datetime(
+                2090, 1, 1, tzinfo=pytz.timezone("Europe/Copenhagen")
+            )
+        },
     }
 
     dataloader.load_mo_manager_data.return_value = manager
     with capture_logs() as cap_logs:
-        await alert_on_manager_removal(context, uuid4(), None)
+        with patch("mo_smtp.agents.DataLoader", DataLoader):
+            await alert_on_manager_removal(context, uuid4(), None, None)
         assert "to_date is in the future" in str(cap_logs)
 
 
 async def test_alert_on_manager_removal_past_to_date(
-    dataloader: AsyncMock, context: Context
+    DataLoader: MagicMock, dataloader: AsyncMock, context: Context
 ):
     manager = {
         "employee_uuid": uuid4(),
         "org_unit_uuid": uuid4(),
-        "validity": {"to": "2000-01-01T00:00+02:00"},
+        "validity": {
+            "to": datetime.datetime(
+                2000, 1, 1, tzinfo=pytz.timezone("Europe/Copenhagen")
+            )
+        },
     }
 
     dataloader.load_mo_manager_data.return_value = manager
@@ -339,7 +376,8 @@ async def test_alert_on_manager_removal_past_to_date(
     dataloader.load_mo_org_unit_data.return_value = {"user_key": "123stones"}
     dataloader.get_org_unit_location = AsyncMock()  # type: ignore
     dataloader.get_org_unit_location.return_value = "Rolling / Stones"
-    await alert_on_manager_removal(context, uuid4(), None)
+    with patch("mo_smtp.agents.DataLoader", DataLoader):
+        await alert_on_manager_removal(context, uuid4(), None, None)
     email_client = context["user_context"]["email_client"]
     email_client.send_email.assert_called_once()
 
@@ -354,17 +392,22 @@ async def test_alert_on_manager_removal_past_to_date(
 
 
 async def test_alert_on_manager_removal_unknown_employee(
-    dataloader: AsyncMock, context: Context
+    DataLoader: MagicMock, dataloader: AsyncMock, context: Context
 ):
     manager = {
         "employee_uuid": None,
         "org_unit_uuid": uuid4(),
-        "validity": {"to": "2000-01-01T00:00+02:00"},
+        "validity": {
+            "to": datetime.datetime(
+                2000, 1, 1, tzinfo=pytz.timezone("Europe/Copenhagen")
+            )
+        },
     }
 
     dataloader.load_mo_manager_data.return_value = manager
     dataloader.get_org_unit_location = AsyncMock()  # type: ignore
-    await alert_on_manager_removal(context, uuid4(), None)
+    with patch("mo_smtp.agents.DataLoader", DataLoader):
+        await alert_on_manager_removal(context, uuid4(), None, None)
     email_client = context["user_context"]["email_client"]
 
     email_client.send_email.assert_called_once()
@@ -374,11 +417,14 @@ async def test_alert_on_manager_removal_unknown_employee(
 
 
 async def test_inform_manager_address_not_found(
-    dataloader: AsyncMock, context: Context
+    DataLoader: MagicMock, dataloader: AsyncMock, context: Context
 ):
 
     dataloader.load_mo_address_data.return_value = None
 
     with capture_logs() as cap_logs:
-        await inform_manager_on_employee_address_creation(context, uuid4(), None)
+        with patch("mo_smtp.agents.DataLoader", DataLoader):
+            await inform_manager_on_employee_address_creation(
+                context, uuid4(), None, None
+            )
         assert "Address not found" in str(cap_logs)

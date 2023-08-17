@@ -1,0 +1,78 @@
+# SPDX-FileCopyrightText: Magenta ApS <https://magenta.dk>
+# SPDX-License-Identifier: MPL-2.0
+
+query getManagerData($uuids: [UUID!]) {
+  managers(
+      uuids: $uuids,
+      from_date: null
+      to_date: null
+  ) {
+    objects {
+      objects {
+        employee_uuid
+        org_unit_uuid
+        validity {
+          to
+          from
+        }
+      }
+    }
+  }
+}
+
+
+query getUserData($uuids: [UUID!]) {
+  employees(uuids: $uuids) {
+    objects {
+      objects {
+        name
+        addresses {
+          value
+          address_type {
+            scope
+          }
+        }
+        engagements {
+          org_unit_uuid
+        }
+      }
+    }
+  }
+}
+
+
+query getRootOrg {
+  org {
+    uuid
+  }
+}
+
+
+query getOrgUnitData($uuids: [UUID!]) {
+  org_units(uuids: $uuids) {
+    objects {
+      objects {
+        name
+        user_key
+        parent_uuid
+        managers {
+          employee_uuid
+        }
+      }
+    }
+  }
+}
+
+query getAddressData($uuids: [UUID!]) {
+  addresses(uuids: $uuids) {
+    objects {
+      current {
+        name
+        employee_uuid
+        address_type {
+          scope
+        }
+      }
+    }
+  }
+}
