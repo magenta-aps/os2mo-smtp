@@ -1,12 +1,9 @@
 from typing import List
 
 from fastramqpi.config import Settings as FastRAMQPISettings
-from pydantic import AnyHttpUrl
 from pydantic import BaseSettings
 from pydantic import Field
-from pydantic import parse_obj_as
 from pydantic import PositiveInt
-from pydantic import SecretStr
 from ramqp.config import AMQPConnectionSettings
 
 
@@ -26,22 +23,6 @@ class Settings(BaseSettings):
         env_nested_delimiter = "__"
 
     fastramqpi: SmtpFastRAMQPISettings
-
-    mo_url: AnyHttpUrl = Field(
-        parse_obj_as(AnyHttpUrl, "http://mo-service:5000"),
-        description="Base URL for OS2mo.",
-    )
-
-    client_id: str = Field("bruce", description="Client ID for OIDC client.")
-    client_secret: SecretStr = Field(..., description="Client Secret for OIDC client.")
-
-    auth_server: AnyHttpUrl = Field(
-        parse_obj_as(AnyHttpUrl, "http://keycloak-service:8080/auth"),
-        description="Base URL for OIDC server (Keycloak).",
-    )
-    auth_realm: str = Field("mo", description="Realm to authenticate against")
-
-    graphql_timeout: int = 120
 
     application_name: str = "os2mo_email_listener"
 
