@@ -5,6 +5,7 @@ from pydantic import AnyHttpUrl
 from pydantic import BaseSettings
 from pydantic import Field
 from pydantic import parse_obj_as
+from pydantic import PositiveInt
 from pydantic import SecretStr
 from ramqp.config import AMQPConnectionSettings
 
@@ -16,6 +17,7 @@ class SmtpAMQPConnectionSettings(AMQPConnectionSettings):
 
 class SmtpFastRAMQPISettings(FastRAMQPISettings):
     amqp: SmtpAMQPConnectionSettings
+    mo_graphql_version: PositiveInt = 7
 
 
 class Settings(BaseSettings):

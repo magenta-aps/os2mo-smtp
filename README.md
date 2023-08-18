@@ -19,6 +19,16 @@ You can get the coverage report like this:
 
 `poetry run pytest -s --cov --cov-report term-missing -vvx`
 
+### Updating the auto-generated grapqhql client
+
+You can update the auto-generated graphql client code like this:
+
+```
+poetry run ariadne-codegen
+```
+
+The only thing which the code generator needs is a query in `queries.graphql`.
+
 ### Using the app
 
 First make sure that OS2mo is up and running.

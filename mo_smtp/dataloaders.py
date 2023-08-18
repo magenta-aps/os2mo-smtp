@@ -3,12 +3,8 @@ from typing import Any
 from typing import Union
 from uuid import UUID
 
-from fastapi.encoders import jsonable_encoder
-from fastramqpi.context import Context
-from gql import gql
 
-
-def mo_datestring_to_utc(datestring: Union[str, None]):
+def mo_datestring_to_utc(datestring: Union[datetime.datetime, None]):
     """
     Returns datetime object at UTC+0
 
@@ -18,17 +14,17 @@ def mo_datestring_to_utc(datestring: Union[str, None]):
     This function essentially removes the "+01:00" part, which gives a UTC+0 timestamp.
     """
     if datestring:
-        return datetime.datetime.fromisoformat(datestring).replace(tzinfo=None)
+        return datestring.replace(tzinfo=None)
     else:
         return None
 
 
 class DataLoader:
-    def __init__(self, context: Context):
-        self.gql_client = context["user_context"]["gql_client"]
+    def __init__(self, mo):
+        self.mo = mo
 
     @staticmethod
-    def extract_current_or_latest_object(objects: list[dict]):
+    def extract_current_or_latest_object(objects: list[Any]):
         """
         Check the validity in a list of object dictionaries and return the one which
         is either valid today, or has the latest end-date
@@ -42,8 +38,8 @@ class DataLoader:
             # If any of the objects is valid today, return it
             latest_object = None
             for obj in objects:
-                valid_to = mo_datestring_to_utc(obj["validity"]["to"])
-                valid_from = mo_datestring_to_utc(obj["validity"]["from"])
+                valid_to = mo_datestring_to_utc(obj.validity.to)  # type: ignore
+                valid_from = mo_datestring_to_utc(obj.validity.from_)  # type: ignore
 
                 if valid_to and valid_from:
                     now_utc = datetime.datetime.utcnow()
@@ -64,7 +60,7 @@ class DataLoader:
                 if valid_to:
                     if latest_object:
                         latest_valid_to = mo_datestring_to_utc(
-                            latest_object["validity"]["to"]
+                            latest_object.validity.to
                         )
                         if latest_valid_to and valid_to > latest_valid_to:
                             latest_object = obj
@@ -77,34 +73,8 @@ class DataLoader:
             return latest_object
 
     async def load_mo_manager_data(self, uuid: UUID) -> Any:
-        query = gql(
-            """
-            query getManagerData($uuids: [UUID!]) {
-              managers(
-                  uuids: $uuids,
-                  from_date: null
-                  to_date: null
-              ) {
-                objects {
-                  objects {
-                    employee_uuid
-                    org_unit_uuid
-                    validity {
-                      to
-                      from
-                    }
-                  }
-                }
-              }
-            }
-            """
-        )
-
-        variable_values = jsonable_encoder({"uuids": uuid})
-        result = await self.gql_client.execute(query, variable_values=variable_values)
-        return self.extract_current_or_latest_object(
-            result["managers"]["objects"][0]["objects"]
-        )
+        result = await self.mo.get_manager_data(uuid)
+        return self.extract_current_or_latest_object(result.objects[0].objects).dict()
 
     async def load_mo_user_data(self, uuid: UUID) -> Any:
         """
@@ -117,45 +87,12 @@ class DataLoader:
         Return:
             Dictionary with queried user data
         """
-
-        query = gql(
-            """
-                query getData($uuids: [UUID!]) {
-                  employees(uuids: $uuids) {
-                    objects {
-                      objects {
-                        name
-                        addresses {
-                          value
-                          address_type {
-                            scope
-                          }
-                        }
-                        engagements {
-                          org_unit_uuid
-                        }
-                      }
-                    }
-                  }
-                }
-                """
-        )
-        variable_values = jsonable_encoder({"uuids": uuid})
-        result = await self.gql_client.execute(query, variable_values=variable_values)
-        return result["employees"]["objects"][0]["objects"][0]
+        result = await self.mo.get_user_data(uuid)
+        return result.objects[0].objects[0].dict()
 
     async def load_mo_root_org_uuid(self):
-        query = gql(
-            """
-                query getData {
-                  org {
-                    uuid
-                  }
-                }
-                """
-        )
-        result = await self.gql_client.execute(query)
-        return result["org"]["uuid"]
+        result = await self.mo.get_root_org()
+        return result.uuid
 
     async def load_mo_org_unit_data(self, uuid: UUID) -> Any:
         """
@@ -168,27 +105,8 @@ class DataLoader:
         Return:
             Dictionary with queried org unit data
         """
-        query = gql(
-            """
-                query getData($uuids: [UUID!]) {
-                  org_units(uuids: $uuids) {
-                    objects {
-                      objects {
-                        name
-                        user_key
-                        parent_uuid
-                        managers {
-                          employee_uuid
-                        }
-                      }
-                    }
-                  }
-                }
-                """
-        )
-        variable_values = jsonable_encoder({"uuids": uuid})
-        result = await self.gql_client.execute(query, variable_values=variable_values)
-        return result["org_units"]["objects"][0]["objects"][0]
+        result = await self.mo.get_org_unit_data(uuid)
+        return result.objects[0].objects[0].dict()
 
     async def load_mo_address_data(self, uuid: UUID) -> Any:
         """
@@ -201,27 +119,9 @@ class DataLoader:
         Return:
             Dictionary with queried address data
         """
-        query = gql(
-            """
-                query getData($uuids: [UUID!]) {
-                  addresses(uuids: $uuids) {
-                    objects {
-                      current {
-                        name
-                        employee_uuid
-                        address_type {
-                          scope
-                        }
-                      }
-                    }
-                  }
-                }
-                """
-        )
-        variable_values = jsonable_encoder({"uuids": uuid})
-        result = await self.gql_client.execute(query, variable_values=variable_values)
-        if result["addresses"]:
-            return result["addresses"]["objects"][0]["current"]
+        result = await self.mo.get_address_data(uuid)
+        if result.objects:
+            return result.objects[0].current.dict()
         else:
             return
 

@@ -15,7 +15,9 @@ from ramqp.depends import rate_limit
 from ramqp.mo import MORouter
 from ramqp.mo import PayloadUUID
 
+from . import depends
 from .config import AgentSettings
+from .dataloaders import DataLoader
 
 logger = structlog.get_logger()
 delay_on_error = AgentSettings().delay_on_error
@@ -38,6 +40,7 @@ async def inform_manager_on_employee_address_creation(
     context: Context,
     uuid: PayloadUUID,
     _: RateLimit,
+    mo: depends.GraphQLClient,
 ) -> None:
     """
     Listen to address creation events and inform the employee as well as his manager
@@ -45,8 +48,8 @@ async def inform_manager_on_employee_address_creation(
     logger.info(f"Obtained message with uuid = {uuid}")
 
     user_context = context["user_context"]
-    dataloader = user_context["dataloader"]
     email_client = user_context["email_client"]
+    dataloader = DataLoader(mo)
 
     # Prepare dictionary to store email arguments
     email_args: dict[str, Any] = {}
@@ -155,6 +158,7 @@ async def alert_on_manager_removal(
     context: Context,
     uuid: PayloadUUID,
     _: RateLimit,
+    mo: depends.GraphQLClient,
 ) -> None:
     """
     Listen to manager events and inform `datagruppen` when a manager leaves the
@@ -165,9 +169,9 @@ async def alert_on_manager_removal(
     logger.info(f"Obtained message with uuid = {uuid}")
 
     user_context = context["user_context"]
-    dataloader = user_context["dataloader"]
     email_client = user_context["email_client"]
     email_settings = user_context["email_settings"]
+    dataloader = DataLoader(mo)
 
     # Load manager data from MO
     manager = await dataloader.load_mo_manager_data(uuid)
@@ -180,7 +184,7 @@ async def alert_on_manager_removal(
         return
     else:
         # Format the to-date as a datetime object at UTC+0
-        to_datetime = datetime.datetime.fromisoformat(to_date).replace(tzinfo=None)
+        to_datetime = to_date.replace(tzinfo=None)
         logger.info(f"to-date (utc+0) = {to_datetime}")
 
     # Get the current time in UTC+0
