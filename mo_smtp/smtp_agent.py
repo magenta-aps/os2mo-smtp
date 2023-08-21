@@ -76,6 +76,7 @@ def create_fastramqpi(**kwargs: Any) -> FastRAMQPI:
             subject="Test mail from OS2MO-smtp agent",
             body="If you see this mail, the test has succeeded",
             texttype="plain",
+            allow_receiver_override=False,
         )
 
     return fastramqpi
