@@ -25,6 +25,7 @@ class EmailClient:
         texttype: str = "plain",
         cc: set[str] = {""},
         bcc: set[str] = {""},
+        allow_receiver_override=True,
     ) -> MIMEText:
         """
         Sends outgoing email given parameters
@@ -55,7 +56,7 @@ class EmailClient:
         msg = MIMEText(body, texttype, _charset="utf-8")
         msg["Subject"] = subject
         msg["From"] = self.sender
-        if self.receiver_override:
+        if self.receiver_override and allow_receiver_override:
             msg["To"] = self.receiver_override
         else:
             msg["To"] = ", ".join(receiver)
