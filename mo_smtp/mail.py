@@ -12,7 +12,8 @@ logger = structlog.get_logger()
 class EmailClient:
     def __init__(self, context: Context):
         email_settings = context["user_context"]["email_settings"]
-        self.smtp = SMTP(host=email_settings.smtp_host, port=email_settings.smtp_port)
+        self.smtp_host = email_settings.smtp_host
+        self.smtp_port = email_settings.smtp_port
         self.sender = email_settings.sender
         self.testing = email_settings.testing
         self.receiver_override = email_settings.receiver_override
@@ -75,12 +76,15 @@ class EmailClient:
         logger.info("Body: " + msg.get_payload(decode=True).decode())
 
         if not self.testing:
+            smtp = SMTP(host=self.smtp_host, port=self.smtp_port)
+
             try:
-                self.smtp.starttls()
-                self.smtp.ehlo_or_helo_if_needed()
+                smtp.starttls()
+                smtp.ehlo_or_helo_if_needed()
             except SMTPNotSupportedError:
                 logger.info("SMTP server doesn't use TLS. TLS ignored")
-            self.smtp.send_message(msg)  # type: ignore
+            smtp.send_message(msg)  # type: ignore
+            smtp.quit()
         else:
             logger.info("This was a test run. No message was sent")
         return msg
