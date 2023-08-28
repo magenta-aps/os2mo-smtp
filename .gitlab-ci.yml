@@ -93,4 +93,19 @@ Deploy to Prod:
   variables:
     ENDPOINT: os2mo/salt/smtp/update-prod
 
+# Release to flux
+Deploy to Flux Dev:
+  extends: .release-to-dev
+  needs: ["Build", "Release version"]
+  variables:
+    ENDPOINT: os2mo/flux/smtp/update-dev
 
+Deploy to Flux Test:
+  extends: .release-to-test
+  variables:
+    ENDPOINT: os2mo/flux/smtp/update-test
+
+Deploy to Flux Prod:
+  extends: .release-to-prod
+  variables:
+    ENDPOINT: os2mo/flux/smtp/update-prod
