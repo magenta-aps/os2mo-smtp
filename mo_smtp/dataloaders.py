@@ -80,7 +80,9 @@ class DataLoader:
 
     async def load_mo_manager_data(self, uuid: UUID) -> Any:
         result = await self.mo.get_manager_data(uuid)
-        return self.extract_current_or_latest_object(result.objects[0].objects).dict()
+        objects = result.objects
+        if objects:
+            return self.extract_current_or_latest_object(objects[0].objects).dict()
 
     async def load_mo_user_data(self, uuid: UUID) -> Any:
         """

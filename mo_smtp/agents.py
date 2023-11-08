@@ -175,6 +175,10 @@ async def alert_on_manager_removal(
 
     # Load manager data from MO
     manager = await dataloader.load_mo_manager_data(uuid)
+    if not manager:
+        logger.info("Manager not found")
+        return
+
     to_date = manager["validity"]["to"]
     employee_uuid = manager["employee_uuid"]
     org_unit_uuid = manager["org_unit_uuid"]

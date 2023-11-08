@@ -321,6 +321,17 @@ async def test_inform_manager_on_org_unit_address_creation(
         assert "The address does not belong to an employee" in str(cap_logs)
 
 
+async def test_alert_on_manager_removal_manager_not_found(
+    DataLoader: MagicMock, dataloader: AsyncMock, context: Context
+):
+
+    dataloader.load_mo_manager_data.return_value = None
+    with capture_logs() as cap_logs:
+        with patch("mo_smtp.agents.DataLoader", DataLoader):
+            await alert_on_manager_removal(context, uuid4(), None, None)
+        assert "Manager not found" in str(cap_logs)
+
+
 async def test_alert_on_manager_removal_currently_employed(
     DataLoader: MagicMock, dataloader: AsyncMock, context: Context
 ):
