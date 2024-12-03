@@ -2,13 +2,9 @@
 # SPDX-License-Identifier: MPL-2.0
 
 query getManagerData($uuids: [UUID!]) {
-  managers(
-      uuids: $uuids,
-      from_date: null
-      to_date: null
-  ) {
+  managers(filter: { uuids: $uuids, from_date: null, to_date: null }) {
     objects {
-      objects {
+      validities {
         employee_uuid
         org_unit_uuid
         validity {
@@ -20,11 +16,10 @@ query getManagerData($uuids: [UUID!]) {
   }
 }
 
-
 query getUserData($uuids: [UUID!]) {
-  employees(uuids: $uuids) {
+  employees(filter: { uuids: $uuids }) {
     objects {
-      objects {
+      validities {
         name
         addresses {
           value
@@ -40,18 +35,16 @@ query getUserData($uuids: [UUID!]) {
   }
 }
 
-
 query getRootOrg {
   org {
     uuid
   }
 }
 
-
 query getOrgUnitData($uuids: [UUID!]) {
-  org_units(uuids: $uuids) {
+  org_units(filter: { uuids: $uuids }) {
     objects {
-      objects {
+      validities {
         name
         user_key
         parent_uuid
@@ -64,7 +57,7 @@ query getOrgUnitData($uuids: [UUID!]) {
 }
 
 query getAddressData($uuids: [UUID!]) {
-  addresses(uuids: $uuids) {
+  addresses(filter: { uuids: $uuids }) {
     objects {
       current {
         name
