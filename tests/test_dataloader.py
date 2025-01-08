@@ -57,11 +57,16 @@ async def test_load_mo_address_data(dataloader: DataLoader) -> None:
 
 async def test_load_mo_manager_data(dataloader: DataLoader):
 
-    objects_mock = MagicMock()
-    objects_mock.objects = [MagicMock()]
-    manager_mock = MagicMock()
-    manager_mock.objects = [objects_mock]
-    dataloader.mo.get_manager_data.return_value = manager_mock
+    result_mock = MagicMock()
+    object_mock = MagicMock()
+
+    validities_list = [MagicMock()]
+
+    object_mock.validities = (
+        validities_list  # Mock the 'validities' attribute as a list
+    )
+    result_mock.objects = [object_mock]
+    dataloader.mo.get_manager_data.return_value = result_mock
 
     result = await dataloader.load_mo_manager_data(uuid4())
     assert result is not None
