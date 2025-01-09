@@ -14,7 +14,7 @@ class SmtpAMQPConnectionSettings(AMQPConnectionSettings):
 
 class SmtpFastRAMQPISettings(FastRAMQPISettings):
     amqp: SmtpAMQPConnectionSettings
-    mo_graphql_version: PositiveInt = 7
+    mo_graphql_version: PositiveInt = 22
 
 
 class Settings(BaseSettings):
