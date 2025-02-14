@@ -1,16 +1,21 @@
-FROM python:3.10
+FROM python:3.11
 
 ENV PYTHONUNBUFFERED=1 \
     PYTHONDONTWRITEBYTECODE=1 \
+    PIP_DISABLE_PIP_VERSION_CHECK=on \
+    POETRY_VERSION="1.4.1" \
+    POETRY_HOME=/opt/poetry \
     POETRY_VIRTUALENVS_CREATE=false \
     POETRY_NO_INTERACTION=1
 SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 
-RUN pip install --no-cache-dir poetry==1.2.0
+# Install poetry in an isolated environment
+RUN python -m venv $POETRY_HOME \
+    && pip install --no-cache-dir poetry==${POETRY_VERSION}
 
 WORKDIR /opt
 COPY poetry.lock pyproject.toml ./
-RUN poetry install --no-dev
+RUN poetry install --only main
 
 WORKDIR /opt/app
 COPY mo_smtp .

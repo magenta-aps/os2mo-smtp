@@ -10,9 +10,22 @@ services:
       - ./mo_smtp:/opt/app/
     networks:
       - os2mo_default
-    env_file:
-      ./dev-environment/mo_smtp.env
+    environment:
+      SMTP_PORT: 1025
+      SMTP_HOST: "mailcatcher"
 
+      FASTRAMQPI__AUTH_SERVER: "http://keycloak:8080/auth"
+      FASTRAMQPI__MO_URL: "http://mo:5000"
+      FASTRAMQPI__AMQP__URL: "amqp://guest:guest@msg-broker:5672/"
+
+      FASTRAMQPI__CLIENT_ID: "dipex"
+      FASTRAMQPI__CLIENT_SECRET: "603f1c82-d012-4d04-9382-dbe659c533fb"
+
+      SENDER: "os2mo@magenta.dk"
+      RECEIVERS: '["datagruppen@silkeborg.dk"]'
+      ACTIVE_AGENTS: '["inform_manager_on_employee_address_creation", "alert_on_manager_removal"]'
+
+      DELAY_ON_ERROR: 2
     extra_hosts:
       - "host.docker.internal:host-gateway"
     ports:

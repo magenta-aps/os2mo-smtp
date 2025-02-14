@@ -1,10 +1,10 @@
 from typing import List
 
 from fastramqpi.config import Settings as FastRAMQPISettings
+from fastramqpi.ramqp.config import AMQPConnectionSettings
 from pydantic import BaseSettings
 from pydantic import Field
 from pydantic import PositiveInt
-from ramqp.config import AMQPConnectionSettings
 
 
 class SmtpAMQPConnectionSettings(AMQPConnectionSettings):

@@ -8,12 +8,13 @@ from typing import Any
 
 import structlog
 from fastapi import Depends
+from fastramqpi.depends import from_user_context
+from fastramqpi.ramqp.depends import from_context
+from fastramqpi.ramqp.depends import rate_limit
+from fastramqpi.ramqp.mo import MORouter
+from fastramqpi.ramqp.mo import PayloadUUID
 from jinja2 import Environment
 from jinja2 import FileSystemLoader
-from ramqp.depends import Context
-from ramqp.depends import rate_limit
-from ramqp.mo import MORouter
-from ramqp.mo import PayloadUUID
 
 from . import depends
 from .config import AgentSettings
@@ -37,7 +38,7 @@ def load_template(filename):
 
 @amqp_router.register("address")
 async def inform_manager_on_employee_address_creation(
-    context: Context,
+    context: from_user_context,
     uuid: PayloadUUID,
     _: RateLimit,
     mo: depends.GraphQLClient,
@@ -155,7 +156,7 @@ async def inform_manager_on_employee_address_creation(
 
 @amqp_router.register("manager")
 async def alert_on_manager_removal(
-    context: Context,
+    context: from_user_context,
     uuid: PayloadUUID,
     _: RateLimit,
     mo: depends.GraphQLClient,
