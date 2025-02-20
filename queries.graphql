@@ -69,3 +69,41 @@ query getAddressData($uuids: [UUID!]) {
     }
   }
 }
+
+query getOrgUnitRelations($uuids: [UUID!]) {
+  org_units(filter: { uuids: $uuids }) {
+    objects {
+      current {
+        name
+        root {
+          uuid
+        }
+        engagements {
+          uuid
+        }
+        related_units(exclude_self: true) {
+          org_units {
+            uuid
+            root {
+              uuid
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
+query getInstitutionAddress($uuids: [UUID!], $root: [UUID!]) {
+  org_units(
+    filter: { parent: { uuids: $root }, descendant: { uuids: $uuids } }
+  ) {
+    objects {
+      current {
+        addresses(filter: { address_type: { scope: "EMAIL" } }) {
+          value
+        }
+      }
+    }
+  }
+}

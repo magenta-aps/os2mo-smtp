@@ -5,11 +5,13 @@ import datetime
 import os
 from typing import Annotated
 from typing import Any
+from uuid import UUID
 
 import structlog
 from fastapi import Depends
 from jinja2 import Environment
 from jinja2 import FileSystemLoader
+from more_itertools import one
 from ramqp.depends import Context
 from ramqp.depends import rate_limit
 from ramqp.mo import MORouter
@@ -228,3 +230,73 @@ async def alert_on_manager_removal(
         message,
         "html",
     )
+
+
+@amqp_router.register("org_unit")
+async def alert_on_org_unit_without_relation(
+    context: Context,
+    uuid: PayloadUUID,
+    _: RateLimit,
+    mo: depends.GraphQLClient,
+) -> None:
+    logger.info(f"Obtained message with uuid = {uuid}")
+
+    # TODO: Get from settings
+    root = UUID("fb2d158f-114e-5f67-8365-2c520cf10b58")
+
+    org_unit_data = await DataLoader.get_org_unit_relations(mo, uuid)
+
+    # Load manager data from MO
+    if not org_unit_data:
+        logger.info("Org unit not found")
+        return
+
+    if one(one(org_unit_data).current.root).uuid != root:
+        logger.info("Org unit is not in Lønorganisation")
+        return
+
+    if not len(one(org_unit_data).current.engagements):
+        logger.info("Org unit has no engagements")
+        return
+
+    if len(one(org_unit_data).current.related_units):
+        for relation in one(org_unit_data).current.related_units:
+            if one(one(relation.org_units).root).uuid != root:
+                logger.info("Org unit has a relation outside the Lønorganisation")
+                return
+
+    # get_address
+    emails = await DataLoader.get_institution_address(mo, uuid, root)
+
+    user_context = context["user_context"]
+    email_client = user_context["email_client"]
+
+    # Prepare dictionary to store email arguments
+    email_args: dict[str, Any] = {}
+
+    email_args["receiver"] = emails
+
+    # Subject string
+    subject = "Manglende relation i Lønorganisation"
+    message_body = (
+        "Denne besked er sendt som en påmindelse om at "
+        + f"enheden: {one(org_unit_data).current.name} "
+        + "ikke er relateret til en enhed i Administrationsorganisationen."
+    )
+    email_args["subject"] = subject
+    email_args["body"] = message_body
+    email_args["texttype"] = "plain"
+
+    # Send email to relevant addresses
+    email_client.send_email(**email_args)
+
+
+@amqp_router.register("related_unit")
+async def alert_on_removed_relation(
+    context: Context,
+    uuid: PayloadUUID,
+    _: RateLimit,
+    mo: depends.GraphQLClient,
+) -> None:
+    # TODO: Only possible to check 'removed' relations, if relations have history
+    pass
