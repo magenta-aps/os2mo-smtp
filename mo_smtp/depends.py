@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 # depends.py
 from typing import Annotated
 

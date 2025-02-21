@@ -1,6 +1,7 @@
 """
 Python file with agents that send emails
 """
+
 import datetime
 import os
 from typing import Any
@@ -17,6 +18,8 @@ from more_itertools import one
 
 from . import depends
 from .dataloaders import DataLoader
+from .dataloaders import get_org_unit_relations
+from .dataloaders import get_institution_address
 
 logger = structlog.get_logger()
 
@@ -86,14 +89,12 @@ async def inform_manager_on_employee_address_creation(
         f"Denne besked er sendt som bekræftelse på at {user_data['name']} "
         + "er registreret i "
     )
-    email_addresses = set(
-        [
-            address["value"]
-            for address in user_data["addresses"]
-            if address["address_type"]["scope"] == "EMAIL"
-            and "@" in address["value"]  # Rudimentary email validator
-        ]
-    )
+    email_addresses = {
+        address["value"]
+        for address in user_data["addresses"]
+        if address["address_type"]["scope"] == "EMAIL"
+        and "@" in address["value"]  # Rudimentary email validator
+    }
     # Sometimes invalid emails may be imported from AD.
     if not email_addresses:
         logger.info(f"User {user_data['name']} does not have an email")
@@ -239,7 +240,7 @@ async def alert_on_org_unit_without_relation(
     # TODO: Get from settings
     root = UUID("fb2d158f-114e-5f67-8365-2c520cf10b58")
 
-    org_unit_data = await DataLoader.get_org_unit_relations(mo, uuid)
+    org_unit_data = await get_org_unit_relations(mo, org_unit_uuid=[uuid])
 
     # Load manager data from MO
     if not org_unit_data:
@@ -261,7 +262,7 @@ async def alert_on_org_unit_without_relation(
                 return
 
     # get_address
-    emails = await DataLoader.get_institution_address(mo, uuid, root)
+    emails = await get_institution_address(mo, [uuid], [root])
 
     user_context = context["user_context"]
     email_client = user_context["email_client"]
