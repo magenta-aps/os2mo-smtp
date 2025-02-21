@@ -64,8 +64,8 @@ class EmailClient:
             msg["To"] = self.receiver_override
         else:
             msg["To"] = ", ".join(receiver)
-            msg["CC"] = ", ".join(cc) or None
-            msg["BCC"] = ", ".join(bcc) or None
+            msg["CC"] = ", ".join(cc) if cc else ""
+            msg["BCC"] = ", ".join(bcc) if bcc else ""
 
         # Print message content to log
         for key in msg.keys():
@@ -73,7 +73,11 @@ class EmailClient:
         # 1st decode seems to decode from email-encoding to binary string
         # 2nd decode decodes from binary string to human-readable
         # (including special chars)
-        logger.info("Body: " + msg.get_payload(decode=True).decode())
+        payload = msg.get_payload(decode=True)
+        logger.info(
+            "Body: "
+            + (payload.decode() if isinstance(payload, bytes) else str(payload))
+        )
 
         if not self.testing:
             smtp = SMTP(host=self.smtp_host, port=self.smtp_port)

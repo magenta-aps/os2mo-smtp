@@ -30,14 +30,12 @@ async def dataloader(graphql_session: AsyncMock) -> DataLoader:
 
 
 async def test_load_mo_user_data(dataloader: DataLoader) -> None:
-
     result = await dataloader.load_mo_user_data(uuid4())
     assert result is not None
     dataloader.mo.get_user_data.assert_awaited_once()
 
 
 async def test_load_mo_org_unit_data(dataloader: DataLoader) -> None:
-
     result = await dataloader.load_mo_org_unit_data(uuid4())
     assert result is not None
     dataloader.mo.get_org_unit_data.assert_awaited_once()
@@ -56,7 +54,6 @@ async def test_load_mo_address_data(dataloader: DataLoader) -> None:
 
 
 async def test_load_mo_manager_data(dataloader: DataLoader):
-
     result_mock = MagicMock()
     object_mock = MagicMock()
 
@@ -119,7 +116,6 @@ async def test_get_org_unit_location(dataloader: DataLoader):
 
 
 def test_extract_latest_object(dataloader: DataLoader):
-
     uuid_obj1 = uuid4()
     uuid_obj2 = uuid4()
     uuid_obj3 = uuid4()
@@ -132,7 +128,6 @@ def test_extract_latest_object(dataloader: DataLoader):
         "mo_smtp.dataloaders.datetime",
         datetime_mock,
     ):
-
         # One of the objects is valid today - return it
         obj1: GetManagerDataManagersObjectsValidities = MagicMock()
         obj1.validity.from_ = datetime.datetime(2022, 8, 1)
@@ -230,7 +225,6 @@ def test_extract_latest_object(dataloader: DataLoader):
 
 
 def test_mo_datestring_to_utc():
-
     datetime_obj = datetime.datetime(
         2022, 8, 15, tzinfo=pytz.timezone("Europe/Copenhagen")
     )

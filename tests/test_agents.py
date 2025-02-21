@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 import datetime
 from typing import Any
 from unittest.mock import AsyncMock
@@ -222,7 +221,6 @@ async def test_inform_manager_on_employee_address_creation_invalid_user_email(
     """
 
     for invalid_email in ["", "   ", "invalidemail"]:
-
         uuid_employee = str(uuid4())
         uuid_address = uuid4()
         employee_address = {
@@ -304,7 +302,6 @@ async def test_inform_manager_on_employee_address_creation_multiple_email_addres
 async def test_inform_manager_on_org_unit_address_creation(
     DataLoader: MagicMock, dataloader: AsyncMock, context: Context
 ):
-
     org_unit_address = {
         "name": "new@email",
         "employee_uuid": None,
@@ -324,7 +321,6 @@ async def test_inform_manager_on_org_unit_address_creation(
 async def test_alert_on_manager_removal_manager_not_found(
     DataLoader: MagicMock, dataloader: AsyncMock, context: Context
 ):
-
     dataloader.load_mo_manager_data.return_value = None
     with capture_logs() as cap_logs:
         with patch("mo_smtp.agents.DataLoader", DataLoader):
@@ -430,7 +426,6 @@ async def test_alert_on_manager_removal_unknown_employee(
 async def test_inform_manager_address_not_found(
     DataLoader: MagicMock, dataloader: AsyncMock, context: Context
 ):
-
     dataloader.load_mo_address_data.return_value = None
 
     with capture_logs() as cap_logs:

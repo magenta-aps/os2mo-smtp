@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 import os
 from collections.abc import Iterator
 from typing import Any
@@ -26,7 +25,7 @@ def settings_overrides() -> Iterator[dict[str, Any]]:
 
 @pytest.fixture(scope="module")
 def load_settings_overrides(
-    settings_overrides: dict[str, Any]
+    settings_overrides: dict[str, Any],
 ) -> Iterator[dict[str, Any]]:
     """Fixture to set happy-path settings overrides as environmental variables.
 

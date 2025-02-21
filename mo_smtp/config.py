@@ -1,5 +1,3 @@
-from typing import List
-
 from fastramqpi.config import Settings as FastRAMQPISettings
 from fastramqpi.ramqp.config import AMQPConnectionSettings
 from pydantic import BaseSettings
@@ -26,7 +24,7 @@ class Settings(BaseSettings):
 
     application_name: str = "os2mo_email_listener"
 
-    active_agents: List[str] = Field(
+    active_agents: list[str] = Field(
         [], description="Agents which are actively listening and sending mails"
     )
 
