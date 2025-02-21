@@ -3,27 +3,22 @@ Python file with agents that send emails
 """
 import datetime
 import os
-from typing import Annotated
 from typing import Any
 from uuid import UUID
 
 import structlog
-from fastapi import Depends
+from fastramqpi.ramqp.depends import Context
+from fastramqpi.ramqp.depends import RateLimit
+from fastramqpi.ramqp.mo import MORouter
+from fastramqpi.ramqp.mo import PayloadUUID
 from jinja2 import Environment
 from jinja2 import FileSystemLoader
 from more_itertools import one
-from ramqp.depends import Context
-from ramqp.depends import rate_limit
-from ramqp.mo import MORouter
-from ramqp.mo import PayloadUUID
 
 from . import depends
-from .config import AgentSettings
 from .dataloaders import DataLoader
 
 logger = structlog.get_logger()
-delay_on_error = AgentSettings().delay_on_error
-RateLimit = Annotated[None, Depends(rate_limit(delay_on_error))]
 
 amqp_router = MORouter()
 

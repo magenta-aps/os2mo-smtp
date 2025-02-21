@@ -1,10 +1,10 @@
 from typing import List
 
 from fastramqpi.config import Settings as FastRAMQPISettings
+from fastramqpi.ramqp.config import AMQPConnectionSettings
 from pydantic import BaseSettings
 from pydantic import Field
 from pydantic import PositiveInt
-from ramqp.config import AMQPConnectionSettings
 
 
 class SmtpAMQPConnectionSettings(AMQPConnectionSettings):
@@ -28,14 +28,6 @@ class Settings(BaseSettings):
 
     active_agents: List[str] = Field(
         [], description="Agents which are actively listening and sending mails"
-    )
-
-
-class AgentSettings(BaseSettings):
-
-    delay_on_error: int = Field(
-        30,
-        description="Amount of seconds to sleep before retrying AMQP messages",
     )
 
 
