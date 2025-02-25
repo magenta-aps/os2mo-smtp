@@ -1,3 +1,4 @@
+from uuid import UUID
 from fastramqpi.config import Settings as FastRAMQPISettings
 from fastramqpi.ramqp.config import AMQPConnectionSettings
 from pydantic import BaseSettings
@@ -27,6 +28,7 @@ class Settings(BaseSettings):
     active_agents: list[str] = Field(
         [], description="Agents which are actively listening and sending mails"
     )
+    root_loen_org: UUID | None = None
 
 
 class EmailSettings(BaseSettings):

@@ -5,7 +5,6 @@ Python file with agents that send emails
 import datetime
 import os
 from typing import Any
-from uuid import UUID
 
 import structlog
 from fastramqpi.ramqp.depends import Context
@@ -17,6 +16,7 @@ from jinja2 import FileSystemLoader
 from more_itertools import one
 
 from . import depends
+from .depends import Settings
 from .dataloaders import DataLoader
 from .dataloaders import get_org_unit_relations
 from .dataloaders import get_institution_address
@@ -237,8 +237,8 @@ async def alert_on_org_unit_without_relation(
 ) -> None:
     logger.info(f"Obtained message with uuid = {uuid}")
 
-    # TODO: Get from settings
-    root = UUID("fb2d158f-114e-5f67-8365-2c520cf10b58")
+    settings = Settings()
+    root = settings.root_loen_org
 
     org_unit_data = await get_org_unit_relations(mo, org_unit_uuid=[uuid])
 

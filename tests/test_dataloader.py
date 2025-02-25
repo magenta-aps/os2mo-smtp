@@ -180,7 +180,7 @@ async def test_get_institution_address():
         mo=mocked_mo_client, root=[root_org], uuids=[org_unit_uuid]
     )
     # expect a set of the email(s) in response
-    expected_response = set(["test@test.dk"])
+    expected_response = {"test@test.dk"}
 
     assert institution_address_response == expected_response
     mocked_mo_client.institution_address.assert_awaited_once_with(
