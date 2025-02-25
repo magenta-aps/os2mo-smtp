@@ -9,7 +9,7 @@ from unittest.mock import patch
 import pytest
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
-from ramqp.mo import MORouter
+from fastramqpi.ramqp.mo import MORouter
 
 from mo_smtp.smtp_agent import create_app
 from mo_smtp.smtp_agent import register_agents
@@ -17,7 +17,7 @@ from mo_smtp.smtp_agent import register_agents
 
 @pytest.fixture(scope="module")
 def app(
-    load_settings_overrides: dict[str, Any],
+    load_settings_overrides_module_scope: dict[str, Any],
 ) -> Iterator[FastAPI]:
     """Test that we can construct our FastAPI application."""
 

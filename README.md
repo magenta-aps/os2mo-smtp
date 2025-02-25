@@ -74,4 +74,4 @@ curl -X 'POST' 'http://localhost:8000/send_test_email?receiver=ini%40magenta-aps
 ```
 
 Where you replace `ini` with your own initials. Note that `%40` in the curl command
-translates to `@`. 
+translates to `@`.

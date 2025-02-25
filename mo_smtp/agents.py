@@ -1,27 +1,27 @@
 """
 Python file with agents that send emails
 """
+
 import datetime
 import os
-from typing import Annotated
 from typing import Any
 
 import structlog
-from fastapi import Depends
+from fastramqpi.ramqp.depends import Context
+from fastramqpi.ramqp.depends import RateLimit
+from fastramqpi.ramqp.mo import MORouter
+from fastramqpi.ramqp.mo import PayloadUUID
 from jinja2 import Environment
 from jinja2 import FileSystemLoader
-from ramqp.depends import Context
-from ramqp.depends import rate_limit
-from ramqp.mo import MORouter
-from ramqp.mo import PayloadUUID
+from more_itertools import one
 
 from . import depends
-from .config import AgentSettings
+from .depends import Settings
 from .dataloaders import DataLoader
+from .dataloaders import get_org_unit_relations
+from .dataloaders import get_institution_address
 
 logger = structlog.get_logger()
-delay_on_error = AgentSettings().delay_on_error
-RateLimit = Annotated[None, Depends(rate_limit(delay_on_error))]
 
 amqp_router = MORouter()
 
@@ -89,14 +89,12 @@ async def inform_manager_on_employee_address_creation(
         f"Denne besked er sendt som bekræftelse på at {user_data['name']} "
         + "er registreret i "
     )
-    email_addresses = set(
-        [
-            address["value"]
-            for address in user_data["addresses"]
-            if address["address_type"]["scope"] == "EMAIL"
-            and "@" in address["value"]  # Rudimentary email validator
-        ]
-    )
+    email_addresses = {
+        address["value"]
+        for address in user_data["addresses"]
+        if address["address_type"]["scope"] == "EMAIL"
+        and "@" in address["value"]  # Rudimentary email validator
+    }
     # Sometimes invalid emails may be imported from AD.
     if not email_addresses:
         logger.info(f"User {user_data['name']} does not have an email")
@@ -228,3 +226,59 @@ async def alert_on_manager_removal(
         message,
         "html",
     )
+
+
+@amqp_router.register("org_unit")
+async def alert_on_org_unit_without_relation(
+    context: Context,
+    uuid: PayloadUUID,
+    _: RateLimit,
+    mo: depends.GraphQLClient,
+) -> None:
+    logger.info("Obtained message", uuid=str(uuid))
+
+    settings = Settings()
+    root = settings.root_loen_org
+
+    org_unit_data = await get_org_unit_relations(mo, org_unit_uuid=uuid)
+
+    # Load manager data from MO
+    if not org_unit_data:
+        logger.info("Org unit not found")
+        return
+
+    current = one(org_unit_data).current
+    if one(current.root).uuid != root:
+        logger.info("Org unit is not in the Lønorganisation")
+        return
+
+    if current.related_units:
+        for relation in current.related_units:
+            if one(one(relation.org_units).root).uuid != root:
+                logger.info("Org unit has a relation outside of the Lønorganisation")
+                return
+
+    # get_address
+    emails = await get_institution_address(mo, uuid, root)
+
+    user_context = context["user_context"]
+    email_client = user_context["email_client"]
+
+    # Prepare dictionary to store email arguments
+    email_args: dict[str, Any] = {}
+
+    email_args["receiver"] = emails
+
+    # Subject string
+    subject = "Manglende relation i Lønorganisation"
+    message_body = (
+        "Denne besked er sendt som en påmindelse om at "
+        + f"enheden: {current.name} "
+        + "ikke er relateret til en enhed i Administrationsorganisationen."
+    )
+    email_args["subject"] = subject
+    email_args["body"] = message_body
+    email_args["texttype"] = "plain"
+
+    # Send email to relevant addresses
+    email_client.send_email(**email_args)

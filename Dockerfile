@@ -1,23 +1,28 @@
-FROM python:3.10
+FROM python:3.11
+
+WORKDIR /app
 
 ENV PYTHONUNBUFFERED=1 \
+    PIP_DISABLE_PIP_VERSION_CHECK=on \
     PYTHONDONTWRITEBYTECODE=1 \
-    POETRY_VIRTUALENVS_CREATE=false \
-    POETRY_NO_INTERACTION=1
-SHELL ["/bin/bash", "-o", "pipefail", "-c"]
+    POETRY_VERSION="1.8" \
+    POETRY_HOME=/opt/poetry \
+    VIRTUAL_ENV="/venv"
+ENV PATH="$VIRTUAL_ENV/bin:$POETRY_HOME/bin:$PATH"
 
-RUN pip install --no-cache-dir poetry==1.2.0
+# Install poetry in an isolated environment
+RUN python -m venv $POETRY_HOME \
+    && pip install --no-cache-dir poetry==${POETRY_VERSION}
 
-WORKDIR /opt
-COPY poetry.lock pyproject.toml ./
-RUN poetry install --no-dev
+# Install project in another isolated environment
+RUN python -m venv $VIRTUAL_ENV
+COPY pyproject.toml poetry.lock* ./
+RUN poetry install --no-root
 
-WORKDIR /opt/app
-COPY mo_smtp .
-WORKDIR /opt/
+COPY . ./
 
 #CMD ["poetry", "run", "python", "-m",  "mo_smtp.smtp_agent"]
-CMD ["uvicorn", "--factory", "app.smtp_agent:create_app", "--host", "0.0.0.0"]
+CMD ["uvicorn", "--factory", "smtp_agent:create_app", "--host", "0.0.0.0"]
 
 # Add build version to the environment last to avoid build cache misses
 ARG COMMIT_TAG

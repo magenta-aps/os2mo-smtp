@@ -44,7 +44,6 @@ async def test_send_message_testing_false(email_client: EmailClient) -> None:
 
     smtpmock = MagicMock()
     with patch("mo_smtp.mail.SMTP", return_value=smtpmock):
-
         message = email_client.send_email(
             receiver=receiver,
             cc=cc,
@@ -62,7 +61,7 @@ async def test_send_message_testing_false(email_client: EmailClient) -> None:
         expected_message["BCC"] = ", ".join(bcc)
 
         # Assert correct return type
-        assert type(message) == MIMEText
+        assert type(message) is MIMEText
 
         # Assert correct field mapping
         for key in message.keys():
@@ -105,7 +104,7 @@ async def test_send_message_testing_true(email_client: EmailClient) -> None:
         expected_message["BCC"] = ", ".join(bcc)
 
         # Assert correct return type
-        assert type(message) == MIMEText
+        assert type(message) is MIMEText
 
         # Assert correct field mapping
         for key in message.keys():
@@ -132,7 +131,6 @@ async def test_send_message_tls_error(email_client: EmailClient) -> None:
     )
 
     with patch("mo_smtp.mail.SMTP", return_value=smtpmock):
-
         # Retrieve MIMEText object from send_email
         message = email_client.send_email(
             receiver=receiver,
@@ -151,7 +149,7 @@ async def test_send_message_tls_error(email_client: EmailClient) -> None:
         expected_message["BCC"] = ", ".join(bcc)
 
         # Assert correct return type
-        assert type(message) == MIMEText
+        assert type(message) is MIMEText
 
         # Assert correct field mapping
         for key in message.keys():
@@ -159,7 +157,6 @@ async def test_send_message_tls_error(email_client: EmailClient) -> None:
 
 
 async def test_send_message_receiver_override(email_client: EmailClient):
-
     receiver = {"receiver1@test.net", "receiver2@test.net"}
     cc = {"cc1@test.net", "cc2@test.net"}
     bcc = {"bcc1@test.net", "bcc2@test.net"}
@@ -170,7 +167,6 @@ async def test_send_message_receiver_override(email_client: EmailClient):
     # Retrieve MIMEText object from send_email
     smtpmock = MagicMock()
     with patch("mo_smtp.mail.SMTP", return_value=smtpmock):
-
         email_client.receiver_override = "mail@test.com"
         message = email_client.send_email(
             receiver=receiver,

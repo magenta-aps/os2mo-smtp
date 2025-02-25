@@ -1,47 +1,78 @@
-# -*- coding: utf-8 -*-
 import os
 from collections.abc import Iterator
 from typing import Any
 
 import pytest
 
+from mo_smtp.config import Settings
+
 
 @pytest.fixture(scope="module")
-def settings_overrides() -> Iterator[dict[str, Any]]:
+def settings_overrides_module_scope() -> Iterator[dict[str, Any]]:
+    """Fixture to construct dictionary of minimal overrides for valid settings."""
+    overrides = {
+        "CLIENT_ID": "Foo",
+        "CLIENT_SECRET": "bar",
+        "TESTING": "True",
+        "SMTP_PORT": "25",
+        "SMTP_HOST": "smtp.host.com",
+        "FASTRAMQPI__AMQP__URL": "amqp://guest:guest@msg_broker:5672/",
+        "FASTRAMQPI__DATABASE__USER": "fastramqpi",
+        "FASTRAMQPI__DATABASE__PASSWORD": "fastramqpi",
+        "FASTRAMQPI__DATABASE__HOST": "db",
+        "FASTRAMQPI__DATABASE__NAME": "fastramqpi",
+    }
+    yield overrides
+
+
+@pytest.fixture(scope="module")
+def load_settings_overrides_module_scope(
+    settings_overrides_module_scope: dict[str, Any],
+) -> Iterator[dict[str, Any]]:
+    """Fixture to set happy-path settings overrides as environmental variables."""
+    monkeypatch = pytest.MonkeyPatch()
+    for key, value in settings_overrides_module_scope.items():
+        if os.environ.get(key) is None:
+            monkeypatch.setenv(key, value)
+        # Debugging line
+        print(f"Set {key}={os.environ.get(key)}")
+    yield settings_overrides_module_scope
+
+
+@pytest.fixture
+def settings_overrides() -> Iterator[dict[str, str]]:
     """Fixture to construct dictionary of minimal overrides for valid settings.
 
     Yields:
         Minimal set of overrides.
     """
     overrides = {
-        "client_id": "Foo",
-        "client_secret": "bar",
-        "testing": "True",
-        "smtp_port": 25,
-        "smtp_host": "smtp.host.com",
-        "fastramqpi__amqp__url": "amqp://guest:guest@msg_broker:5672/",
+        "CLIENT_ID": "Foo",
+        "CLIENT_SECRET": "bar",
+        "TESTING": "True",
+        "SMTP_PORT": "25",
+        "SMTP_HOST": "smtp.host.com",
+        "FASTRAMQPI__AMQP__URL": "amqp://guest:guest@msg_broker:5672/",
+        "FASTRAMQPI__DATABASE__USER": "fastramqpi",
+        "FASTRAMQPI__DATABASE__PASSWORD": "fastramqpi",
+        "FASTRAMQPI__DATABASE__HOST": "db",
+        "FASTRAMQPI__DATABASE__NAME": "fastramqpi",
     }
     yield overrides
 
 
-@pytest.fixture(scope="module")
+@pytest.fixture
 def load_settings_overrides(
-    settings_overrides: dict[str, Any]
+    monkeypatch: pytest.MonkeyPatch,
+    settings_overrides: dict[str, str],
 ) -> Iterator[dict[str, Any]]:
-    """Fixture to set happy-path settings overrides as environmental variables.
-
-    Note:
-        Only loads environmental variables, if variables are not already set.
-
-    Args:
-        settings_overrides: The list of settings to load in.
-        monkeypatch: Pytest MonkeyPatch instance to set environmental variables.
-
-    Yields:
-        Minimal set of overrides.
-    """
-    monkeypatch = pytest.MonkeyPatch()
+    """Fixture to set happy-path settings overrides as environmental variables."""
     for key, value in settings_overrides.items():
         if os.environ.get(key) is None:
             monkeypatch.setenv(key, value)
     yield settings_overrides
+
+
+@pytest.fixture
+def minimal_valid_settings(load_settings_overrides: None) -> Settings:
+    return Settings()
