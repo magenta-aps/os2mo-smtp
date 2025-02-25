@@ -152,15 +152,13 @@ class DataLoader:
         return org_unit_location
 
 
-async def get_org_unit_relations(mo: GraphQLClient, org_unit_uuid: list[UUID]):
+async def get_org_unit_relations(mo: GraphQLClient, org_unit_uuid: UUID):
     gql_response = await mo.org_unit_relations(org_unit_uuid)
     return gql_response.objects
 
 
-async def get_institution_address(
-    mo: GraphQLClient, uuids: list[UUID], root: list[UUID]
-):
-    gql_response = await mo.institution_address(uuids, root)
+async def get_institution_address(mo: GraphQLClient, uuid: UUID, root: UUID):
+    gql_response = await mo.institution_address(uuid, root)
     current = one(gql_response.objects).current
     addresses = {address.value for address in current.addresses} if current else set()
 

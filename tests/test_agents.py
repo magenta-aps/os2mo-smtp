@@ -453,6 +453,8 @@ async def test_alert_on_org_unit_without_relation_not_found(context: Context):
     with capture_logs() as cap_logs:
         await alert_on_org_unit_without_relation(context, uuid4(), None, mo)
 
+    email_client = context["user_context"]["email_client"]
+    email_client.send_email.assert_not_called()
     assert "Org unit not found" in str(cap_logs)
 
 
@@ -496,46 +498,9 @@ async def test_alert_on_org_unit_not_in_loenorganisation(
         with capture_logs() as cap_logs:
             await alert_on_org_unit_without_relation(context, uuid4(), None, mo)
 
-        assert "Org unit is not in Lønorganisation" in str(cap_logs)
-
-
-@pytest.mark.usefixtures("minimal_valid_settings")
-async def test_alert_on_org_unit_no_engagements(
-    context: Context, monkeypatch: pytest.MonkeyPatch
-):
-    root_loen_org = uuid4()
-    with monkeypatch.context() as con:
-        con.setenv("ROOT_LOEN_ORG", str(root_loen_org))
-
-        mo = AsyncMock()
-        mo.org_unit_relations.return_value = OrgUnitRelationsOrgUnits.parse_obj(
-            {
-                "objects": [
-                    {
-                        "current": {
-                            "name": "org-unit-name",
-                            "root": [{"uuid": root_loen_org}],
-                            "engagements": [],
-                            "related_units": [
-                                {
-                                    "org_units": [
-                                        {
-                                            "uuid": uuid4(),
-                                            "root": [{"uuid": root_loen_org}],
-                                        }
-                                    ]
-                                }
-                            ],
-                        },
-                    }
-                ]
-            }
-        )
-
-        with capture_logs() as cap_logs:
-            await alert_on_org_unit_without_relation(context, uuid4(), None, mo)
-
-        assert "Org unit has no engagements" in str(cap_logs)
+        email_client = context["user_context"]["email_client"]
+        email_client.send_email.assert_not_called()
+        assert "Org unit is not in the Lønorganisation" in str(cap_logs)
 
 
 @pytest.mark.usefixtures("minimal_valid_settings")
@@ -577,7 +542,9 @@ async def test_alert_on_org_unit_has_external_relation(
         with capture_logs() as cap_logs:
             await alert_on_org_unit_without_relation(context, uuid4(), None, mo)
 
-        assert "Org unit has a relation outside the Lønorganisation" in str(cap_logs)
+        email_client = context["user_context"]["email_client"]
+        email_client.send_email.assert_not_called()
+        assert "Org unit has a relation outside of the Lønorganisation" in str(cap_logs)
 
 
 @pytest.mark.usefixtures("minimal_valid_settings")

@@ -70,8 +70,8 @@ query getAddressData($uuids: [UUID!]) {
   }
 }
 
-query orgUnitRelations($uuids: [UUID!]) {
-  org_units(filter: { uuids: $uuids }) {
+query orgUnitRelations($uuid: UUID!) {
+  org_units(filter: { uuids: [$uuid] }) {
     objects {
       current {
         name
@@ -94,9 +94,9 @@ query orgUnitRelations($uuids: [UUID!]) {
   }
 }
 
-query institutionAddress($uuids: [UUID!], $root: [UUID!]) {
+query institutionAddress($uuid: UUID!, $root: UUID!) {
   org_units(
-    filter: { parent: { uuids: $root }, descendant: { uuids: $uuids } }
+    filter: { parent: { uuids: [$root] }, descendant: { uuids: [$uuid] } }
   ) {
     objects {
       current {

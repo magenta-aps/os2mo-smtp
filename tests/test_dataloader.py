@@ -158,11 +158,11 @@ async def test_get_org_unit_relations():
 
     # test that `get_org_unit_relations` returns the response from `org_unit_relations`.objects (which is what the test_data is)
     org_unit_relations_response = await get_org_unit_relations(
-        mo=mocked_mo_client, org_unit_uuid=[org_unit_uuid]
+        mo=mocked_mo_client, org_unit_uuid=org_unit_uuid
     )
 
     assert org_unit_relations_response == test_data
-    mocked_mo_client.org_unit_relations.assert_awaited_once_with([org_unit_uuid])
+    mocked_mo_client.org_unit_relations.assert_awaited_once_with(org_unit_uuid)
 
 
 async def test_get_institution_address():
@@ -177,14 +177,14 @@ async def test_get_institution_address():
     mocked_mo_client.institution_address.return_value = test_data
 
     institution_address_response = await get_institution_address(
-        mo=mocked_mo_client, root=[root_org], uuids=[org_unit_uuid]
+        mo=mocked_mo_client, root=root_org, uuid=org_unit_uuid
     )
     # expect a set of the email(s) in response
     expected_response = {"test@test.dk"}
 
     assert institution_address_response == expected_response
     mocked_mo_client.institution_address.assert_awaited_once_with(
-        [org_unit_uuid], [root_org]
+        org_unit_uuid, root_org
     )
 
 

@@ -235,34 +235,31 @@ async def alert_on_org_unit_without_relation(
     _: RateLimit,
     mo: depends.GraphQLClient,
 ) -> None:
-    logger.info(f"Obtained message with uuid = {uuid}")
+    logger.info("Obtained message", uuid=str(uuid))
 
     settings = Settings()
     root = settings.root_loen_org
 
-    org_unit_data = await get_org_unit_relations(mo, org_unit_uuid=[uuid])
+    org_unit_data = await get_org_unit_relations(mo, org_unit_uuid=uuid)
 
     # Load manager data from MO
     if not org_unit_data:
         logger.info("Org unit not found")
         return
 
-    if one(one(org_unit_data).current.root).uuid != root:
-        logger.info("Org unit is not in Lønorganisation")
+    current = one(org_unit_data).current
+    if one(current.root).uuid != root:
+        logger.info("Org unit is not in the Lønorganisation")
         return
 
-    if not len(one(org_unit_data).current.engagements):
-        logger.info("Org unit has no engagements")
-        return
-
-    if len(one(org_unit_data).current.related_units):
-        for relation in one(org_unit_data).current.related_units:
+    if current.related_units:
+        for relation in current.related_units:
             if one(one(relation.org_units).root).uuid != root:
-                logger.info("Org unit has a relation outside the Lønorganisation")
+                logger.info("Org unit has a relation outside of the Lønorganisation")
                 return
 
     # get_address
-    emails = await get_institution_address(mo, [uuid], [root])
+    emails = await get_institution_address(mo, uuid, root)
 
     user_context = context["user_context"]
     email_client = user_context["email_client"]
@@ -276,7 +273,7 @@ async def alert_on_org_unit_without_relation(
     subject = "Manglende relation i Lønorganisation"
     message_body = (
         "Denne besked er sendt som en påmindelse om at "
-        + f"enheden: {one(org_unit_data).current.name} "
+        + f"enheden: {current.name} "
         + "ikke er relateret til en enhed i Administrationsorganisationen."
     )
     email_args["subject"] = subject

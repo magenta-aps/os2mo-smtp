@@ -19,7 +19,7 @@ services:
       FASTRAMQPI__CLIENT_SECRET: "603f1c82-d012-4d04-9382-dbe659c533fb"
 
       EMAIL_SETTINGS__SENDER: "os2mo@magenta.dk"
-      EMAIL_SETTINGS__RECEIVERS: '["datagruppen@silkeborg.dk"]'
+      EMAIL_SETTINGS__RECEIVERS: '["test@example.dk"]'
       SMTP_PORT: 1025
       SMTP_HOST: "mailcatcher"
 
