@@ -285,14 +285,3 @@ async def alert_on_org_unit_without_relation(
 
     # Send email to relevant addresses
     email_client.send_email(**email_args)
-
-
-@amqp_router.register("related_unit")
-async def alert_on_removed_relation(
-    context: Context,
-    uuid: PayloadUUID,
-    _: RateLimit,
-    mo: depends.GraphQLClient,
-) -> None:
-    # TODO: Only possible to check 'removed' relations, if relations have history
-    pass
