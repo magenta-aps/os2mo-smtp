@@ -1,4 +1,6 @@
 .cache/**
 **/.cache/**
+**/__pycache__/**
 .coverage
 docker-compose.override.yml
+.coveragerc

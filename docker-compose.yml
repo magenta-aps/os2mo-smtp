@@ -1,17 +1,30 @@
-version: "3"
-
 services:
 
   mo_smtp:
     build: .
-    command: [ "uvicorn", "--factory", "app.smtp_agent:create_app", "--host", "0.0.0.0", "--reload", "--reload-include", "*.html" ]
+    command: [ "uvicorn", "--factory", "mo_smtp.smtp_agent:create_app", "--host", "0.0.0.0", "--reload"]
 
     volumes:
-      - ./mo_smtp:/opt/app/
+      - ./mo_smtp:/app/mo_smtp
     networks:
       - os2mo_default
-    env_file:
-      ./dev-environment/mo_smtp.env
+    environment:
+      FASTRAMQPI__LOG_LEVEL: "INFO"
+      FASTRAMQPI__JSON_LOGS: False
+
+      FASTRAMQPI__AMQP__URL: "amqp://guest:guest@msg-broker:5672/"
+      FASTRAMQPI__MO_URL: "http://mo:5000"
+      FASTRAMQPI__AUTH_SERVER: "http://keycloak:8080/auth"
+      FASTRAMQPI__CLIENT_ID: "dipex"
+      FASTRAMQPI__CLIENT_SECRET: "603f1c82-d012-4d04-9382-dbe659c533fb"
+
+      EMAIL_SETTINGS__SENDER: "os2mo@magenta.dk"
+      EMAIL_SETTINGS__RECEIVERS: '["test@example.dk"]'
+      SMTP_PORT: 1025
+      SMTP_HOST: "mailcatcher"
+
+      ACTIVE_AGENTS: '["inform_manager_on_employee_address_creation", "alert_on_manager_removal","alert_on_org_unit_without_relation"]'
+      ROOT_LOEN_ORG: "fb2d158f-114e-5f67-8365-2c520cf10b58"
 
     extra_hosts:
       - "host.docker.internal:host-gateway"
