@@ -238,6 +238,7 @@ async def alert_on_org_unit_without_relation(
     logger.info("Obtained message", uuid=str(uuid))
 
     settings = Settings()
+    assert settings.root_loen_org
     root = settings.root_loen_org
 
     org_unit_data = await get_org_unit_relations(mo, org_unit_uuid=uuid)
