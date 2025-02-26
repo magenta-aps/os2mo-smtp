@@ -443,19 +443,23 @@ async def test_inform_manager_address_not_found(
 
 
 @pytest.mark.usefixtures("minimal_valid_settings")
-async def test_alert_on_org_unit_without_relation_not_found(context: Context):
-    mo = AsyncMock()
+async def test_alert_on_org_unit_without_relation_not_found(
+    context: Context, monkeypatch: pytest.MonkeyPatch
+):
+    with monkeypatch.context() as con:
+        con.setenv("ROOT_LOEN_ORG", str(uuid4()))
+        mo = AsyncMock()
 
-    mo.org_unit_relations.return_value = OrgUnitRelationsOrgUnits.parse_obj(
-        {"objects": []}
-    )
+        mo.org_unit_relations.return_value = OrgUnitRelationsOrgUnits.parse_obj(
+            {"objects": []}
+        )
 
-    with capture_logs() as cap_logs:
-        await alert_on_org_unit_without_relation(context, uuid4(), None, mo)
+        with capture_logs() as cap_logs:
+            await alert_on_org_unit_without_relation(context, uuid4(), None, mo)
 
-    email_client = context["user_context"]["email_client"]
-    email_client.send_email.assert_not_called()
-    assert "Org unit not found" in str(cap_logs)
+        email_client = context["user_context"]["email_client"]
+        email_client.send_email.assert_not_called()
+        assert "Org unit not found" in str(cap_logs)
 
 
 @pytest.mark.usefixtures("minimal_valid_settings")
