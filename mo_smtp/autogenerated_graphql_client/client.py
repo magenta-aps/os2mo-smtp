@@ -3,14 +3,14 @@
 
 from uuid import UUID
 
+from .address_data import AddressData, AddressDataAddresses
 from .async_base_client import AsyncBaseClient
-from .base_model import UNSET, UnsetType
-from .get_address_data import GetAddressData, GetAddressDataAddresses
-from .get_manager_data import GetManagerData, GetManagerDataManagers
-from .get_org_unit_data import GetOrgUnitData, GetOrgUnitDataOrgUnits
-from .get_root_org import GetRootOrg, GetRootOrgOrg
-from .get_user_data import GetUserData, GetUserDataEmployees
+from .employee_data import EmployeeData, EmployeeDataEmployees
+from .employee_name import EmployeeName, EmployeeNameEmployees
 from .institution_address import InstitutionAddress, InstitutionAddressOrgUnits
+from .manager_data import ManagerData, ManagerDataManagers
+from .org_unit_data import OrgUnitData, OrgUnitDataOrgUnits
+from .org_unit_descendants import OrgUnitDescendants, OrgUnitDescendantsOrgUnits
 from .org_unit_relations import OrgUnitRelations, OrgUnitRelationsOrgUnits
 
 
@@ -19,13 +19,11 @@ def gql(q: str) -> str:
 
 
 class GraphQLClient(AsyncBaseClient):
-    async def get_manager_data(
-        self, uuids: list[UUID] | None | UnsetType = UNSET
-    ) -> GetManagerDataManagers:
+    async def manager_data(self, uuid: UUID) -> ManagerDataManagers:
         query = gql(
             """
-            query getManagerData($uuids: [UUID!]) {
-              managers(filter: {uuids: $uuids, from_date: null, to_date: null}) {
+            query managerData($uuid: UUID!) {
+              managers(filter: {uuids: [$uuid], from_date: null, to_date: null}) {
                 objects {
                   validities {
                     employee_uuid
@@ -40,29 +38,33 @@ class GraphQLClient(AsyncBaseClient):
             }
             """
         )
-        variables: dict[str, object] = {"uuids": uuids}
+        variables: dict[str, object] = {"uuid": uuid}
         response = await self.execute(query=query, variables=variables)
         data = self.get_data(response)
-        return GetManagerData.parse_obj(data).managers
+        return ManagerData.parse_obj(data).managers
 
-    async def get_user_data(
-        self, uuids: list[UUID] | None | UnsetType = UNSET
-    ) -> GetUserDataEmployees:
+    async def employee_data(self, uuid: UUID) -> EmployeeDataEmployees:
         query = gql(
             """
-            query getUserData($uuids: [UUID!]) {
-              employees(filter: {uuids: $uuids}) {
+            query employeeData($uuid: UUID!) {
+              employees(filter: {uuids: [$uuid]}) {
                 objects {
                   validities {
                     name
-                    addresses {
+                    addresses(filter: {address_type: {scope: "EMAIL"}}) {
                       value
-                      address_type {
-                        scope
-                      }
                     }
                     engagements {
-                      org_unit_uuid
+                      org_unit {
+                        name
+                      }
+                      managers(exclude_self: true) {
+                        person {
+                          addresses(filter: {address_type: {scope: "EMAIL"}}) {
+                            value
+                          }
+                        }
+                      }
                     }
                   }
                 }
@@ -70,62 +72,77 @@ class GraphQLClient(AsyncBaseClient):
             }
             """
         )
-        variables: dict[str, object] = {"uuids": uuids}
+        variables: dict[str, object] = {"uuid": uuid}
         response = await self.execute(query=query, variables=variables)
         data = self.get_data(response)
-        return GetUserData.parse_obj(data).employees
+        return EmployeeData.parse_obj(data).employees
 
-    async def get_root_org(self) -> GetRootOrgOrg:
+    async def employee_name(self, uuid: UUID) -> EmployeeNameEmployees:
         query = gql(
             """
-            query getRootOrg {
-              org {
-                uuid
+            query employeeName($uuid: UUID!) {
+              employees(filter: {uuids: [$uuid]}) {
+                objects {
+                  validities {
+                    name
+                  }
+                }
               }
             }
             """
         )
-        variables: dict[str, object] = {}
+        variables: dict[str, object] = {"uuid": uuid}
         response = await self.execute(query=query, variables=variables)
         data = self.get_data(response)
-        return GetRootOrg.parse_obj(data).org
+        return EmployeeName.parse_obj(data).employees
 
-    async def get_org_unit_data(
-        self, uuids: list[UUID] | None | UnsetType = UNSET
-    ) -> GetOrgUnitDataOrgUnits:
+    async def org_unit_descendants(self, uuid: UUID) -> OrgUnitDescendantsOrgUnits:
         query = gql(
             """
-            query getOrgUnitData($uuids: [UUID!]) {
-              org_units(filter: {uuids: $uuids}) {
+            query orgUnitDescendants($uuid: UUID!) {
+              org_units(filter: {descendant: {uuids: [$uuid]}}) {
+                objects {
+                  current {
+                    name
+                  }
+                }
+              }
+            }
+            """
+        )
+        variables: dict[str, object] = {"uuid": uuid}
+        response = await self.execute(query=query, variables=variables)
+        data = self.get_data(response)
+        return OrgUnitDescendants.parse_obj(data).org_units
+
+    async def org_unit_data(self, uuid: UUID) -> OrgUnitDataOrgUnits:
+        query = gql(
+            """
+            query orgUnitData($uuid: UUID!) {
+              org_units(filter: {uuids: [$uuid]}) {
                 objects {
                   validities {
                     name
                     user_key
-                    parent_uuid
-                    managers {
-                      employee_uuid
-                    }
                   }
                 }
               }
             }
             """
         )
-        variables: dict[str, object] = {"uuids": uuids}
+        variables: dict[str, object] = {"uuid": uuid}
         response = await self.execute(query=query, variables=variables)
         data = self.get_data(response)
-        return GetOrgUnitData.parse_obj(data).org_units
+        return OrgUnitData.parse_obj(data).org_units
 
-    async def get_address_data(
-        self, uuids: list[UUID] | None | UnsetType = UNSET
-    ) -> GetAddressDataAddresses:
+    async def address_data(self, uuid: UUID) -> AddressDataAddresses:
         query = gql(
             """
-            query getAddressData($uuids: [UUID!]) {
-              addresses(filter: {uuids: $uuids}) {
+            query addressData($uuid: UUID!) {
+              addresses(filter: {uuids: [$uuid]}) {
                 objects {
                   current {
-                    name
+                    value
                     employee_uuid
                     address_type {
                       scope
@@ -136,10 +153,10 @@ class GraphQLClient(AsyncBaseClient):
             }
             """
         )
-        variables: dict[str, object] = {"uuids": uuids}
+        variables: dict[str, object] = {"uuid": uuid}
         response = await self.execute(query=query, variables=variables)
         data = self.get_data(response)
-        return GetAddressData.parse_obj(data).addresses
+        return AddressData.parse_obj(data).addresses
 
     async def org_unit_relations(self, uuid: UUID) -> OrgUnitRelationsOrgUnits:
         query = gql(

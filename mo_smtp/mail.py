@@ -60,6 +60,8 @@ class EmailClient:
         msg = MIMEText(body, texttype, _charset="utf-8")
         msg["Subject"] = subject
         msg["From"] = self.sender
+        print("qqqqqqqqqqqqqqqqqqqqqqqqq")
+        print(receiver)
         if self.receiver_override and allow_receiver_override:
             msg["To"] = self.receiver_override
         else:
