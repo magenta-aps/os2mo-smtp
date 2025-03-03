@@ -209,7 +209,7 @@ async def alert_on_manager_removal(
             mo, org_unit_uuid, one(org_unit.root).uuid
         )
     else:
-        receivers = email_settings.receivers
+        receivers = set(email_settings.receivers)
 
     email_client.send_email(
         receivers,

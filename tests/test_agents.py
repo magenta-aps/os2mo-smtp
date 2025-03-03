@@ -455,6 +455,7 @@ async def test_alert_on_manager_removal_future_to_date(context: Context):
     assert "to_date is in the future" in str(cap_logs)
 
 
+@pytest.mark.usefixtures("minimal_valid_settings")
 async def test_alert_on_manager_removal_past_to_date(context: Context):
     mo = AsyncMock()
     mo.manager_data.return_value = ManagerDataManagers.parse_obj(
@@ -537,13 +538,14 @@ async def test_alert_on_manager_removal_past_to_date(context: Context):
     call_args = email_client.send_email.call_args_list[0]
 
     receiver, header, message, _ = call_args.args
-    assert receiver == ["datagruppen@silkeborg.dk"]
+    assert receiver == {"datagruppen@silkeborg.dk"}
     assert header == "En medarbejder er blevet fjernet fra lederfanen"
     assert "123stones" in message
     assert "Mick Jagger" in message
     assert "Rolling / Stones" in message
 
 
+@pytest.mark.usefixtures("minimal_valid_settings")
 async def test_alert_on_manager_vacant(context: Context):
     mo = AsyncMock()
     mo.manager_data.return_value = ManagerDataManagers.parse_obj(
@@ -602,13 +604,13 @@ async def test_alert_on_manager_vacant(context: Context):
             "objects": [
                 {
                     "current": {
-                        "name": "Rolling",
-                    },
+                        "name": "Stones",
+                    }
                 },
                 {
                     "current": {
-                        "name": "Stones",
-                    }
+                        "name": "Rolling",
+                    },
                 },
             ]
         }
@@ -619,10 +621,108 @@ async def test_alert_on_manager_vacant(context: Context):
     email_client.send_email.assert_called_once()
     call_args = email_client.send_email.call_args_list[0]
     receiver, header, message, _ = call_args.args
-    assert receiver == ["datagruppen@silkeborg.dk"]
+    assert receiver == {"datagruppen@silkeborg.dk"}
     assert header == "En medarbejder er blevet fjernet fra lederfanen"
     assert "123stones" in message
     assert "Vacant manager" in message
+    assert "Rolling / Stones" in message
+
+
+@pytest.mark.usefixtures("minimal_valid_settings")
+async def test_alert_on_manager_send_to_org_unit_email(
+    context: Context, monkeypatch: pytest.MonkeyPatch
+):
+    mo = AsyncMock()
+    mo.manager_data.return_value = ManagerDataManagers.parse_obj(
+        {
+            "objects": [
+                {
+                    "validities": [
+                        {
+                            "employee_uuid": uuid4(),
+                            "org_unit_uuid": uuid4(),
+                            "validity": {
+                                "from": datetime.datetime(
+                                    2015,
+                                    1,
+                                    1,
+                                    tzinfo=timezone(timedelta(hours=1)),
+                                ),
+                                "to": datetime.datetime(
+                                    2000,
+                                    1,
+                                    1,
+                                    tzinfo=timezone(timedelta(hours=1)),
+                                ),
+                            },
+                        }
+                    ]
+                }
+            ]
+        }
+    )
+    mo.employee_name.return_value = EmployeeNameEmployees.parse_obj(
+        {
+            "objects": [
+                {
+                    "validities": [
+                        {
+                            "name": "Mick Jagger",
+                        }
+                    ]
+                }
+            ]
+        }
+    )
+    mo.org_unit_data.return_value = OrgUnitDataOrgUnits.parse_obj(
+        {
+            "objects": [
+                {
+                    "validities": [
+                        {
+                            "name": "Rolling",
+                            "user_key": "123stones",
+                            "root": [{"uuid": uuid4()}],
+                            "managers": [],
+                        }
+                    ]
+                }
+            ]
+        }
+    )
+    mo.org_unit_descendants.return_value = OrgUnitDescendantsOrgUnits.parse_obj(
+        {
+            "objects": [
+                {
+                    "current": {
+                        "name": "Stones",
+                    }
+                },
+                {
+                    "current": {
+                        "name": "Rolling",
+                    },
+                },
+            ]
+        }
+    )
+
+    mo.institution_address.return_value = InstitutionAddressOrgUnits.parse_obj(
+        {"objects": [{"current": {"addresses": [{"value": "org_unit@email.com"}]}}]}
+    )
+
+    with monkeypatch.context() as con:
+        con.setenv("ALERT_MANAGER_REMOVAL_USE_ORG_UNIT_EMAILS", "True")
+        await alert_on_manager_removal(context, uuid4(), None, mo)
+    email_client = context["user_context"]["email_client"]
+
+    email_client.send_email.assert_called_once()
+    call_args = email_client.send_email.call_args_list[0]
+    receiver, header, message, _ = call_args.args
+    assert receiver == {"org_unit@email.com"}
+    assert header == "En medarbejder er blevet fjernet fra lederfanen"
+    assert "123stones" in message
+    assert "Mick Jagger" in message
     assert "Rolling / Stones" in message
 
 
