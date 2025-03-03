@@ -203,8 +203,16 @@ async def alert_on_manager_removal(
 
     message = template.render(context=context)
 
+    settings = Settings()
+    if settings.alert_manager_removal_use_org_unit_emails:
+        receivers = await get_institution_address(
+            mo, org_unit_uuid, one(org_unit.root).uuid
+        )
+    else:
+        receivers = email_settings.receivers
+
     email_client.send_email(
-        email_settings.receivers,
+        receivers,
         "En medarbejder er blevet fjernet fra lederfanen",
         message,
         "html",

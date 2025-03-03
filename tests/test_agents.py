@@ -619,7 +619,11 @@ async def test_alert_on_manager_vacant(context: Context):
     email_client.send_email.assert_called_once()
     call_args = email_client.send_email.call_args_list[0]
     receiver, header, message, _ = call_args.args
+    assert receiver == ["datagruppen@silkeborg.dk"]
+    assert header == "En medarbejder er blevet fjernet fra lederfanen"
+    assert "123stones" in message
     assert "Vacant manager" in message
+    assert "Rolling / Stones" in message
 
 
 @pytest.mark.usefixtures("minimal_valid_settings")

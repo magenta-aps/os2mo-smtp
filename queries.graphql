@@ -67,6 +67,9 @@ query orgUnitData($uuid: UUID!) {
       validities {
         name
         user_key
+        root {
+          uuid
+        }
       }
     }
   }

@@ -124,6 +124,9 @@ class GraphQLClient(AsyncBaseClient):
                   validities {
                     name
                     user_key
+                    root {
+                      uuid
+                    }
                   }
                 }
               }
