@@ -164,7 +164,7 @@ async def alert_on_manager_removal(
 
     Developed for Silkeborg Kommune
     """
-    logger.info(f"Obtained message with uuid = {uuid}")
+    logger.info("Listening on a manager event with uuid:", uuid=uuid)
 
     user_context = context["user_context"]
     email_client = user_context["email_client"]
@@ -181,17 +181,24 @@ async def alert_on_manager_removal(
     employee_uuid = manager["employee_uuid"]
     org_unit_uuid = manager["org_unit_uuid"]
 
-    if not to_date:
+    if not to_date and employee_uuid:
         logger.info("Manager is currently employed. No message will be sent")
         return
-    else:
+    elif not to_date and not employee_uuid:  # vacant manager
+        from_date = manager["validity"]["from_"]
+        # Insert from_date in `to_datetime`, as a vacant from_date equals a terminated manager's to_date
+        to_datetime = from_date.replace(tzinfo=None)
+        template = load_template("alert_on_vacant_manager.html")
+        logger.info("Vacant from (utc+0): ", datetime=to_datetime)
+    else:  # terminated manager
         # Format the to-date as a datetime object at UTC+0
         to_datetime = to_date.replace(tzinfo=None)
-        logger.info(f"to-date (utc+0) = {to_datetime}")
+        template = load_template("alert_on_manager_termination.html")
+        logger.info("Terminate from(utc+0): ", datetime=to_datetime)
 
     # Get the current time in UTC+0
     now = datetime.datetime.utcnow()
-    logger.info(f"now (utc+0) = {now}")
+    logger.info("Now (utc+0): ", now=now)
 
     # Compare the to-date with the current time
     # Only send a mail if the to-date is in the past
@@ -203,13 +210,12 @@ async def alert_on_manager_removal(
     if employee_uuid:
         employee = await dataloader.load_mo_user_data(employee_uuid)
     else:
-        employee = {"name": "Unknown employee"}
+        employee = {"name": "Vacant manager"}
 
     # Construct org unit location string
     org_unit = await dataloader.load_mo_org_unit_data(org_unit_uuid)
     location = await dataloader.get_org_unit_location(org_unit)
 
-    # Write message
     context = {
         "name": employee["name"],
         "to_date": to_datetime.date(),
@@ -217,7 +223,6 @@ async def alert_on_manager_removal(
         "user_key": org_unit["user_key"],
     }
 
-    template = load_template("alert_on_manager_termination.html")
     message = template.render(context=context)
 
     email_client.send_email(
@@ -238,6 +243,7 @@ async def alert_on_org_unit_without_relation(
     logger.info("Obtained message", uuid=str(uuid))
 
     settings = Settings()
+    assert settings.root_loen_org
     root = settings.root_loen_org
 
     org_unit_data = await get_org_unit_relations(mo, org_unit_uuid=uuid)

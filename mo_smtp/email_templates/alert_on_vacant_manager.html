@@ -1,0 +1,46 @@
+<html>
+<head>
+<style>
+table {
+    border-collapse: collapse;
+    }
+td, th {
+  border: 1px solid #dddddd;
+  text-align: left;
+  padding: 8px;
+}
+</style>
+</head>
+  <body>
+    <p>
+       Denne besked er for at gøre opmærksom på, at
+       en lederrolle er blevet vakant.
+       <br>
+       <br>
+       <table>
+         <tr>
+           <td>Navn:</td>
+           <td>{{ context.name }}</td>
+         </tr>
+         <tr>
+           <td>Vakant fra:</td>
+           <td>{{ context.to_date }}</td>
+         </tr>
+         <tr>
+           <td>Placering:</td>
+           <td>{{ context.location }}</td>
+         </tr>
+         <tr>
+           <td>Enhedsnummer:</td>
+           <td>{{ context.user_key }}</td>
+         </tr>
+       </table>
+       <br>
+
+       Med venlig hilsen,<br>
+       OS2mo
+       <br><br>
+       Denne besked kan ikke besvares.
+    </p>
+  </body>
+</html>
