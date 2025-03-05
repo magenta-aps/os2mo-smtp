@@ -260,9 +260,12 @@ async def alert_on_org_unit_without_relation(
 
     if current.related_units:
         for relation in current.related_units:
-            if one(one(relation.org_units).root).uuid != root:
-                logger.info("Org unit has a relation outside of the Lønorganisation")
-                return
+            for org_unit in relation.org_units:
+                if one(org_unit.root).uuid != root:
+                    logger.info(
+                        "Org unit has a relation outside of the Lønorganisation"
+                    )
+                    return
 
     # get_address
     emails = await get_institution_address(mo, uuid, root)

@@ -81,7 +81,7 @@ query orgUnitRelations($uuid: UUID!) {
         engagements {
           uuid
         }
-        related_units(exclude_self: true) {
+        related_units {
           org_units {
             uuid
             root {

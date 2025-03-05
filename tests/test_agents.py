@@ -518,16 +518,7 @@ async def test_alert_on_org_unit_not_in_loenorganisation(
                             "engagements": [
                                 {"uuid": uuid4()},
                             ],
-                            "related_units": [
-                                {
-                                    "org_units": [
-                                        {
-                                            "uuid": uuid4(),
-                                            "root": [{"uuid": root_uuid}],
-                                        }
-                                    ]
-                                }
-                            ],
+                            "related_units": [{"org_units": []}],
                         },
                     }
                 ]
@@ -550,6 +541,7 @@ async def test_alert_on_org_unit_has_external_relation(
 
     with monkeypatch.context() as con:
         con.setenv("ROOT_LOEN_ORG", str(root_loen_org))
+        org_unit_uuid = uuid4()
 
         mo = AsyncMock()
         mo.org_unit_relations.return_value = OrgUnitRelationsOrgUnits.parse_obj(
@@ -566,9 +558,13 @@ async def test_alert_on_org_unit_has_external_relation(
                                 {
                                     "org_units": [
                                         {
+                                            "uuid": org_unit_uuid,
+                                            "root": [{"uuid": root_loen_org}],
+                                        },
+                                        {
                                             "uuid": uuid4(),
                                             "root": [{"uuid": uuid4()}],
-                                        }
+                                        },
                                     ]
                                 }
                             ],
@@ -579,7 +575,7 @@ async def test_alert_on_org_unit_has_external_relation(
         )
 
         with capture_logs() as cap_logs:
-            await alert_on_org_unit_without_relation(context, uuid4(), None, mo)
+            await alert_on_org_unit_without_relation(context, org_unit_uuid, None, mo)
 
         email_client = context["user_context"]["email_client"]
         email_client.send_email.assert_not_called()
