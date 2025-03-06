@@ -1,8 +1,8 @@
 # SPDX-FileCopyrightText: Magenta ApS <https://magenta.dk>
 # SPDX-License-Identifier: MPL-2.0
 
-query getManagerData($uuids: [UUID!]) {
-  managers(filter: { uuids: $uuids, from_date: null, to_date: null }) {
+query managerData($uuid: UUID!) {
+  managers(filter: { uuids: [$uuid], from_date: null, to_date: null }) {
     objects {
       validities {
         employee_uuid
@@ -16,51 +16,70 @@ query getManagerData($uuids: [UUID!]) {
   }
 }
 
-query getUserData($uuids: [UUID!]) {
-  employees(filter: { uuids: $uuids }) {
-    objects {
-      validities {
-        name
-        addresses {
-          value
-          address_type {
-            scope
-          }
-        }
-        engagements {
-          org_unit_uuid
-        }
-      }
-    }
-  }
-}
-
-query getRootOrg {
-  org {
-    uuid
-  }
-}
-
-query getOrgUnitData($uuids: [UUID!]) {
-  org_units(filter: { uuids: $uuids }) {
-    objects {
-      validities {
-        name
-        user_key
-        parent_uuid
-        managers {
-          employee_uuid
-        }
-      }
-    }
-  }
-}
-
-query getAddressData($uuids: [UUID!]) {
-  addresses(filter: { uuids: $uuids }) {
+query employeeData($uuid: UUID!) {
+  employees(filter: { uuids: [$uuid] }) {
     objects {
       current {
         name
+        addresses(filter: {address_type:{scope: "EMAIL"}}) {
+          value
+        }
+        engagements {
+          org_unit {
+            name
+          }
+          managers(exclude_self: true) {
+            person {
+              addresses(filter: {address_type: {scope: "EMAIL"} }) {
+                value
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
+query employeeName($uuid: UUID!) {
+  employees(filter: { uuids: [$uuid] }) {
+    objects {
+      current {
+        name
+      }
+    }
+  }
+}
+
+query orgUnitDescendants($uuid: UUID!) {
+  org_units(filter: { descendant: { uuids: [$uuid]} }) {
+    objects {
+      current {
+        name
+      }
+    }
+  }
+}
+
+query orgUnitData($uuid: UUID!) {
+  org_units(filter: { uuids: [$uuid] }) {
+    objects {
+      current {
+        name
+        user_key
+        root {
+          uuid
+        }
+      }
+    }
+  }
+}
+
+query addressData($uuid: UUID!) {
+  addresses(filter: { uuids: [$uuid] }) {
+    objects {
+      current {
+        value
         employee_uuid
         address_type {
           scope

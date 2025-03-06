@@ -29,6 +29,7 @@ class Settings(BaseSettings):
         [], description="Agents which are actively listening and sending mails"
     )
     root_loen_org: UUID | None = None
+    alert_manager_removal_use_org_unit_emails: bool = False
 
 
 class EmailSettings(BaseSettings):
