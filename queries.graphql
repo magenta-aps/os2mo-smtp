@@ -19,7 +19,7 @@ query managerData($uuid: UUID!) {
 query employeeData($uuid: UUID!) {
   employees(filter: { uuids: [$uuid] }) {
     objects {
-      validities {
+      current {
         name
         addresses(filter: {address_type:{scope: "EMAIL"}}) {
           value
@@ -44,7 +44,7 @@ query employeeData($uuid: UUID!) {
 query employeeName($uuid: UUID!) {
   employees(filter: { uuids: [$uuid] }) {
     objects {
-      validities {
+      current {
         name
       }
     }
@@ -64,7 +64,7 @@ query orgUnitDescendants($uuid: UUID!) {
 query orgUnitData($uuid: UUID!) {
   org_units(filter: { uuids: [$uuid] }) {
     objects {
-      validities {
+      current {
         name
         user_key
         root {

@@ -145,16 +145,14 @@ async def test_inform_manager_on_employee_address_creation_multiple_emails(
         {
             "objects": [
                 {
-                    "validities": [
-                        {
-                            "name": "Mick Jagger",
-                            "addresses": [
-                                {"value": "test@example.com"},
-                                {"value": "another@email.com"},
-                            ],
-                            "engagements": [],
-                        }
-                    ]
+                    "current": {
+                        "name": "Mick Jagger",
+                        "addresses": [
+                            {"value": "test@example.com"},
+                            {"value": "another@email.com"},
+                        ],
+                        "engagements": [],
+                    }
                 }
             ]
         }
@@ -191,15 +189,13 @@ async def test_inform_manager_on_employee_address_creation_no_engagements(
         {
             "objects": [
                 {
-                    "validities": [
-                        {
-                            "name": "Mick Jagger",
-                            "addresses": [
-                                {"value": "test@example.com"},
-                            ],
-                            "engagements": [],
-                        }
-                    ]
+                    "current": {
+                        "name": "Mick Jagger",
+                        "addresses": [
+                            {"value": "test@example.com"},
+                        ],
+                        "engagements": [],
+                    }
                 }
             ]
         }
@@ -239,30 +235,28 @@ async def test_inform_manager_on_employee_address_creation(
         {
             "objects": [
                 {
-                    "validities": [
-                        {
-                            "name": "Mick Jagger",
-                            "addresses": [
-                                {"value": "test@example.com"},
-                            ],
-                            "engagements": [
-                                {
-                                    "org_unit": [{"name": "Stones"}],
-                                    "managers": [
-                                        {
-                                            "person": [
-                                                {
-                                                    "addresses": [
-                                                        {"value": "manager@email.com"}
-                                                    ]
-                                                }
-                                            ]
-                                        },
-                                    ],
-                                }
-                            ],
-                        }
-                    ]
+                    "current": {
+                        "name": "Mick Jagger",
+                        "addresses": [
+                            {"value": "test@example.com"},
+                        ],
+                        "engagements": [
+                            {
+                                "org_unit": [{"name": "Stones"}],
+                                "managers": [
+                                    {
+                                        "person": [
+                                            {
+                                                "addresses": [
+                                                    {"value": "manager@email.com"}
+                                                ]
+                                            }
+                                        ]
+                                    },
+                                ],
+                            }
+                        ],
+                    }
                 }
             ]
         }
@@ -303,46 +297,44 @@ async def test_inform_manager_on_employee_address_creation_multiple_engagements(
         {
             "objects": [
                 {
-                    "validities": [
-                        {
-                            "name": "Mick Jagger",
-                            "addresses": [
-                                {"value": "test@example.com"},
-                            ],
-                            "engagements": [
-                                {
-                                    "org_unit": [{"name": "Stones"}],
-                                    "managers": [
-                                        {
-                                            "person": [
-                                                {
-                                                    "addresses": [
-                                                        {"value": "manager@email.com"}
-                                                    ]
-                                                }
-                                            ]
-                                        },
-                                    ],
-                                },
-                                {
-                                    "org_unit": [{"name": "Rolling"}],
-                                    "managers": [
-                                        {
-                                            "person": [
-                                                {
-                                                    "addresses": [
-                                                        {
-                                                            "value": "another_manager@email.com"
-                                                        }
-                                                    ]
-                                                }
-                                            ]
-                                        },
-                                    ],
-                                },
-                            ],
-                        }
-                    ]
+                    "current": {
+                        "name": "Mick Jagger",
+                        "addresses": [
+                            {"value": "test@example.com"},
+                        ],
+                        "engagements": [
+                            {
+                                "org_unit": [{"name": "Stones"}],
+                                "managers": [
+                                    {
+                                        "person": [
+                                            {
+                                                "addresses": [
+                                                    {"value": "manager@email.com"}
+                                                ]
+                                            }
+                                        ]
+                                    },
+                                ],
+                            },
+                            {
+                                "org_unit": [{"name": "Rolling"}],
+                                "managers": [
+                                    {
+                                        "person": [
+                                            {
+                                                "addresses": [
+                                                    {
+                                                        "value": "another_manager@email.com"
+                                                    }
+                                                ]
+                                            }
+                                        ]
+                                    },
+                                ],
+                            },
+                        ],
+                    }
                 }
             ]
         }
@@ -491,11 +483,9 @@ async def test_alert_on_manager_removal_past_to_date(context: Context):
         {
             "objects": [
                 {
-                    "validities": [
-                        {
-                            "name": "Mick Jagger",
-                        }
-                    ]
+                    "current": {
+                        "name": "Mick Jagger",
+                    }
                 }
             ]
         }
@@ -504,13 +494,11 @@ async def test_alert_on_manager_removal_past_to_date(context: Context):
         {
             "objects": [
                 {
-                    "validities": [
-                        {
-                            "name": "Rolling",
-                            "user_key": "123stones",
-                            "managers": [],
-                        }
-                    ]
+                    "current": {
+                        "name": "Rolling",
+                        "user_key": "123stones",
+                        "managers": [],
+                    }
                 }
             ]
         }
@@ -575,11 +563,9 @@ async def test_alert_on_manager_vacant(context: Context):
         {
             "objects": [
                 {
-                    "validities": [
-                        {
-                            "name": "None",
-                        }
-                    ]
+                    "current": {
+                        "name": "None",
+                    }
                 }
             ]
         }
@@ -588,13 +574,11 @@ async def test_alert_on_manager_vacant(context: Context):
         {
             "objects": [
                 {
-                    "validities": [
-                        {
-                            "name": "Rolling",
-                            "user_key": "123stones",
-                            "managers": [],
-                        }
-                    ]
+                    "current": {
+                        "name": "Rolling",
+                        "user_key": "123stones",
+                        "managers": [],
+                    }
                 }
             ]
         }
@@ -665,11 +649,9 @@ async def test_alert_on_manager_send_to_org_unit_email(
         {
             "objects": [
                 {
-                    "validities": [
-                        {
-                            "name": "Mick Jagger",
-                        }
-                    ]
+                    "current": {
+                        "name": "Mick Jagger",
+                    }
                 }
             ]
         }
@@ -678,14 +660,12 @@ async def test_alert_on_manager_send_to_org_unit_email(
         {
             "objects": [
                 {
-                    "validities": [
-                        {
-                            "name": "Rolling",
-                            "user_key": "123stones",
-                            "root": [{"uuid": uuid4()}],
-                            "managers": [],
-                        }
-                    ]
+                    "current": {
+                        "name": "Rolling",
+                        "user_key": "123stones",
+                        "root": [{"uuid": uuid4()}],
+                        "managers": [],
+                    }
                 }
             ]
         }

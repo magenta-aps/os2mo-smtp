@@ -43,7 +43,7 @@ async def get_employee_data(mo: GraphQLClient, uuid: UUID) -> Any:
         Dictionary with queried user data
     """
     gql_response = await mo.employee_data(uuid)
-    return one(one(gql_response.objects).validities)
+    return one(gql_response.objects).current
 
 
 async def get_employee_name(mo: GraphQLClient, uuid: UUID) -> Any:
@@ -58,7 +58,7 @@ async def get_employee_name(mo: GraphQLClient, uuid: UUID) -> Any:
         Dictionary with queried user data
     """
     gql_response = await mo.employee_name(uuid)
-    return one(one(gql_response.objects).validities)
+    return one(gql_response.objects).current
 
 
 async def get_org_unit_data(mo: GraphQLClient, uuid: UUID) -> Any:
@@ -73,7 +73,7 @@ async def get_org_unit_data(mo: GraphQLClient, uuid: UUID) -> Any:
         Dictionary with queried org unit data
     """
     gql_response = await mo.org_unit_data(uuid)
-    return one(one(gql_response.objects).validities)
+    return one(gql_response.objects).current
 
 
 async def get_org_unit_location(mo: GraphQLClient, uuid: UUID):
