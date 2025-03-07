@@ -22,6 +22,7 @@ services:
       RECEIVERS: '["test@example.dk"]'
       SMTP_PORT: 1025
       SMTP_HOST: "mailcatcher"
+      TESTING: "true"
 
       ACTIVE_AGENTS: '["inform_manager_on_employee_address_creation", "alert_on_manager_removal","alert_on_org_unit_without_relation"]'
       ROOT_LOEN_ORG: "fb2d158f-114e-5f67-8365-2c520cf10b58"
