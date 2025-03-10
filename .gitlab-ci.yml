@@ -19,7 +19,7 @@ variables:
   POETRY_VERSION: "1.8"
   PRECOMMIT_USE_POETRY: "true"
   PRODUCT: os2mo
-  COMPONENT: os2mo_smtp
+  COMPONENT: smtp
 
 
 # Conditions
