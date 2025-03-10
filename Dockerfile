@@ -22,7 +22,7 @@ RUN poetry install --no-root
 COPY . ./
 
 #CMD ["poetry", "run", "python", "-m",  "mo_smtp.smtp_agent"]
-CMD ["uvicorn", "--factory", "smtp_agent:create_app", "--host", "0.0.0.0"]
+CMD ["uvicorn", "--factory", "mo_smtp.smtp_agent:create_app", "--host", "0.0.0.0"]
 
 # Add build version to the environment last to avoid build cache misses
 ARG COMMIT_TAG
