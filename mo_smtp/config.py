@@ -37,6 +37,8 @@ class EmailSettings(BaseSettings):
         frozen = True
         env_nested_delimiter = "__"
 
+    smtp_user: str | None = Field(None, description="SMTP user")
+    smtp_password: str | None = Field(None, description="SMTP password")
     sender: str = "os2mo@magenta.dk"
     smtp_port: int = Field(..., description="SMTP port")
     smtp_host: str = Field(..., description="SMTP host. For example 'smtp.gmail.com' ")
