@@ -62,12 +62,16 @@ class EmailClient:
         msg = MIMEText(body, texttype, _charset="utf-8")
         msg["Subject"] = subject
         msg["From"] = self.sender
+
         if self.receiver_override and allow_receiver_override:
             msg["To"] = self.receiver_override
+            recipients = [self.receiver_override]
         else:
             msg["To"] = ", ".join(receiver)
-            msg["CC"] = ", ".join(cc) if cc else ""
-            msg["BCC"] = ", ".join(bcc) if bcc else ""
+            msg["CC"] = ", ".join(cc)
+            recipients = list(receiver) + list(cc)
+
+        bcc_list = list(bcc)
 
         # Print message content to log
         for key in msg.keys():
@@ -83,14 +87,13 @@ class EmailClient:
 
         if not self.testing:
             smtp = SMTP(host=self.smtp_host, port=self.smtp_port)
-
             try:
                 smtp.starttls()
                 smtp.ehlo_or_helo_if_needed()
                 smtp.login(user=self.smtp_user, password=self.smtp_password)
             except SMTPNotSupportedError:
                 logger.info("SMTP server doesn't use TLS. TLS ignored")
-            smtp.send_message(msg)  # type: ignore
+            smtp.send_message(msg, to_addrs=recipients + bcc_list)
             smtp.quit()
         else:
             logger.info("This was a test run. No message was sent")
