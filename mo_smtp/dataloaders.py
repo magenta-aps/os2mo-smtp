@@ -81,13 +81,14 @@ async def get_org_unit_location(mo: GraphQLClient, uuid: UUID):
     Constructs and org-unit location string, where different org-units in the
     hierarchy are separated by forward slashes.
     """
-    gql_response = await mo.org_unit_descendants(uuid)
+    gql_response = await mo.org_unit_ancestors(uuid)
     org_units = gql_response.objects
-    org_unit_location = ""
+    current = one(org_units).current
 
-    org_unit_location = " / ".join(
-        org_unit.current.name for org_unit in reversed(org_units) if org_unit.current
-    )
+    org_unit_location = ""
+    if current:
+        ancestors = [ancestor.name for ancestor in reversed(current.ancestors)]
+        org_unit_location = " / ".join(ancestors + [current.name])
 
     return org_unit_location
 
