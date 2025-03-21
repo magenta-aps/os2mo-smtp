@@ -51,10 +51,13 @@ query employeeName($uuid: UUID!) {
   }
 }
 
-query orgUnitDescendants($uuid: UUID!) {
-  org_units(filter: { descendant: { uuids: [$uuid]} }) {
+query orgUnitAncestors($uuid: UUID!) {
+  org_units(filter: { uuids: [$uuid]} ) {
     objects {
       current {
+        ancestors {
+          name
+        }
         name
       }
     }
