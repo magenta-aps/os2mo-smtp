@@ -129,3 +129,41 @@ query institutionAddress($uuid: UUID!, $root: UUID!) {
     }
   }
 }
+
+
+query rolebinding($uuid: UUID!) {
+  rolebindings(filter: {uuids: [$uuid]}) {
+    objects {
+      current {
+        ituser {
+          uuid
+        }
+      }
+    }
+  }
+}
+
+
+query ituser($uuid: UUID!) {
+  itusers(filter: { uuids: [$uuid] }) {
+    objects {
+      current {
+        user_key
+        rolebindings {
+          role {
+            name
+            uuid
+          }
+        }
+        person {
+          name
+          uuid
+        }
+        itsystem {
+          name
+          uuid
+        }
+      }
+    }
+  }
+}
