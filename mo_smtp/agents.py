@@ -282,7 +282,8 @@ async def alert_on_org_unit_without_relation(
     email_client.send_email(**email_args)
 
 
-_last_sent_messages = {}
+# TODO: This should be stored in a db, since a restart would throw away the last message
+_last_sent_messages: dict = {}
 
 
 @amqp_router.register("rolebinding")
@@ -293,10 +294,9 @@ async def alert_on_rolebinding(
     mo: depends.GraphQLClient,
 ) -> None:
     ituser_uuid = await get_ituser_uuid_by_rolebinding(mo, uuid=uuid)
-
     if not ituser_uuid:
-        logger.info("ITUser not found")
-        return
+        logger.info("Rolebindings are fucked")
+        return None
     return await generate_ituser_email(context, ituser_uuid, mo)
 
 
@@ -335,10 +335,11 @@ async def generate_ituser_email(
         "roles": roles,
     }
 
-    message = template.render(context=context)
-    if message == _last_sent_messages.get(ituser_uuid):
-        logger.info("Email is identical to previous. Don't send")
+    if context == _last_sent_messages.get(ituser_uuid):
+        logger.info("Email is identical to the previous. Don't send")
         return
+
+    message = template.render(context=context)
 
     email_client.send_email(
         set(email_settings.receivers),
@@ -346,4 +347,4 @@ async def generate_ituser_email(
         message,
         "html",
     )
-    _last_sent_messages[ituser_uuid] = message
+    _last_sent_messages[ituser_uuid] = context
