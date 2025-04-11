@@ -270,7 +270,7 @@ async def test_get_institution_address():
     )
 
 
-async def test_get_ituser_uuid_by_rolebinding():
+async def test_get_ituser_uuid_by_rolebinding() -> None:
     rolebinding_uuid = uuid4()
     ituser_uuid = uuid4()
     test_data = RolebindingRolebindings.parse_obj(
@@ -290,7 +290,7 @@ async def test_get_ituser_uuid_by_rolebinding():
     mocked_mo_client.rolebinding.assert_awaited_once_with(rolebinding_uuid)
 
 
-async def test_get_ituser():
+async def test_get_ituser() -> None:
     ituser_uuid = uuid4()
     test_data = ItuserItusersObjectsCurrent.parse_obj(
         {

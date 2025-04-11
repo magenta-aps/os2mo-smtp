@@ -848,7 +848,7 @@ async def test_alert_on_org_unit_sends_email(
 
 
 @pytest.mark.usefixtures("minimal_valid_settings")
-async def test_ituser_events_sends_email(context: Context):
+async def test_ituser_events_sends_email(context: Context) -> None:
     mo = AsyncMock()
     ituser_test_data = ItuserItusersObjectsCurrent.parse_obj(
         {

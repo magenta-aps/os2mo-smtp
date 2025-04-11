@@ -322,10 +322,12 @@ async def generate_ituser_email(
     email_settings = user_context["email_settings"]
 
     ituser = await get_ituser(mo, uuid=ituser_uuid)
+    if not ituser:
+        return
 
     rolebindings = ituser.rolebindings
     itsystem = ituser.itsystem.name
-    person = one(ituser.person).name
+    person = one(ituser.person).name if ituser.person else None
     roles = [one(rb.role) for rb in rolebindings]
 
     template = load_template("alert_on_rolebinding.html")
