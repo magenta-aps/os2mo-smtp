@@ -1,0 +1,52 @@
+
+<html>
+<head>
+<style>
+table {
+    border-collapse: collapse;
+    }
+td, th {
+  border: 1px solid #dddddd;
+  text-align: left;
+  padding: 8px;
+}
+</style>
+</head>
+  <body>
+    <p>
+      Denne besked er for at gøre opmærksom på, at følgende bruger skal oprettes i {{ context.itsystem }}:
+      <br><br>
+
+      <table>
+        <tr>
+          <td>Navn:</td>
+          <td>{{ context.person }}</td>
+        </tr>
+        <tr>
+          <td>Brugernavn:</td>
+          <td>{{ context.ituser }}</td>
+        </tr>
+        <tr>
+          <td>IT-system:</td>
+          <td>{{ context.itsystem }}</td>
+        </tr>
+      </table>
+      <br>
+
+      Brugeren skal tildeles følgende roller:
+      <ul>
+      {% for role in context.roles %}
+        <li>{{ role.name }}</li>
+      {% endfor %}
+      </ul>
+
+      <br>
+      På forhånd tak.<br>
+      Med venlig hilsen,<br>
+      OS2mo
+
+      <br><br>
+      Denne besked kan ikke besvares.
+    </p>
+  </body>
+</html>
