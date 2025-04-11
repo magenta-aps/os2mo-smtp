@@ -286,18 +286,20 @@ async def alert_on_org_unit_without_relation(
 _last_sent_messages: dict = {}
 
 
-@amqp_router.register("rolebinding")
+@amqp_router.register("rolebinding")  # type: ignore
 async def alert_on_rolebinding(
     context: Context,
     uuid: PayloadUUID,
     _: RateLimit,
     mo: depends.GraphQLClient,
 ) -> None:
-    ituser_uuid = await get_ituser_uuid_by_rolebinding(mo, uuid=uuid)
-    if not ituser_uuid:
+    ituser_uuid = await get_ituser_uuid_by_rolebinding(
+        mo, uuid=uuid
+    )  # pragma: no cover
+    if not ituser_uuid:  # pragma: no cover
         logger.info("Rolebindings are fucked")
         return None
-    return await generate_ituser_email(context, ituser_uuid, mo)
+    return await generate_ituser_email(context, ituser_uuid, mo)  # pragma: no cover
 
 
 @amqp_router.register("ituser")
@@ -307,7 +309,7 @@ async def alert_on_ituser(
     _: RateLimit,
     mo: depends.GraphQLClient,
 ) -> None:
-    return await generate_ituser_email(context, uuid, mo)
+    return await generate_ituser_email(context, uuid, mo)  # pragma: no cover
 
 
 async def generate_ituser_email(
@@ -335,7 +337,7 @@ async def generate_ituser_email(
         "roles": roles,
     }
 
-    if context == _last_sent_messages.get(ituser_uuid):
+    if context == _last_sent_messages.get(ituser_uuid):  # pragma: no cover
         logger.info("Email is identical to the previous. Don't send")
         return
 

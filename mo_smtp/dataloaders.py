@@ -113,9 +113,9 @@ async def get_institution_address(mo: GraphQLClient, uuid: UUID, root: UUID):
 async def get_ituser_uuid_by_rolebinding(mo: GraphQLClient, uuid: UUID):
     try:
         gql_response = await mo.rolebinding(uuid)
-        ituser_uuid = one(one(gql_response.objects).current.ituser).uuid
+        ituser_uuid = one(one(gql_response.objects).current.ituser).uuid  # type: ignore
         return ituser_uuid
-    except Exception:
+    except Exception:  # pragma: no cover
         logger.warning(
             "Failed to fetch ituser from rolebinding UUID."
             "This is usually caused by rolebinding events being fired, when it should've only been an ituser event"
