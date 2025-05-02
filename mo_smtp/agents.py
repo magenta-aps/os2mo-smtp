@@ -195,6 +195,12 @@ async def alert_on_manager_removal(
 
     # Construct org unit location string
     org_unit = await get_org_unit_data(mo, org_unit_uuid)
+    if not org_unit:
+        logger.info(
+            "Org unit is possibly terminated or doesn't exist. An email will not be sent"
+        )
+        return
+
     location = await get_org_unit_location(mo, org_unit_uuid)
 
     context = {
@@ -297,7 +303,9 @@ async def alert_on_rolebinding(
         mo, uuid=uuid
     )  # pragma: no cover
     if not ituser_uuid:  # pragma: no cover
-        logger.info("Rolebindings are fucked")
+        logger.info(
+            "IT-user is possibly terminated or doesn't exist. An email will not be sent"
+        )
         return None
     return await generate_ituser_email(context, ituser_uuid, mo)  # pragma: no cover
 
@@ -322,7 +330,10 @@ async def generate_ituser_email(
     email_settings = user_context["email_settings"]
 
     ituser = await get_ituser(mo, uuid=ituser_uuid)
-    if not ituser:  # pragma: no cover
+    if not ituser:
+        logger.info(
+            "IT-user is possibly terminated or doesn't exist. An email will not be sent"
+        )
         return
 
     rolebindings = ituser.rolebindings
@@ -340,7 +351,7 @@ async def generate_ituser_email(
     }
 
     if context == _last_sent_messages.get(ituser_uuid):  # pragma: no cover
-        logger.info("Email is identical to the previous. Don't send")
+        logger.info("Email is identical to the previous. An email will not be sent")
         return
 
     message = template.render(context=context)
