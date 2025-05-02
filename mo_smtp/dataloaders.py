@@ -77,6 +77,8 @@ async def get_org_unit_data(mo: GraphQLClient, uuid: UUID) -> Any:
         Dictionary with queried org unit data
     """
     gql_response = await mo.org_unit_data(uuid)
+    if not gql_response.objects:
+        return None
     return one(gql_response.objects).current
 
 
@@ -130,5 +132,6 @@ async def get_ituser(
     mo: GraphQLClient, uuid: UUID
 ) -> ItuserItusersObjectsCurrent | None:
     gql_response = await mo.ituser(uuid)
-    ituser_data = one(gql_response.objects).current
-    return ituser_data
+    if not gql_response.objects:
+        return None
+    return one(gql_response.objects).current
