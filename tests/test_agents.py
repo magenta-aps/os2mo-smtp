@@ -882,4 +882,55 @@ async def test_ituser_events_sends_email(context: Context) -> None:
     assert "Mick Jagger" in message
 
 
-# TODO: Test cases where email won't be sent
+@pytest.mark.usefixtures("minimal_valid_settings")
+async def test_alert_on_manager_org_unit_not_found(context: Context) -> None:
+    mo = AsyncMock()
+    mo.manager_data.return_value = ManagerDataManagers.parse_obj(
+        {
+            "objects": [
+                {
+                    "validities": [
+                        {
+                            "employee_uuid": None,
+                            "org_unit_uuid": uuid4(),
+                            "validity": {
+                                "from": datetime.datetime(
+                                    2015,
+                                    1,
+                                    1,
+                                    tzinfo=timezone(timedelta(hours=1)),
+                                ),
+                                "to": datetime.datetime(
+                                    2020,
+                                    1,
+                                    1,
+                                    tzinfo=timezone(timedelta(hours=1)),
+                                ),
+                            },
+                        }
+                    ]
+                }
+            ]
+        }
+    )
+    mo.employee_name.return_value = EmployeeNameEmployees.parse_obj({"objects": []})
+    mo.org_unit_data.return_value = OrgUnitDataOrgUnits.parse_obj({"objects": []})
+    with capture_logs() as cap_logs:
+        await alert_on_manager_removal(context, uuid4(), None, mo)
+
+    email_client = context["user_context"]["email_client"]
+    email_client.send_email.assert_not_called()
+    assert "Org unit is possibly terminated or doesn't exist." in str(cap_logs)
+
+
+@pytest.mark.usefixtures("minimal_valid_settings")
+async def test_ituser_events_ituser_not_found(context: Context) -> None:
+    mo = AsyncMock()
+    mo.ituser.return_value = ItuserItusers.parse_obj({"objects": []})
+
+    with capture_logs() as cap_logs:
+        await generate_ituser_email(context, uuid4(), mo)
+
+    email_client = context["user_context"]["email_client"]
+    email_client.send_email.assert_not_called()
+    assert "IT-user is possibly terminated or doesn't exist." in str(cap_logs)
