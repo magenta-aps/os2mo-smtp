@@ -53,6 +53,7 @@ from mo_smtp.dataloaders import (
 from mo_smtp.dataloaders import get_org_unit_relations
 from mo_smtp.dataloaders import get_ituser_uuid_by_rolebinding
 from mo_smtp.dataloaders import get_ituser
+from structlog.testing import capture_logs
 
 
 async def test_get_address_data() -> None:
@@ -288,6 +289,44 @@ async def test_get_ituser_uuid_by_rolebinding() -> None:
 
     assert ituser_response == expected_response
     mocked_mo_client.rolebinding.assert_awaited_once_with(rolebinding_uuid)
+
+
+async def test_get_ituser_uuid_by_rolebinding_not_found() -> None:
+    rolebinding_uuid = uuid4()
+    test_data = RolebindingRolebindings.parse_obj({"objects": [{"current": None}]})
+
+    mocked_mo_client = AsyncMock()
+
+    mocked_mo_client.rolebinding.return_value = test_data
+
+    ituser_response = await get_ituser_uuid_by_rolebinding(
+        mo=mocked_mo_client, uuid=rolebinding_uuid
+    )
+    expected_response = None
+
+    assert ituser_response == expected_response
+    mocked_mo_client.rolebinding.assert_awaited_once_with(rolebinding_uuid)
+
+
+async def test_get_ituser_uuid_by_rolebinding_empty_ituser() -> None:
+    rolebinding_uuid = uuid4()
+    test_data = RolebindingRolebindings.parse_obj(
+        {"objects": [{"current": {"ituser": []}}]}
+    )
+
+    mocked_mo_client = AsyncMock()
+
+    mocked_mo_client.rolebinding.return_value = test_data
+
+    with capture_logs() as cap_logs:
+        await get_ituser_uuid_by_rolebinding(mo=mocked_mo_client, uuid=rolebinding_uuid)
+
+    mocked_mo_client.rolebinding.assert_awaited_once_with(rolebinding_uuid)
+
+    assert (
+        "Failed to fetch ituser from rolebinding UUID. This is usually caused by rolebinding events being fired, when it should've only been an ituser event"
+        in str(cap_logs)
+    )
 
 
 async def test_get_ituser() -> None:

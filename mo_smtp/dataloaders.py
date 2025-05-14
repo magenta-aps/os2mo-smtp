@@ -116,13 +116,13 @@ async def get_ituser_uuid_by_rolebinding(mo: GraphQLClient, uuid: UUID) -> UUID 
     try:
         gql_response = await mo.rolebinding(uuid)
         current = one(gql_response.objects).current
-        if current is None:  # pragma: no cover
+        if current is None:
             return None
         ituser_uuid = one(current.ituser).uuid
         return ituser_uuid
-    except Exception:  # pragma: no cover
+    except Exception:
         logger.warning(
-            "Failed to fetch ituser from rolebinding UUID."
+            "Failed to fetch ituser from rolebinding UUID. "
             "This is usually caused by rolebinding events being fired, when it should've only been an ituser event"
         )
         return None
