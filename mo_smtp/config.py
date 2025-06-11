@@ -1,4 +1,6 @@
 from uuid import UUID
+from enum import Enum
+
 from fastramqpi.config import Settings as FastRAMQPISettings
 from fastramqpi.ramqp.config import AMQPConnectionSettings
 from pydantic import BaseSettings
@@ -14,6 +16,12 @@ class SmtpAMQPConnectionSettings(AMQPConnectionSettings):
 class SmtpFastRAMQPISettings(FastRAMQPISettings):
     amqp: SmtpAMQPConnectionSettings
     mo_graphql_version: PositiveInt = 22
+
+
+class SMTPSecurity(Enum):
+    NONE = "none"
+    STARTTLS = "starttls"
+    TLS = "tls"
 
 
 class Settings(BaseSettings):
@@ -42,7 +50,8 @@ class EmailSettings(BaseSettings):
     sender: str = "os2mo@magenta.dk"
     smtp_port: int = Field(..., description="SMTP port")
     smtp_host: str = Field(..., description="SMTP host. For example 'smtp.gmail.com' ")
-    testing: bool = Field(
+    smtp_security: SMTPSecurity
+    dry_run: bool = Field(
         False,
         description="When True, will print mails to the console but not send anything",
     )

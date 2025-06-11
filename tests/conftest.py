@@ -13,9 +13,10 @@ def settings_overrides_module_scope() -> Iterator[dict[str, Any]]:
     overrides = {
         "CLIENT_ID": "Foo",
         "CLIENT_SECRET": "bar",
-        "TESTING": "True",
+        "DRY_RUN": "True",
         "SMTP_PORT": "25",
         "SMTP_HOST": "smtp.host.com",
+        "SMTP_SECURITY": "none",
         "FASTRAMQPI__AMQP__URL": "amqp://guest:guest@msg_broker:5672/",
         "FASTRAMQPI__DATABASE__USER": "fastramqpi",
         "FASTRAMQPI__DATABASE__PASSWORD": "fastramqpi",
@@ -49,9 +50,10 @@ def settings_overrides() -> Iterator[dict[str, str]]:
     overrides = {
         "CLIENT_ID": "Foo",
         "CLIENT_SECRET": "bar",
-        "TESTING": "True",
+        "DRY_RUN": "True",
         "SMTP_PORT": "25",
         "SMTP_HOST": "smtp.host.com",
+        "SMTP_SECURITY": "none",
         "FASTRAMQPI__AMQP__URL": "amqp://guest:guest@msg_broker:5672/",
         "FASTRAMQPI__DATABASE__USER": "fastramqpi",
         "FASTRAMQPI__DATABASE__PASSWORD": "fastramqpi",
