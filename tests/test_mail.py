@@ -2,6 +2,7 @@ from email.mime.text import MIMEText
 from smtplib import SMTPNotSupportedError
 from unittest.mock import MagicMock
 from unittest.mock import patch
+from mo_smtp.config import SMTPSecurity
 
 import pytest
 from fastramqpi.context import Context
@@ -14,6 +15,7 @@ def email_settings() -> MagicMock:
     email_settings = MagicMock()
     email_settings.smtp_host = "0.0.0.0"
     email_settings.smtp_port = 1025
+    email_settings.smtp_security = "none"
     email_settings.sender = "sender@test.net"
     email_settings.dry_run = False
     email_settings.receiver_override = ""
@@ -180,3 +182,17 @@ async def test_send_message_receiver_override(email_client: EmailClient):
         assert "CC" not in message
         assert "BCC" not in message
         assert message["To"] == "mail@test.com"
+
+
+def test_send_message_starttls_not_implemented(email_client: EmailClient):
+    email_client.smtp_security = SMTPSecurity.STARTTLS
+    with pytest.raises(
+        NotImplementedError, match="STARTTLS support has not been implemented"
+    ):
+        email_client.send_email(
+            receiver={"a@test.com"},
+            cc=set(),
+            bcc=set(),
+            subject="Subject",
+            body="Body",
+        )
