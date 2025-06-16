@@ -1,7 +1,7 @@
 # Sends an email
 from email.mime.text import MIMEText
-from smtplib import SMTP
-from smtplib import SMTPNotSupportedError
+from smtplib import SMTP, SMTP_SSL
+from .config import SMTPSecurity
 
 import structlog
 from fastramqpi.context import Context
@@ -16,8 +16,9 @@ class EmailClient:
         self.smtp_password = email_settings.smtp_password
         self.smtp_host = email_settings.smtp_host
         self.smtp_port = email_settings.smtp_port
+        self.smtp_security = email_settings.smtp_security
         self.sender = email_settings.sender
-        self.testing = email_settings.testing
+        self.dry_run = email_settings.dry_run
         self.receiver_override = email_settings.receiver_override
 
     def send_email(
@@ -85,16 +86,19 @@ class EmailClient:
             + (payload.decode() if isinstance(payload, bytes) else str(payload))
         )
 
-        if not self.testing:
-            smtp = SMTP(host=self.smtp_host, port=self.smtp_port)
-            try:
-                smtp.starttls()
-                smtp.ehlo_or_helo_if_needed()
-                smtp.login(user=self.smtp_user, password=self.smtp_password)
-            except SMTPNotSupportedError:
-                logger.info("SMTP server doesn't use TLS. TLS ignored")
+        if self.smtp_security is SMTPSecurity.STARTTLS:
+            raise NotImplementedError(
+                "STARTTLS support has not been implemented. Consider using implicit TLS, which is generally considered more secure."
+            )
+        smtp_cls = SMTP_SSL if self.smtp_security is SMTPSecurity.TLS else SMTP
+        smtp = smtp_cls(host=self.smtp_host, port=self.smtp_port)
+        if self.smtp_user and self.smtp_password:
+            smtp.login(user=self.smtp_user, password=self.smtp_password)
+
+        if not self.dry_run:
             smtp.send_message(msg, to_addrs=recipients + bcc_list)
             smtp.quit()
+            logger.info("Email has been sent")
         else:
-            logger.info("This was a test run. No message was sent")
+            logger.info("This was a dry run")
         return msg
