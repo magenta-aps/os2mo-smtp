@@ -26,6 +26,7 @@ from .dataloaders import (
     get_employee_data,
     get_employee_name,
     get_manager_data,
+    get_org_unit_address,
     get_org_unit_data,
     get_org_unit_location,
 )
@@ -214,9 +215,12 @@ async def alert_on_manager_removal(
 
     settings = Settings()
     if settings.alert_manager_removal_use_org_unit_emails:
-        receivers = await get_institution_address(
-            mo, org_unit_uuid, one(org_unit.root).uuid
-        )
+        root = one(org_unit.root).uuid
+        # if org_unit_uuid == root, we just use the address from the root
+        if org_unit_uuid == root:
+            receivers = await get_org_unit_address(mo, org_unit_uuid)
+        else:
+            receivers = await get_institution_address(mo, org_unit_uuid, root)
     else:
         receivers = set(email_settings.receivers)
 

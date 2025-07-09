@@ -175,6 +175,13 @@ from .manager_data import (
     ManagerDataManagersObjectsValidities,
     ManagerDataManagersObjectsValiditiesValidity,
 )
+from .org_unit_address import (
+    OrgUnitAddress,
+    OrgUnitAddressOrgUnits,
+    OrgUnitAddressOrgUnitsObjects,
+    OrgUnitAddressOrgUnitsObjectsCurrent,
+    OrgUnitAddressOrgUnitsObjectsCurrentAddresses,
+)
 from .org_unit_ancestors import (
     OrgUnitAncestors,
     OrgUnitAncestorsOrgUnits,
@@ -330,6 +337,11 @@ __all__ = [
     "ManagerTerminateInput",
     "ManagerUpdateInput",
     "ModelsUuidsBoundRegistrationFilter",
+    "OrgUnitAddress",
+    "OrgUnitAddressOrgUnits",
+    "OrgUnitAddressOrgUnitsObjects",
+    "OrgUnitAddressOrgUnitsObjectsCurrent",
+    "OrgUnitAddressOrgUnitsObjectsCurrentAddresses",
     "OrgUnitAncestors",
     "OrgUnitAncestorsOrgUnits",
     "OrgUnitAncestorsOrgUnitsObjects",

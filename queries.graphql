@@ -130,6 +130,19 @@ query institutionAddress($uuid: UUID!, $root: UUID!) {
   }
 }
 
+query orgUnitAddress($uuid: UUID!) {
+  org_units(
+    filter: { uuids: [$uuid] }
+  ) {
+    objects {
+      current {
+        addresses(filter: { address_type: { scope: "EMAIL" } }) {
+          value
+        }
+      }
+    }
+  }
+}
 
 query rolebinding($uuid: UUID!) {
   rolebindings(filter: {uuids: [$uuid]}) {
