@@ -267,7 +267,10 @@ async def alert_on_org_unit_without_relation(
                     return
 
     # get_address
-    emails = await get_institution_address(mo, uuid, root)
+    if uuid == root:
+        emails = await get_org_unit_address(mo, uuid)
+    else:
+        emails = await get_institution_address(mo, uuid, root)
 
     user_context = context["user_context"]
     email_client = user_context["email_client"]
