@@ -2,7 +2,7 @@ services:
 
   mo_smtp:
     build: .
-    command: [ "uvicorn", "--factory", "mo_smtp.smtp_agent:create_app", "--host", "0.0.0.0", "--reload"]
+    command: [ "uvicorn", "--factory", "mo_smtp.app:create_app", "--host", "0.0.0.0", "--reload"]
 
     volumes:
       - ./mo_smtp:/app/mo_smtp
@@ -23,14 +23,14 @@ services:
       FASTRAMQPI__DATABASE__PASSWORD: "hemmelighed"
       FASTRAMQPI__DATABASE__NAME: "smtp"
 
-      SENDER: "os2mo@magenta.dk"
-      RECEIVERS: '["test@example.dk"]'
-      SMTP_PORT: 1025
-      SMTP_HOST: "mailcatcher"
-      SMTP_SECURITY: "none"
-      DRY_RUN: True
+      EMAIL_SETTINGS__SENDER: "os2mo@magenta.dk"
+      EMAIL_SETTINGS__SMTP_PORT: 1025
+      EMAIL_SETTINGS__SMTP_HOST: "mailcatcher"
+      EMAIL_SETTINGS__SMTP_SECURITY: "none"
+      EMAIL_SETTINGS__DRY_RUN: True
 
       ACTIVE_AGENTS: '["inform_manager_on_employee_address_creation", "alert_on_manager_removal","alert_on_org_unit_without_relation","alert_on_rolebinding","alert_on_ituser"]'
+      RECEIVERS: '["test@example.dk"]'
       ROOT_LOEN_ORG: "fb2d158f-114e-5f67-8365-2c520cf10b58"
       ALERT_MANAGER_REMOVAL_USE_ORG_UNIT_EMAILS: "true"
 

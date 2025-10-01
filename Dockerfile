@@ -1,3 +1,5 @@
+# SPDX-FileCopyrightText: 2019-2020 Magenta ApS
+# SPDX-License-Identifier: MPL-2.0
 FROM python:3.11
 
 WORKDIR /app
@@ -22,7 +24,7 @@ RUN poetry install --no-root
 COPY . ./
 
 #CMD ["poetry", "run", "python", "-m",  "mo_smtp.smtp_agent"]
-CMD ["uvicorn", "--factory", "mo_smtp.smtp_agent:create_app", "--host", "0.0.0.0"]
+CMD ["uvicorn", "--factory", "mo_smtp.app:create_app", "--host", "0.0.0.0"]
 
 # Add build version to the environment last to avoid build cache misses
 ARG COMMIT_TAG

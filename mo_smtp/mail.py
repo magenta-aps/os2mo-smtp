@@ -4,14 +4,12 @@ from smtplib import SMTP, SMTP_SSL
 from .config import SMTPSecurity
 
 import structlog
-from fastramqpi.context import Context
 
 logger = structlog.get_logger()
 
 
 class EmailClient:
-    def __init__(self, context: Context):
-        email_settings = context["user_context"]["email_settings"]
+    def __init__(self, email_settings):
         self.smtp_user = email_settings.smtp_user
         self.smtp_password = email_settings.smtp_password
         self.smtp_host = email_settings.smtp_host
