@@ -7,6 +7,7 @@ services:
     volumes:
       - ./mo_smtp:/app/mo_smtp
     networks:
+      - default
       - os2mo_default
     environment:
       FASTRAMQPI__LOG_LEVEL: "INFO"
@@ -18,10 +19,11 @@ services:
       FASTRAMQPI__AUTH_SERVER: "http://keycloak:8080/auth"
       FASTRAMQPI__AUTH_REALM: "mo"
       FASTRAMQPI__AMQP__URL: "amqp://guest:guest@msg-broker:5672/"
+      # Database
+      FASTRAMQPI__DATABASE__USER: "fastramqpi"
+      FASTRAMQPI__DATABASE__PASSWORD: "fastramqpi"
       FASTRAMQPI__DATABASE__HOST: "db"
-      FASTRAMQPI__DATABASE__USER: "smtp"
-      FASTRAMQPI__DATABASE__PASSWORD: "hemmelighed"
-      FASTRAMQPI__DATABASE__NAME: "smtp"
+      FASTRAMQPI__DATABASE__NAME: "fastramqpi"
 
       EMAIL_SETTINGS__SENDER: "os2mo@magenta.dk"
       EMAIL_SETTINGS__SMTP_PORT: 1025
@@ -51,9 +53,9 @@ services:
   db:
     image: postgres:16
     environment:
-      POSTGRES_USER: "smtp"
-      POSTGRES_PASSWORD: "hemmelighed"
-      POSTGRES_DB: "smtp"
+      POSTGRES_USER: "fastramqpi"
+      POSTGRES_PASSWORD: "fastramqpi"
+      POSTGRES_DB: "fastramqpi"
 
 networks:
   os2mo_default:
