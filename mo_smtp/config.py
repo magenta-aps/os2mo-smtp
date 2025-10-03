@@ -1,10 +1,10 @@
 from uuid import UUID
 from enum import Enum
 
-from fastramqpi.config import Settings as FastRAMQPISettings
+from fastramqpi.config import Settings as _FastRAMQPISettings
 from fastramqpi.ramqp.config import AMQPConnectionSettings
 from pydantic import BaseSettings
-from pydantic import PositiveInt
+from pydantic import EmailStr
 
 
 class SmtpAMQPConnectionSettings(AMQPConnectionSettings):
@@ -12,9 +12,8 @@ class SmtpAMQPConnectionSettings(AMQPConnectionSettings):
     prefetch_count = 1  # MO cannot handle too many requests
 
 
-class SmtpFastRAMQPISettings(FastRAMQPISettings):
+class FastRAMQPISettings(_FastRAMQPISettings):
     amqp: SmtpAMQPConnectionSettings
-    mo_graphql_version: PositiveInt = 25
 
 
 class SMTPSecurity(Enum):
@@ -30,7 +29,7 @@ class EmailSettings(BaseSettings):
 
     smtp_user: str | None = None
     smtp_password: str | None = None
-    sender: str = "os2mo@magenta.dk"
+    sender: EmailStr = EmailStr("os2mo@magenta.dk")
     smtp_port: int = 465
     smtp_host: str = "mailcatcher"
     smtp_security: SMTPSecurity
@@ -44,11 +43,10 @@ class Settings(BaseSettings):
         frozen = True
         env_nested_delimiter = "__"
 
-    fastramqpi: SmtpFastRAMQPISettings
+    fastramqpi: FastRAMQPISettings
+    email_settings: EmailSettings
 
     active_agents: list[str] = []
-    receivers: list[str] = []
+    receivers: list[EmailStr] = []
     root_loen_org: UUID | None = None
     alert_manager_removal_use_org_unit_emails: bool = False
-
-    email_settings: EmailSettings
