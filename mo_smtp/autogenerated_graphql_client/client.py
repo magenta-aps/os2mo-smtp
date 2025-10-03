@@ -4,6 +4,7 @@ from .address_data import AddressData, AddressDataAddresses
 from .async_base_client import AsyncBaseClient
 from .employee_data import EmployeeData, EmployeeDataEmployees
 from .employee_name import EmployeeName, EmployeeNameEmployees
+from .get_manager import GetManager, GetManagerManagers
 from .institution_address import InstitutionAddress, InstitutionAddressOrgUnits
 from .ituser import Ituser, ItuserItusers
 from .manager_data import ManagerData, ManagerDataManagers
@@ -18,6 +19,37 @@ def gql(q: str) -> str:
 
 
 class GraphQLClient(AsyncBaseClient):
+    async def get_manager(self, uuid: UUID) -> GetManagerManagers:
+        query = gql(
+            """
+            query GetManager($uuid: UUID!) {
+              managers(filter: {uuids: [$uuid], from_date: null, to_date: null}) {
+                objects {
+                  validities {
+                    uuid
+                    person {
+                      name
+                      uuid
+                    }
+                    org_unit {
+                      name
+                      uuid
+                    }
+                    validity {
+                      to
+                      from
+                    }
+                  }
+                }
+              }
+            }
+            """
+        )
+        variables: dict[str, object] = {"uuid": uuid}
+        response = await self.execute(query=query, variables=variables)
+        data = self.get_data(response)
+        return GetManager.parse_obj(data).managers
+
     async def manager_data(self, uuid: UUID) -> ManagerDataManagers:
         query = gql(
             """

@@ -1,6 +1,28 @@
 # SPDX-FileCopyrightText: Magenta ApS <https://magenta.dk>
 # SPDX-License-Identifier: MPL-2.0
 
+query GetManager($uuid: UUID!) {
+  managers(filter: { uuids: [$uuid], from_date: null, to_date: null }) {
+    objects {
+      validities {
+        uuid
+        person {
+          name
+          uuid
+        }
+        org_unit {
+          name
+          uuid
+        }
+        validity {
+          to
+          from
+        }
+      }
+    }
+  }
+}
+
 query managerData($uuid: UUID!) {
   managers(filter: { uuids: [$uuid], from_date: null, to_date: null }) {
     objects {

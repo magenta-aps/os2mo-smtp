@@ -34,6 +34,15 @@ from .exceptions import (
     GraphQLClientHttpError,
     GraphQlClientInvalidResponseError,
 )
+from .get_manager import (
+    GetManager,
+    GetManagerManagers,
+    GetManagerManagersObjects,
+    GetManagerManagersObjectsValidities,
+    GetManagerManagersObjectsValiditiesOrgUnit,
+    GetManagerManagersObjectsValiditiesPerson,
+    GetManagerManagersObjectsValiditiesValidity,
+)
 from .input_types import (
     AddressCreateInput,
     AddressFilter,
@@ -274,6 +283,13 @@ __all__ = [
     "FacetsBoundClassFilter",
     "FileFilter",
     "FileStore",
+    "GetManager",
+    "GetManagerManagers",
+    "GetManagerManagersObjects",
+    "GetManagerManagersObjectsValidities",
+    "GetManagerManagersObjectsValiditiesOrgUnit",
+    "GetManagerManagersObjectsValiditiesPerson",
+    "GetManagerManagersObjectsValiditiesValidity",
     "GraphQLClient",
     "GraphQLClientError",
     "GraphQLClientGraphQLError",
