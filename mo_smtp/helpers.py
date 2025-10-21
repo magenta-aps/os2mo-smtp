@@ -77,13 +77,15 @@ def get_manager_end_date(validities: list) -> ManagerNotification | None:
 
     # Determine the end_date: either 'to' date for a scheduled termination, or 'from' date if vacant
     if employee_uuid:
-        end_date = latest.validity.to
+        # TODO: Should maybe be datetime, even if we don't care?
+        end_date = latest.validity.to.date()
         if not end_date:
             # Active manager with no scheduled termination -> ignore
             return None
     else:
         # Vacant manager -> track from-date
-        end_date = latest.validity.from_
+        # TODO: Should maybe be datetime, even if we don't care?
+        end_date = latest.validity.from_.date()
 
     return ManagerNotification(
         manager_uuid=manager_uuid,

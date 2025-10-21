@@ -27,6 +27,9 @@ class EmailSettings(BaseSettings):
         frozen = True
         env_nested_delimiter = "__"
 
+    # The interval in which we check for notifications to send
+    interval: int = 60 * 15
+    pre_notification_days: int = 4
     smtp_user: str | None = None
     smtp_password: str | None = None
     sender: EmailStr = EmailStr("os2mo@magenta.dk")

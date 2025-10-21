@@ -25,6 +25,7 @@ services:
       FASTRAMQPI__DATABASE__HOST: "db"
       FASTRAMQPI__DATABASE__NAME: "fastramqpi"
 
+      EMAIL_SETTINGS__INTERVAL: 30
       EMAIL_SETTINGS__SENDER: "os2mo@magenta.dk"
       EMAIL_SETTINGS__SMTP_PORT: 1025
       EMAIL_SETTINGS__SMTP_HOST: "mailcatcher"

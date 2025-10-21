@@ -2,8 +2,10 @@
 # SPDX-License-Identifier: MPL-2.0
 from uuid import UUID
 from datetime import datetime
+from datetime import date
 
 from sqlalchemy import DateTime
+from sqlalchemy import Date
 from sqlalchemy import func
 from sqlalchemy.orm import Mapped
 from sqlalchemy.orm import mapped_column
@@ -20,7 +22,8 @@ class ManagerNotification(Base):
     manager_uuid: Mapped[UUID] = mapped_column()
     employee_uuid: Mapped[UUID] = mapped_column()
     org_unit_uuid: Mapped[UUID] = mapped_column()
-    end_date: Mapped[datetime] = mapped_column()
+    # TODO: Should maybe be datetime, even if we only care about the date?
+    end_date: Mapped[date] = mapped_column(Date)
     pre_notification_sent: Mapped[bool] = mapped_column(default=False)
     notification_sent: Mapped[bool] = mapped_column(default=False)
 
@@ -44,3 +47,7 @@ class ManagerNotification(Base):
         if other is None:
             return False
         raise NotImplementedError()
+
+
+class LastSentEmail(Base):
+    __tablename__ = "last_sent_email"

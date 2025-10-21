@@ -13,14 +13,13 @@ from jinja2 import Environment
 from jinja2 import FileSystemLoader
 from more_itertools import one
 
+from mo_smtp.dataloaders import fetch_notifications_from_db
 from mo_smtp.helpers import get_manager_end_date
 from mo_smtp import depends
 from .dataloaders import (
     get_address_data,
     get_employee_data,
 )
-from .dataloaders import get_org_unit_relations
-from .dataloaders import get_institution_address
 from .dataloaders import get_ituser_uuid_by_rolebinding
 from .dataloaders import get_ituser
 
@@ -142,53 +141,67 @@ async def alert_on_manager_removal(
     result = await mo.get_manager(manager_uuid)
     if len(result.objects) == 0 or one(result.objects).validities is None:
         logger.info("Manager not found")
-        raise
+        return
+
     manager = one(result.objects).validities
     relevant_manager = get_manager_end_date(manager)
 
     if not relevant_manager:
-        print("NO RELEVANT MANAGER VALIDITY")
-        raise
+        logger.info(
+            "No relevant manager validity found for uuid:", uuid=str(manager_uuid)
+        )
+        return
 
-    return session.add(relevant_manager)
+    db_notification = await fetch_notifications_from_db(session, manager_uuid)
+    if db_notification:
+        if db_notification == relevant_manager:
+            logger.info(
+                "Notification already exists for manager with uuid:",
+                uuid=str(manager_uuid),
+            )
+            return
+
+        await session.delete(db_notification)
+        logger.info("Delete old notification for manager", uuid=str(manager_uuid))
+
+    session.add(relevant_manager)
+    logger.info("Created new notification for manager", uuid=str(manager_uuid))
+    return
 
 
 @amqp_router.register("org_unit")
 async def alert_on_org_unit_without_relation(
-    context: Context,
-    uuid: PayloadUUID,
-    _: RateLimit,
+    org_unit_uuid: PayloadUUID,
+    settings: depends.Settings,
     mo: depends.GraphQLClient,
+    session: depends.Session,
+    _: RateLimit,
 ) -> None:
-    logger.info("Obtained message", uuid=str(uuid))
+    logger.info("Listening on an org_unit event with uuid:", uuid=org_unit_uuid)
 
-    settings = Settings()
     assert settings.root_loen_org
     root = settings.root_loen_org
 
-    org_unit_data = await get_org_unit_relations(mo, org_unit_uuid=uuid)
-
-    # Load manager data from MO
-    if not org_unit_data:
+    result = await mo.get_org_unit_relations(mo, org_unit_uuid=org_unit_uuid)
+    if len(result.objects) == 0 or one(result.objects).validities is None:
         logger.info("Org unit not found")
         return
 
-    current = one(org_unit_data).current
-    if one(current.root).uuid != root:
+    org_unit = one(result.objects).validities
+    if org_unit.root.uuid != root:
         logger.info("Org unit is not in the Lønorganisation")
         return
 
-    if current.related_units:
-        for relation in current.related_units:
-            for org_unit in relation.org_units:
-                if one(org_unit.root).uuid != root:
+    if org_unit.related_units:
+        for relation in org_unit.related_units:
+            for unit in relation.org_units:
+                if one(unit.root).uuid != root:
                     logger.info(
                         "Org unit has a relation outside of the Lønorganisation"
                     )
                     return
 
     # get_address
-    emails = await get_institution_address(mo, uuid, root)
 
     user_context = context["user_context"]
     email_client = user_context["email_client"]
@@ -199,12 +212,6 @@ async def alert_on_org_unit_without_relation(
     email_args["receiver"] = emails
 
     # Subject string
-    subject = "Manglende relation i Lønorganisation"
-    message_body = (
-        "Denne besked er sendt som en påmindelse om at "
-        + f"enheden: {current.name} "
-        + "ikke er relateret til en enhed i Administrationsorganisationen."
-    )
     email_args["subject"] = subject
     email_args["body"] = message_body
     email_args["texttype"] = "plain"

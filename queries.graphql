@@ -23,6 +23,30 @@ query GetManager($uuid: UUID!) {
   }
 }
 
+query GetOrgUnitRelations($uuid: UUID!) {
+  org_units(filter: { uuids: [$uuid], from_date: null, to_date: null }) {
+    objects {
+      validities {
+        name
+        root {
+          uuid
+        }
+        engagements {
+          uuid
+        }
+        related_units {
+          org_units {
+            uuid
+            root {
+              uuid
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
 query managerData($uuid: UUID!) {
   managers(filter: { uuids: [$uuid], from_date: null, to_date: null }) {
     objects {

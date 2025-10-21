@@ -1,102 +1,123 @@
-# Sends an email
-from email.mime.text import MIMEText
-from smtplib import SMTP, SMTP_SSL
+# SPDX-FileCopyrightText: Magenta ApS <https://magenta.dk>
+# SPDX-License-Identifier: MPL-2.0
+import asyncio
+from datetime import datetime
+from datetime import timedelta
+from email.message import EmailMessage
+import aiosmtplib
 from .config import SMTPSecurity
 
 import structlog
+from sqlalchemy.ext.asyncio import async_sessionmaker
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import select
+
+from mo_smtp.models import ManagerNotification
+from mo_smtp import depends
+from mo_smtp.utils import email_builders
 
 logger = structlog.get_logger()
 
 
 class EmailClient:
-    def __init__(self, email_settings):
-        self.smtp_user = email_settings.smtp_user
-        self.smtp_password = email_settings.smtp_password
-        self.smtp_host = email_settings.smtp_host
-        self.smtp_port = email_settings.smtp_port
-        self.smtp_security = email_settings.smtp_security
-        self.sender = email_settings.sender
-        self.dry_run = email_settings.dry_run
-        self.receiver_override = email_settings.receiver_override
+    def __init__(self, settings):
+        self.smtp_user = settings.smtp_user
+        self.smtp_password = settings.smtp_password
+        self.smtp_host = settings.smtp_host
+        self.smtp_port = settings.smtp_port
+        self.smtp_security = settings.smtp_security
+        self.sender = settings.sender
+        self.dry_run = settings.dry_run
 
-    def send_email(
-        self,
-        receiver: set[str],
-        subject: str,
-        body: str,
-        texttype: str = "plain",
-        cc: set[str] = {""},
-        bcc: set[str] = {""},
-        allow_receiver_override=True,
-    ) -> MIMEText:
-        """
-        Sends outgoing email given parameters
+    async def send_email(self, message: EmailMessage):
+        if self.dry_run:
+            logger.info("Dry run: email not sent", subject=message["Subject"])
+            return
 
-        Args:
-            receiver: Set of receiver email addresses
-                Example: {"receive@example.net"}
-            sender: Sender email address
-                Example: "sender@example.net"
-            subject: Message subject
-                Example: "Subject line"
-            body: Message body
-                Example: "This is a test message"
-            textType: Mime subtype of text. Can also be 'html'
-                Example: "plain"
-            hostname: SMTP host IP address
-                Example: "hostname.example.net" or "123.45.67.890"
-            port: SMTP server connection port
-                Example: 25
-            cc: List of CC'ed email addresses
-                Example: {"person@thing.net", "otherperson@something.com"}
-            bcc: List of BCC'ed email addresses
-                Example: {"person@thing.net", "otherperson@something.com"}
-            testing: Whether the function is being run in a testing environment
-                Example: True
-            allow_receiver_override : Whether we should override the receiver with
-                the address specified in settings.receiver_override
-                Example: True
-        """
-
-        msg = MIMEText(body, texttype, _charset="utf-8")
-        msg["Subject"] = subject
-        msg["From"] = self.sender
-
-        if self.receiver_override and allow_receiver_override:
-            msg["To"] = self.receiver_override
-            recipients = [self.receiver_override]
-        else:
-            msg["To"] = ", ".join(receiver)
-            msg["CC"] = ", ".join(cc)
-            recipients = list(receiver) + list(cc)
-
-        bcc_list = list(bcc)
-
-        # Print message content to log
-        for key in msg.keys():
-            logger.info(f"{key}: {msg[key]}")
-        # 1st decode seems to decode from email-encoding to binary string
-        # 2nd decode decodes from binary string to human-readable
-        # (including special chars)
-        payload = msg.get_payload(decode=True)
-        logger.info(
-            "Body: "
-            + (payload.decode() if isinstance(payload, bytes) else str(payload))
+        use_tls = self.smtp_security is SMTPSecurity.TLS
+        smtp = aiosmtplib.SMTP(
+            hostname=self.smtp_host, port=self.smtp_port, use_tls=use_tls
         )
-
-        if self.smtp_security is SMTPSecurity.STARTTLS:
-            raise NotImplementedError(
-                "STARTTLS support has not been implemented. Consider using implicit TLS, which is generally considered more secure."
-            )
-        smtp_cls = SMTP_SSL if self.smtp_security is SMTPSecurity.TLS else SMTP
-        smtp = smtp_cls(host=self.smtp_host, port=self.smtp_port)
+        await smtp.connect()
         if self.smtp_user and self.smtp_password:
-            smtp.login(user=self.smtp_user, password=self.smtp_password)
+            await smtp.login(self.smtp_user, self.smtp_password)
 
-        if not self.dry_run:
-            smtp.send_message(msg, to_addrs=recipients + bcc_list)
-            smtp.quit()
-            logger.info("Email has been sent")
-        else:
-            logger.info("This was a dry run")
-        return msg
+        await smtp.send_message(message)
+        await smtp.quit()
+        logger.info("Email sent", subject=message["Subject"], to=message["To"])
+
+
+class EmailAlert:
+    def __init__(
+        self,
+        sessionmaker: async_sessionmaker[AsyncSession],
+        email_client: EmailClient,
+        mo: depends.GraphQLClient,
+        interval: int,
+        pre_notification_days: int,
+    ):
+        self.sessionmaker = sessionmaker
+        self.email_client = email_client
+        self.mo = (mo,)
+        self.interval = interval
+        self.pre_notification_days = pre_notification_days
+        self.event = asyncio.Event()
+
+    async def _background(self) -> None:
+        while True:
+            try:
+                now = datetime.utcnow()
+                pre_threshold = now + timedelta(days=self.pre_notification_days)
+
+                async with self.sessionmaker() as session, session.begin():
+                    # Pre notifications
+                    pre_stmt = select(ManagerNotification).where(
+                        ManagerNotification.pre_notification_sent == False,
+                        ManagerNotification.end_date <= pre_threshold,
+                        ManagerNotification.end_date > now,
+                    )
+                    pre_notifications = (
+                        (await session.execute(pre_stmt)).scalars().all()
+                    )
+
+                    for n in pre_notifications:
+                        try:
+                            msg = await email_builders.build_manager_email(n, self.mo)
+                            await self.email_client.send_email(msg)
+                            n.pre_notification_sent = True
+                            logger.info(
+                                "Pre-notification sent", employee=n.employee_uuid
+                            )
+                        except Exception as e:
+                            logger.exception(
+                                "Failed to send pre-notification",
+                                employee=n.employee_uuid,
+                                error=e,
+                            )
+
+                    # # Main notifications
+                    # main_stmt = select(ManagerNotification).where(
+                    #     ManagerNotification.notification_sent == False,
+                    #     ManagerNotification.end_date <= now,
+                    #     ManagerNotification.pre_notification_sent == True,
+                    # )
+                    # main_notifications = (await session.execute(main_stmt)).scalars().all()
+                    #
+                    # for n in main_notifications:
+                    #     try:
+                    #         msg = await email_builders.build_manager_email(n, depends.GraphQLClient)
+                    #         await self.email_client.send_email(msg)
+                    #         n.notification_sent = True
+                    #         await session.delete(n)
+                    #         logger.info("Main notification sent", employee=n.employee_uuid)
+                    #     except Exception as e:
+                    #         logger.exception("Failed to send main notification", employee=n.employee_uuid, error=e)
+
+            except Exception as e:
+                logger.exception("Error in background email loop", error=e)
+
+            await asyncio.sleep(self.interval)
+
+    def start(self):
+        asyncio.create_task(self._background())
+        logger.info("EmailAlert background task started")
