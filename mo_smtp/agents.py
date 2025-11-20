@@ -334,6 +334,12 @@ async def generate_ituser_email(
         )
         return
 
+    if ituser.user_key == "nanoq-brugernavn":
+        logger.info(
+            "IT-user has default user_key 'nanoq-brugernavn'. An email will not be sent"
+        )
+        return
+
     rolebindings = ituser.rolebindings
     itsystem = ituser.itsystem.name
     person = one(ituser.person).name if ituser.person else None
