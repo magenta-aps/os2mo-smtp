@@ -26,6 +26,7 @@ from .dataloaders import (
     get_employee_data,
     get_employee_name,
     get_manager_data,
+    get_org_unit_address,
     get_org_unit_data,
     get_org_unit_location,
 )
@@ -214,9 +215,12 @@ async def alert_on_manager_removal(
 
     settings = Settings()
     if settings.alert_manager_removal_use_org_unit_emails:
-        receivers = await get_institution_address(
-            mo, org_unit_uuid, one(org_unit.root).uuid
-        )
+        root = one(org_unit.root).uuid
+        # if org_unit_uuid == root, we just use the address from the root
+        if org_unit_uuid == root:
+            receivers = await get_org_unit_address(mo, org_unit_uuid)
+        else:
+            receivers = await get_institution_address(mo, org_unit_uuid, root)
     else:
         receivers = set(email_settings.receivers)
 
@@ -243,7 +247,6 @@ async def alert_on_org_unit_without_relation(
 
     org_unit_data = await get_org_unit_relations(mo, org_unit_uuid=uuid)
 
-    # Load manager data from MO
     if not org_unit_data:
         logger.info("Org unit not found")
         return
@@ -262,8 +265,10 @@ async def alert_on_org_unit_without_relation(
                     )
                     return
 
-    # get_address
-    emails = await get_institution_address(mo, uuid, root)
+    if uuid == root:
+        emails = await get_org_unit_address(mo, uuid)
+    else:
+        emails = await get_institution_address(mo, uuid, root)
 
     user_context = context["user_context"]
     email_client = user_context["email_client"]

@@ -7,6 +7,7 @@ from .employee_name import EmployeeName, EmployeeNameEmployees
 from .institution_address import InstitutionAddress, InstitutionAddressOrgUnits
 from .ituser import Ituser, ItuserItusers
 from .manager_data import ManagerData, ManagerDataManagers
+from .org_unit_address import OrgUnitAddress, OrgUnitAddressOrgUnits
 from .org_unit_ancestors import OrgUnitAncestors, OrgUnitAncestorsOrgUnits
 from .org_unit_data import OrgUnitData, OrgUnitDataOrgUnits
 from .org_unit_relations import OrgUnitRelations, OrgUnitRelationsOrgUnits
@@ -218,6 +219,27 @@ class GraphQLClient(AsyncBaseClient):
         response = await self.execute(query=query, variables=variables)
         data = self.get_data(response)
         return InstitutionAddress.parse_obj(data).org_units
+
+    async def org_unit_address(self, uuid: UUID) -> OrgUnitAddressOrgUnits:
+        query = gql(
+            """
+            query orgUnitAddress($uuid: UUID!) {
+              org_units(filter: {uuids: [$uuid]}) {
+                objects {
+                  current {
+                    addresses(filter: {address_type: {scope: "EMAIL"}}) {
+                      value
+                    }
+                  }
+                }
+              }
+            }
+            """
+        )
+        variables: dict[str, object] = {"uuid": uuid}
+        response = await self.execute(query=query, variables=variables)
+        data = self.get_data(response)
+        return OrgUnitAddress.parse_obj(data).org_units
 
     async def rolebinding(self, uuid: UUID) -> RolebindingRolebindings:
         query = gql(
