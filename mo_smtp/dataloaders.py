@@ -112,6 +112,14 @@ async def get_institution_address(mo: GraphQLClient, uuid: UUID, root: UUID):
     return addresses
 
 
+async def get_org_unit_address(mo: GraphQLClient, uuid: UUID):
+    gql_response = await mo.org_unit_address(uuid)
+    current = one(gql_response.objects).current
+    addresses = {address.value for address in current.addresses} if current else set()
+
+    return addresses
+
+
 async def get_ituser_uuid_by_rolebinding(mo: GraphQLClient, uuid: UUID) -> UUID | None:
     try:
         gql_response = await mo.rolebinding(uuid)
