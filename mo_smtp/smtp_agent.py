@@ -54,6 +54,8 @@ def create_fastramqpi(**kwargs: Any) -> FastRAMQPI:
 
     logger.info("Initializing email client")
     email_client = EmailClient(fastramqpi.get_context())
+
+    email_client.check_connectivity()
     fastramqpi.add_context(email_client=email_client)
 
     logger.info("AMQP router setup")
