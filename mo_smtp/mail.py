@@ -21,6 +21,13 @@ class EmailClient:
         self.dry_run = email_settings.dry_run
         self.receiver_override = email_settings.receiver_override
 
+    def check_connectivity(self, timeout: int = 5) -> None:  # pragma: no cover
+        smtp_cls = SMTP_SSL if self.smtp_security is SMTPSecurity.TLS else SMTP
+        with smtp_cls(
+            host=self.smtp_host, port=self.smtp_port, timeout=timeout
+        ) as smtp:
+            smtp.noop()
+
     def send_email(
         self,
         receiver: set[str],
@@ -98,7 +105,7 @@ class EmailClient:
         if not self.dry_run:
             smtp.send_message(msg, to_addrs=recipients + bcc_list)
             smtp.quit()
-            logger.info("Email has been sent")
+            logger.info("Email sent", receiver=recipients, subject=subject)
         else:
             logger.info("This was a dry run")
         return msg
