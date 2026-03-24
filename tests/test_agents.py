@@ -1512,7 +1512,9 @@ async def test_alert_on_related_units_deleted_org_unit(
             )
         )
 
-        await alert_on_related_units(context, uuid4(), None, mo)
+        with capture_logs() as cap_logs:
+            await alert_on_related_units(context, uuid4(), None, mo)
 
     email_client = context["user_context"]["email_client"]
     email_client.send_email.assert_not_called()
+    assert "Org unit does not exist in current, skipping" in str(cap_logs)

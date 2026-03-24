@@ -336,11 +336,10 @@ async def alert_on_related_units(
     for registration in registrations:
         for validity in registration.validities:
             for obj in validity.org_units_response.objects:
-                if (
-                    obj.current
-                    and obj.current.root
-                    and one(obj.current.root).uuid == root
-                ):
+                if not obj.current:
+                    logger.info("Org unit does not exist in current, skipping")
+                    continue
+                if obj.current.root and one(obj.current.root).uuid == root:
                     loen_org_unit_uuids.add(obj.current.uuid)
 
     for org_unit_uuid in loen_org_unit_uuids:
