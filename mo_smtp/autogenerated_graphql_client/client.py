@@ -11,6 +11,10 @@ from .org_unit_address import OrgUnitAddress, OrgUnitAddressOrgUnits
 from .org_unit_ancestors import OrgUnitAncestors, OrgUnitAncestorsOrgUnits
 from .org_unit_data import OrgUnitData, OrgUnitDataOrgUnits
 from .org_unit_relations import OrgUnitRelations, OrgUnitRelationsOrgUnits
+from .related_unit_registrations import (
+    RelatedUnitRegistrations,
+    RelatedUnitRegistrationsRegistrations,
+)
 from .rolebinding import Rolebinding, RolebindingRolebindings
 
 
@@ -240,6 +244,39 @@ class GraphQLClient(AsyncBaseClient):
         response = await self.execute(query=query, variables=variables)
         data = self.get_data(response)
         return OrgUnitAddress.parse_obj(data).org_units
+
+    async def related_unit_registrations(
+        self, uuid: UUID
+    ) -> RelatedUnitRegistrationsRegistrations:
+        query = gql(
+            """
+            query relatedUnitRegistrations($uuid: UUID!) {
+              registrations(filter: {uuids: [$uuid], start: null, end: null}) {
+                objects {
+                  __typename
+                  ... on RelatedUnitRegistration {
+                    validities(start: null, end: null) {
+                      org_units_response {
+                        objects {
+                          current {
+                            uuid
+                            root {
+                              uuid
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+            """
+        )
+        variables: dict[str, object] = {"uuid": uuid}
+        response = await self.execute(query=query, variables=variables)
+        data = self.get_data(response)
+        return RelatedUnitRegistrations.parse_obj(data).registrations
 
     async def rolebinding(self, uuid: UUID) -> RolebindingRolebindings:
         query = gql(

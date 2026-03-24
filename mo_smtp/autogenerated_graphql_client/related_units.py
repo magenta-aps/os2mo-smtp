@@ -1,4 +1,3 @@
-from typing import Optional
 from uuid import UUID
 
 from .base_model import BaseModel
@@ -13,25 +12,25 @@ class RelatedUnitsRelatedUnits(BaseModel):
 
 
 class RelatedUnitsRelatedUnitsObjects(BaseModel):
-    current: Optional["RelatedUnitsRelatedUnitsObjectsCurrent"]
+    validities: list["RelatedUnitsRelatedUnitsObjectsValidities"]
 
 
-class RelatedUnitsRelatedUnitsObjectsCurrent(BaseModel):
-    org_units: list["RelatedUnitsRelatedUnitsObjectsCurrentOrgUnits"]
+class RelatedUnitsRelatedUnitsObjectsValidities(BaseModel):
+    org_units: list["RelatedUnitsRelatedUnitsObjectsValiditiesOrgUnits"]
 
 
-class RelatedUnitsRelatedUnitsObjectsCurrentOrgUnits(BaseModel):
+class RelatedUnitsRelatedUnitsObjectsValiditiesOrgUnits(BaseModel):
     uuid: UUID
-    root: list["RelatedUnitsRelatedUnitsObjectsCurrentOrgUnitsRoot"] | None
+    root: list["RelatedUnitsRelatedUnitsObjectsValiditiesOrgUnitsRoot"] | None
 
 
-class RelatedUnitsRelatedUnitsObjectsCurrentOrgUnitsRoot(BaseModel):
+class RelatedUnitsRelatedUnitsObjectsValiditiesOrgUnitsRoot(BaseModel):
     uuid: UUID
 
 
 RelatedUnits.update_forward_refs()
 RelatedUnitsRelatedUnits.update_forward_refs()
 RelatedUnitsRelatedUnitsObjects.update_forward_refs()
-RelatedUnitsRelatedUnitsObjectsCurrent.update_forward_refs()
-RelatedUnitsRelatedUnitsObjectsCurrentOrgUnits.update_forward_refs()
-RelatedUnitsRelatedUnitsObjectsCurrentOrgUnitsRoot.update_forward_refs()
+RelatedUnitsRelatedUnitsObjectsValidities.update_forward_refs()
+RelatedUnitsRelatedUnitsObjectsValiditiesOrgUnits.update_forward_refs()
+RelatedUnitsRelatedUnitsObjectsValiditiesOrgUnitsRoot.update_forward_refs()
