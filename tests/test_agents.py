@@ -34,8 +34,8 @@ import pytest
 from fastramqpi.context import Context
 from structlog.testing import capture_logs
 
-from mo_smtp.agents import alert_on_manager_removal, alert_on_org_unit_without_relation
-from mo_smtp.agents import alert_on_related_units
+from mo_smtp.agents import alert_on_manager_removal, handle_org_unit
+from mo_smtp.agents import handle_related_units
 from mo_smtp.agents import inform_manager_on_employee_address_creation
 from mo_smtp.agents import alert_on_rolebinding
 from mo_smtp.agents import alert_on_ituser
@@ -806,7 +806,7 @@ async def test_alert_on_manager_send_to_root_email(
 
 
 @pytest.mark.usefixtures("minimal_valid_settings")
-async def test_alert_on_org_unit_without_relation_not_found(
+async def test_handle_org_unit_not_found(
     context: Context, monkeypatch: pytest.MonkeyPatch
 ):
     with monkeypatch.context() as con:
@@ -818,7 +818,7 @@ async def test_alert_on_org_unit_without_relation_not_found(
         )
 
         with capture_logs() as cap_logs:
-            await alert_on_org_unit_without_relation(context, uuid4(), None, mo)
+            await handle_org_unit(context, uuid4(), None, mo)
 
         email_client = context["user_context"]["email_client"]
         email_client.send_email.assert_not_called()
@@ -826,7 +826,7 @@ async def test_alert_on_org_unit_without_relation_not_found(
 
 
 @pytest.mark.usefixtures("minimal_valid_settings")
-async def test_alert_on_org_unit_not_in_loenorganisation(
+async def test_handle_org_unit_not_in_loenorganisation(
     context: Context, monkeypatch: pytest.MonkeyPatch
 ):
     root_loen_org = uuid4()
@@ -854,7 +854,7 @@ async def test_alert_on_org_unit_not_in_loenorganisation(
         )
 
         with capture_logs() as cap_logs:
-            await alert_on_org_unit_without_relation(context, uuid4(), None, mo)
+            await handle_org_unit(context, uuid4(), None, mo)
 
         email_client = context["user_context"]["email_client"]
         email_client.send_email.assert_not_called()
@@ -862,7 +862,7 @@ async def test_alert_on_org_unit_not_in_loenorganisation(
 
 
 @pytest.mark.usefixtures("minimal_valid_settings")
-async def test_alert_on_org_unit_has_external_relation(
+async def test_handle_org_unit_has_external_relation(
     context: Context, monkeypatch: pytest.MonkeyPatch
 ):
     root_loen_org = uuid4()
@@ -903,7 +903,7 @@ async def test_alert_on_org_unit_has_external_relation(
         )
 
         with capture_logs() as cap_logs:
-            await alert_on_org_unit_without_relation(context, org_unit_uuid, None, mo)
+            await handle_org_unit(context, org_unit_uuid, None, mo)
 
         email_client = context["user_context"]["email_client"]
         email_client.send_email.assert_not_called()
@@ -911,7 +911,7 @@ async def test_alert_on_org_unit_has_external_relation(
 
 
 @pytest.mark.usefixtures("minimal_valid_settings")
-async def test_alert_on_org_unit_sends_email(
+async def test_handle_org_unit_sends_email(
     context: Context, monkeypatch: pytest.MonkeyPatch
 ):
     root_loen_org = uuid4()
@@ -940,7 +940,7 @@ async def test_alert_on_org_unit_sends_email(
             {"objects": [{"current": {"addresses": [{"value": "test@example.com"}]}}]}
         )
 
-        await alert_on_org_unit_without_relation(context, uuid4(), None, mo)
+        await handle_org_unit(context, uuid4(), None, mo)
 
     email_client = context["user_context"]["email_client"]
 
@@ -954,7 +954,7 @@ async def test_alert_on_org_unit_sends_email(
 
 
 @pytest.mark.usefixtures("minimal_valid_settings")
-async def test_alert_on_org_unit_sends_email_to_root(
+async def test_handle_org_unit_sends_email_to_root(
     context: Context, monkeypatch: pytest.MonkeyPatch
 ):
     root_loen_org = uuid4()
@@ -988,7 +988,7 @@ async def test_alert_on_org_unit_sends_email_to_root(
             {"objects": [{"current": {"addresses": [{"value": "test@example.com"}]}}]}
         )
 
-        await alert_on_org_unit_without_relation(context, root_loen_org, None, mo)
+        await handle_org_unit(context, root_loen_org, None, mo)
 
     email_client = context["user_context"]["email_client"]
 
@@ -1253,12 +1253,12 @@ async def test_rolebinding_events_ituser_default_userkey(context: Context) -> No
 
 
 # =====================================================================
-# Tests for alert_on_related_units
+# Tests for handle_related_units
 # =====================================================================
 
 
 @pytest.mark.usefixtures("minimal_valid_settings")
-async def test_alert_on_related_units_not_found(
+async def test_handle_related_units_not_found(
     context: Context, monkeypatch: pytest.MonkeyPatch
 ):
     with monkeypatch.context() as con:
@@ -1270,7 +1270,7 @@ async def test_alert_on_related_units_not_found(
         )
 
         with capture_logs() as cap_logs:
-            await alert_on_related_units(context, uuid4(), None, mo)
+            await handle_related_units(context, uuid4(), None, mo)
 
         email_client = context["user_context"]["email_client"]
         email_client.send_email.assert_not_called()
@@ -1278,7 +1278,7 @@ async def test_alert_on_related_units_not_found(
 
 
 @pytest.mark.usefixtures("minimal_valid_settings")
-async def test_alert_on_related_units_org_unit_not_in_loenorg(
+async def test_handle_related_units_org_unit_not_in_loenorg(
     context: Context, monkeypatch: pytest.MonkeyPatch
 ):
     """If the related_units only contains org_units outside the lønorg, no email."""
@@ -1315,14 +1315,14 @@ async def test_alert_on_related_units_org_unit_not_in_loenorg(
             )
         )
 
-        await alert_on_related_units(context, uuid4(), None, mo)
+        await handle_related_units(context, uuid4(), None, mo)
 
         email_client = context["user_context"]["email_client"]
         email_client.send_email.assert_not_called()
 
 
 @pytest.mark.usefixtures("minimal_valid_settings")
-async def test_alert_on_related_units_sends_email(
+async def test_handle_related_units_sends_email(
     context: Context, monkeypatch: pytest.MonkeyPatch
 ):
     """When a related_units change leaves a lønorg unit without an adm relation,
@@ -1386,7 +1386,7 @@ async def test_alert_on_related_units_sends_email(
             {"objects": [{"current": {"addresses": [{"value": "test@example.com"}]}}]}
         )
 
-        await alert_on_related_units(context, uuid4(), None, mo)
+        await handle_related_units(context, uuid4(), None, mo)
 
     email_client = context["user_context"]["email_client"]
 
@@ -1400,7 +1400,7 @@ async def test_alert_on_related_units_sends_email(
 
 
 @pytest.mark.usefixtures("minimal_valid_settings")
-async def test_alert_on_related_units_has_relation(
+async def test_handle_related_units_has_relation(
     context: Context, monkeypatch: pytest.MonkeyPatch
 ):
     """When the lønorg unit still has a valid adm relation, no email is sent."""
@@ -1473,14 +1473,14 @@ async def test_alert_on_related_units_has_relation(
             }
         )
 
-        await alert_on_related_units(context, uuid4(), None, mo)
+        await handle_related_units(context, uuid4(), None, mo)
 
     email_client = context["user_context"]["email_client"]
     email_client.send_email.assert_not_called()
 
 
 @pytest.mark.usefixtures("minimal_valid_settings")
-async def test_alert_on_related_units_deleted_org_unit(
+async def test_handle_related_units_deleted_org_unit(
     context: Context, monkeypatch: pytest.MonkeyPatch
 ):
     """When an org unit in the relation has been deleted (current is None),
@@ -1513,7 +1513,7 @@ async def test_alert_on_related_units_deleted_org_unit(
         )
 
         with capture_logs() as cap_logs:
-            await alert_on_related_units(context, uuid4(), None, mo)
+            await handle_related_units(context, uuid4(), None, mo)
 
     email_client = context["user_context"]["email_client"]
     email_client.send_email.assert_not_called()

@@ -291,7 +291,7 @@ async def _check_and_alert_org_unit_without_relation(
 
 
 @amqp_router.register("org_unit")
-async def alert_on_org_unit_without_relation(
+async def handle_org_unit(
     context: Context,
     uuid: PayloadUUID,
     _: RateLimit,
@@ -301,8 +301,8 @@ async def alert_on_org_unit_without_relation(
     await _check_and_alert_org_unit_without_relation(context, uuid, mo)
 
 
-@amqp_router.register("related_unit")  # type: ignore
-async def alert_on_related_units(
+@amqp_router.register("related_unit")
+async def handle_related_units(
     context: Context,
     uuid: PayloadUUID,
     _: RateLimit,
@@ -350,7 +350,7 @@ async def alert_on_related_units(
 _last_sent_messages: dict = {}
 
 
-@amqp_router.register("rolebinding")  # type: ignore
+@amqp_router.register("rolebinding")  # type: ignore[arg-type]
 async def alert_on_rolebinding(
     context: Context,
     uuid: PayloadUUID,

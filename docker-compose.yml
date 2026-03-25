@@ -25,7 +25,7 @@ services:
       SMTP_SECURITY: "none"
       DRY_RUN: True
 
-      ACTIVE_AGENTS: '["inform_manager_on_employee_address_creation", "alert_on_manager_removal","alert_on_org_unit_without_relation","alert_on_rolebinding","alert_on_ituser", "alert_on_related_units"]'
+      ACTIVE_AGENTS: '["inform_manager_on_employee_address_creation", "alert_on_manager_removal","alert_on_rolebinding","alert_on_ituser","handle_org_unit", "handle_related_units"]'
       ROOT_LOEN_ORG: "fb2d158f-114e-5f67-8365-2c520cf10b58"
       ALERT_MANAGER_REMOVAL_USE_ORG_UNIT_EMAILS: "true"
 
