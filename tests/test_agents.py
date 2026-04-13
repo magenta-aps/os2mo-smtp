@@ -367,9 +367,9 @@ async def test_inform_manager_on_employee_address_creation_multiple_engagements(
 
     # Need to check like this, since 'Rolling' and 'Stones' comes in random order, and therefore the test will fail 50% of the time
     # Ensure both 'Rolling' and 'Stones' are in the body, regardless of order
-    assert (
-        "Rolling" and "Stones" in body
-    ), f"Expected 'Rolling' and 'Stones' to be in body, but got {body}"
+    assert "Rolling" and "Stones" in body, (
+        f"Expected 'Rolling' and 'Stones' to be in body, but got {body}"
+    )
 
     # Also check that the rest of the parameters are correct
     assert called_args["receiver"] == {"test@example.com"}

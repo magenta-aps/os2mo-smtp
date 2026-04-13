@@ -13,7 +13,7 @@ from .org_unit_data import OrgUnitData, OrgUnitDataOrgUnits
 from .org_unit_relations import OrgUnitRelations, OrgUnitRelationsOrgUnits
 from .related_unit_registrations import (
     RelatedUnitRegistrations,
-    RelatedUnitRegistrationsRegistrations,
+    RelatedUnitRegistrationsRelatedUnits,
 )
 from .rolebinding import Rolebinding, RolebindingRolebindings
 
@@ -247,19 +247,18 @@ class GraphQLClient(AsyncBaseClient):
 
     async def related_unit_registrations(
         self, uuid: UUID
-    ) -> RelatedUnitRegistrationsRegistrations:
+    ) -> RelatedUnitRegistrationsRelatedUnits:
         query = gql(
             """
             query relatedUnitRegistrations($uuid: UUID!) {
-              registrations(filter: {uuids: [$uuid], start: null, end: null}) {
+              related_units(filter: {uuids: [$uuid], from_date: null, to_date: null}) {
                 objects {
-                  __typename
-                  ... on RelatedUnitRegistration {
-                    validities(start: null, end: null) {
+                  registrations {
+                    validities {
                       org_units_response {
                         objects {
+                          uuid
                           current {
-                            uuid
                             root {
                               uuid
                             }
@@ -276,7 +275,7 @@ class GraphQLClient(AsyncBaseClient):
         variables: dict[str, object] = {"uuid": uuid}
         response = await self.execute(query=query, variables=variables)
         data = self.get_data(response)
-        return RelatedUnitRegistrations.parse_obj(data).registrations
+        return RelatedUnitRegistrations.parse_obj(data).related_units
 
     async def rolebinding(self, uuid: UUID) -> RolebindingRolebindings:
         query = gql(

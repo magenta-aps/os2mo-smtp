@@ -1,102 +1,73 @@
-from typing import Annotated, Literal, Optional, Union
+from typing import Optional
 from uuid import UUID
-
-from pydantic import Field
 
 from .base_model import BaseModel
 
 
 class RelatedUnitRegistrations(BaseModel):
-    registrations: "RelatedUnitRegistrationsRegistrations"
+    related_units: "RelatedUnitRegistrationsRelatedUnits"
 
 
-class RelatedUnitRegistrationsRegistrations(BaseModel):
-    objects: list[
-        Annotated[
-            Union[
-                "RelatedUnitRegistrationsRegistrationsObjectsIRegistration",
-                "RelatedUnitRegistrationsRegistrationsObjectsRelatedUnitRegistration",
-            ],
-            Field(discriminator="typename__"),
-        ]
-    ]
+class RelatedUnitRegistrationsRelatedUnits(BaseModel):
+    objects: list["RelatedUnitRegistrationsRelatedUnitsObjects"]
 
 
-class RelatedUnitRegistrationsRegistrationsObjectsIRegistration(BaseModel):
-    typename__: Literal[
-        "AddressRegistration",
-        "AssociationRegistration",
-        "ClassRegistration",
-        "EngagementRegistration",
-        "FacetRegistration",
-        "IRegistration",
-        "ITSystemRegistration",
-        "ITUserRegistration",
-        "KLERegistration",
-        "LeaveRegistration",
-        "ManagerRegistration",
-        "OrganisationUnitRegistration",
-        "OwnerRegistration",
-        "PersonRegistration",
-        "RoleBindingRegistration",
-    ] = Field(alias="__typename")
+class RelatedUnitRegistrationsRelatedUnitsObjects(BaseModel):
+    registrations: list["RelatedUnitRegistrationsRelatedUnitsObjectsRegistrations"]
 
 
-class RelatedUnitRegistrationsRegistrationsObjectsRelatedUnitRegistration(BaseModel):
-    typename__: Literal["RelatedUnitRegistration"] = Field(alias="__typename")
+class RelatedUnitRegistrationsRelatedUnitsObjectsRegistrations(BaseModel):
     validities: list[
-        "RelatedUnitRegistrationsRegistrationsObjectsRelatedUnitRegistrationValidities"
+        "RelatedUnitRegistrationsRelatedUnitsObjectsRegistrationsValidities"
     ]
 
 
-class RelatedUnitRegistrationsRegistrationsObjectsRelatedUnitRegistrationValidities(
-    BaseModel
-):
-    org_units_response: "RelatedUnitRegistrationsRegistrationsObjectsRelatedUnitRegistrationValiditiesOrgUnitsResponse"
+class RelatedUnitRegistrationsRelatedUnitsObjectsRegistrationsValidities(BaseModel):
+    org_units_response: "RelatedUnitRegistrationsRelatedUnitsObjectsRegistrationsValiditiesOrgUnitsResponse"
 
 
-class RelatedUnitRegistrationsRegistrationsObjectsRelatedUnitRegistrationValiditiesOrgUnitsResponse(
+class RelatedUnitRegistrationsRelatedUnitsObjectsRegistrationsValiditiesOrgUnitsResponse(
     BaseModel
 ):
     objects: list[
-        "RelatedUnitRegistrationsRegistrationsObjectsRelatedUnitRegistrationValiditiesOrgUnitsResponseObjects"
+        "RelatedUnitRegistrationsRelatedUnitsObjectsRegistrationsValiditiesOrgUnitsResponseObjects"
     ]
 
 
-class RelatedUnitRegistrationsRegistrationsObjectsRelatedUnitRegistrationValiditiesOrgUnitsResponseObjects(
-    BaseModel
-):
-    current: Optional[
-        "RelatedUnitRegistrationsRegistrationsObjectsRelatedUnitRegistrationValiditiesOrgUnitsResponseObjectsCurrent"
-    ]
-
-
-class RelatedUnitRegistrationsRegistrationsObjectsRelatedUnitRegistrationValiditiesOrgUnitsResponseObjectsCurrent(
+class RelatedUnitRegistrationsRelatedUnitsObjectsRegistrationsValiditiesOrgUnitsResponseObjects(
     BaseModel
 ):
     uuid: UUID
+    current: Optional[
+        "RelatedUnitRegistrationsRelatedUnitsObjectsRegistrationsValiditiesOrgUnitsResponseObjectsCurrent"
+    ]
+
+
+class RelatedUnitRegistrationsRelatedUnitsObjectsRegistrationsValiditiesOrgUnitsResponseObjectsCurrent(
+    BaseModel
+):
     root: (
         None
         | (
             list[
-                "RelatedUnitRegistrationsRegistrationsObjectsRelatedUnitRegistrationValiditiesOrgUnitsResponseObjectsCurrentRoot"
+                "RelatedUnitRegistrationsRelatedUnitsObjectsRegistrationsValiditiesOrgUnitsResponseObjectsCurrentRoot"
             ]
         )
     )
 
 
-class RelatedUnitRegistrationsRegistrationsObjectsRelatedUnitRegistrationValiditiesOrgUnitsResponseObjectsCurrentRoot(
+class RelatedUnitRegistrationsRelatedUnitsObjectsRegistrationsValiditiesOrgUnitsResponseObjectsCurrentRoot(
     BaseModel
 ):
     uuid: UUID
 
 
 RelatedUnitRegistrations.update_forward_refs()
-RelatedUnitRegistrationsRegistrations.update_forward_refs()
-RelatedUnitRegistrationsRegistrationsObjectsIRegistration.update_forward_refs()
-RelatedUnitRegistrationsRegistrationsObjectsRelatedUnitRegistration.update_forward_refs()
-RelatedUnitRegistrationsRegistrationsObjectsRelatedUnitRegistrationValidities.update_forward_refs()
-RelatedUnitRegistrationsRegistrationsObjectsRelatedUnitRegistrationValiditiesOrgUnitsResponse.update_forward_refs()
-RelatedUnitRegistrationsRegistrationsObjectsRelatedUnitRegistrationValiditiesOrgUnitsResponseObjects.update_forward_refs()
-RelatedUnitRegistrationsRegistrationsObjectsRelatedUnitRegistrationValiditiesOrgUnitsResponseObjectsCurrent.update_forward_refs()
-RelatedUnitRegistrationsRegistrationsObjectsRelatedUnitRegistrationValiditiesOrgUnitsResponseObjectsCurrentRoot.update_forward_refs()
+RelatedUnitRegistrationsRelatedUnits.update_forward_refs()
+RelatedUnitRegistrationsRelatedUnitsObjects.update_forward_refs()
+RelatedUnitRegistrationsRelatedUnitsObjectsRegistrations.update_forward_refs()
+RelatedUnitRegistrationsRelatedUnitsObjectsRegistrationsValidities.update_forward_refs()
+RelatedUnitRegistrationsRelatedUnitsObjectsRegistrationsValiditiesOrgUnitsResponse.update_forward_refs()
+RelatedUnitRegistrationsRelatedUnitsObjectsRegistrationsValiditiesOrgUnitsResponseObjects.update_forward_refs()
+RelatedUnitRegistrationsRelatedUnitsObjectsRegistrationsValiditiesOrgUnitsResponseObjectsCurrent.update_forward_refs()
+RelatedUnitRegistrationsRelatedUnitsObjectsRegistrationsValiditiesOrgUnitsResponseObjectsCurrentRoot.update_forward_refs()
