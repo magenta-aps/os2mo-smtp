@@ -145,14 +145,14 @@ query orgUnitAddress($uuid: UUID!) {
 }
 
 query relatedUnitRegistrations($uuid: UUID!) {
-  registrations(filter: { uuids: [$uuid], start: null, end: null }) {
+  related_units(filter: { uuids: [$uuid], from_date: null, to_date: null }) {
     objects {
-      ... on RelatedUnitRegistration {
-        validities(start: null, end: null) {
+      registrations {
+        validities {
           org_units_response {
             objects {
+              uuid
               current {
-                uuid
                 root {
                   uuid
                 }
