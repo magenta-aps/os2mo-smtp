@@ -240,8 +240,7 @@ async def _check_and_alert_org_unit_without_relation(
 ) -> None:
     """Check if an org unit in the Lønorganisation lacks a relation to
     an Administrationsorganisation unit, and send an alert email if so."""
-
-    logger.info("Obtained message", uuid=str(uuid))
+    log = logger.bind(uuid=str(uuid))
 
     settings = Settings()
     assert settings.root_loen_org
@@ -250,22 +249,19 @@ async def _check_and_alert_org_unit_without_relation(
     org_unit_data = await get_org_unit_relations(mo, org_unit_uuid=uuid)
 
     if not org_unit_data:
-        logger.info("Org unit not found", uuid=str(uuid))
+        log.info("Org unit not found")
         return
 
     current = one(org_unit_data).current
     if one(current.root).uuid != root:
-        logger.info("Org unit is not in the Lønorganisation", uuid=str(uuid))
+        log.info("Org unit is not in the Lønorganisation")
         return
 
     if current.related_units:
         for relation in current.related_units:
             for org_unit in relation.org_units:
                 if one(org_unit.root).uuid != root:
-                    logger.info(
-                        "Org unit has a relation outside of the Lønorganisation",
-                        uuid=str(uuid),
-                    )
+                    log.info("Org unit has a relation outside of the Lønorganisation")
                     return
 
     if uuid == root:
@@ -312,12 +308,13 @@ async def handle_related_units(
     We use registrations (bitemporal history) because a deleted relation
     no longer has a current state — querying current would return nothing.
     Registrations let us find which org units were involved historically."""
-    logger.info("Obtained related_units message", uuid=str(uuid))
+    log = logger.bind(uuid=str(uuid))
+    log.info("Obtained related_units message")
 
     related_units = await get_related_units_data(mo, related_units_uuid=uuid)
 
     if not related_units:
-        logger.info("Related units not found", uuid=str(uuid))
+        log.info("Related units not found")
         return
 
     # Collect all unique org unit UUIDs across all registrations and
