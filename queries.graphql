@@ -144,6 +144,27 @@ query orgUnitAddress($uuid: UUID!) {
   }
 }
 
+query relatedUnitRegistrations($uuid: UUID!) {
+  related_units(filter: { uuids: [$uuid], from_date: null, to_date: null }) {
+    objects {
+      registrations {
+        validities {
+          org_units_response {
+            objects {
+              uuid
+              current {
+                root {
+                  uuid
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
 query rolebinding($uuid: UUID!) {
   rolebindings(filter: {uuids: [$uuid]}) {
     objects {
