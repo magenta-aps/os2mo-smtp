@@ -32,6 +32,7 @@ from .dataloaders import (
 )
 from .dataloaders import get_org_unit_relations
 from .dataloaders import get_institution_address
+from .dataloaders import get_related_units_data
 from .dataloaders import get_ituser_uuid_by_rolebinding
 from .dataloaders import get_ituser
 
@@ -232,14 +233,14 @@ async def alert_on_manager_removal(
     )
 
 
-@amqp_router.register("org_unit")
-async def alert_on_org_unit_without_relation(
+async def _check_and_alert_org_unit_without_relation(
     context: Context,
-    uuid: PayloadUUID,
-    _: RateLimit,
+    uuid: UUID,
     mo: depends.GraphQLClient,
 ) -> None:
-    logger.info("Obtained message", uuid=str(uuid))
+    """Check if an org unit in the Lønorganisation lacks a relation to
+    an Administrationsorganisation unit, and send an alert email if so."""
+    log = logger.bind(uuid=str(uuid))
 
     settings = Settings()
     assert settings.root_loen_org
@@ -248,21 +249,19 @@ async def alert_on_org_unit_without_relation(
     org_unit_data = await get_org_unit_relations(mo, org_unit_uuid=uuid)
 
     if not org_unit_data:
-        logger.info("Org unit not found")
+        log.info("Org unit not found")
         return
 
     current = one(org_unit_data).current
     if one(current.root).uuid != root:
-        logger.info("Org unit is not in the Lønorganisation")
+        log.info("Org unit is not in the Lønorganisation")
         return
 
     if current.related_units:
         for relation in current.related_units:
             for org_unit in relation.org_units:
                 if one(org_unit.root).uuid != root:
-                    logger.info(
-                        "Org unit has a relation outside of the Lønorganisation"
-                    )
+                    log.info("Org unit has a relation outside of the Lønorganisation")
                     return
 
     if uuid == root:
@@ -273,31 +272,72 @@ async def alert_on_org_unit_without_relation(
     user_context = context["user_context"]
     email_client = user_context["email_client"]
 
-    # Prepare dictionary to store email arguments
-    email_args: dict[str, Any] = {}
-
-    email_args["receiver"] = emails
-
-    # Subject string
-    subject = "Manglende relation i Lønorganisation"
-    message_body = (
-        "Denne besked er sendt som en påmindelse om at "
-        + f"enheden: {current.name} "
-        + "ikke er relateret til en enhed i Administrationsorganisationen."
+    email_client.send_email(
+        receiver=emails,
+        subject="Manglende relation i Lønorganisation",
+        body=(
+            "Denne besked er sendt som en påmindelse om at "
+            f"enheden: {current.name} "
+            "ikke er relateret til en enhed i Administrationsorganisationen."
+        ),
+        texttype="plain",
     )
-    email_args["subject"] = subject
-    email_args["body"] = message_body
-    email_args["texttype"] = "plain"
 
-    # Send email to relevant addresses
-    email_client.send_email(**email_args)
+
+@amqp_router.register("org_unit")
+async def handle_org_unit(
+    context: Context,
+    uuid: PayloadUUID,
+    _: RateLimit,
+    mo: depends.GraphQLClient,
+) -> None:
+    logger.info("Obtained message", uuid=str(uuid))
+    await _check_and_alert_org_unit_without_relation(context, uuid, mo)
+
+
+@amqp_router.register("related_unit")
+async def handle_related_units(
+    context: Context,
+    uuid: PayloadUUID,
+    _: RateLimit,
+    mo: depends.GraphQLClient,
+) -> None:
+    """When a related_units object changes, check each lønorg unit involved
+    to see if it still has a relation to an adm org.
+
+    We use registrations (bitemporal history) because a deleted relation
+    no longer has a current state — querying current would return nothing.
+    Registrations let us find which org units were involved historically."""
+    log = logger.bind(uuid=str(uuid))
+    log.info("Obtained related_units message")
+
+    related_units = await get_related_units_data(mo, related_units_uuid=uuid)
+
+    if not related_units:
+        log.info("Related units not found")
+        return
+
+    # Collect all unique org unit UUIDs across all registrations and
+    # validity periods. We use obj.uuid (always exists on the response)
+    # rather than obj.current.uuid, since current can be None for
+    # terminated or future-dated org units.
+    # The root/lønorg check is handled by _check_and_alert_org_unit_without_relation.
+    org_unit_uuids: set[UUID] = set()
+    for related_unit in related_units:
+        for registration in related_unit.registrations:
+            for validity in registration.validities:
+                for obj in validity.org_units_response.objects:
+                    org_unit_uuids.add(obj.uuid)
+
+    for org_unit_uuid in org_unit_uuids:
+        await _check_and_alert_org_unit_without_relation(context, org_unit_uuid, mo)
 
 
 # TODO: This should be stored in a db, since a restart would throw away the last message
 _last_sent_messages: dict = {}
 
 
-@amqp_router.register("rolebinding")  # type: ignore
+@amqp_router.register("rolebinding")  # type: ignore[arg-type]
 async def alert_on_rolebinding(
     context: Context,
     uuid: PayloadUUID,

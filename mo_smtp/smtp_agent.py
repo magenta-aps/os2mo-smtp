@@ -46,7 +46,7 @@ def create_fastramqpi(**kwargs: Any) -> FastRAMQPI:
     fastramqpi = FastRAMQPI(
         application_name=settings.application_name,
         settings=settings.fastramqpi,
-        graphql_version=24,
+        graphql_version=28,
         graphql_client_cls=GraphQLClient,  # type: ignore
     )
     fastramqpi.add_context(settings=settings)

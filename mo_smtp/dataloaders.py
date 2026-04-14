@@ -120,6 +120,11 @@ async def get_org_unit_address(mo: GraphQLClient, uuid: UUID):
     return addresses
 
 
+async def get_related_units_data(mo: GraphQLClient, related_units_uuid: UUID):
+    _response = await mo.related_unit_registrations(related_units_uuid)
+    return _response.objects
+
+
 async def get_ituser_uuid_by_rolebinding(mo: GraphQLClient, uuid: UUID) -> UUID | None:
     try:
         gql_response = await mo.rolebinding(uuid)
