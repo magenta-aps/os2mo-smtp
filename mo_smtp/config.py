@@ -63,3 +63,7 @@ class EmailSettings(BaseSettings):
         ),
     )
     receivers: list[str] = Field([], description="Email addresses to send mail to")
+    smtp_timeout: int = Field(
+        30,
+        description="Timeout in seconds for SMTP connectivity check at startup",
+    )
