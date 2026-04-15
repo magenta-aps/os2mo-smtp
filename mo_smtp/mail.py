@@ -20,11 +20,12 @@ class EmailClient:
         self.sender = email_settings.sender
         self.dry_run = email_settings.dry_run
         self.receiver_override = email_settings.receiver_override
+        self.smtp_timeout = email_settings.smtp_timeout
 
-    def check_connectivity(self, timeout: int = 5) -> None:  # pragma: no cover
+    def check_connectivity(self) -> None:  # pragma: no cover
         smtp_cls = SMTP_SSL if self.smtp_security is SMTPSecurity.TLS else SMTP
         with smtp_cls(
-            host=self.smtp_host, port=self.smtp_port, timeout=timeout
+            host=self.smtp_host, port=self.smtp_port, timeout=self.smtp_timeout
         ) as smtp:
             smtp.noop()
 
