@@ -242,6 +242,8 @@ async def _check_and_alert_org_unit_without_relation(
     an Administrationsorganisation unit, and send an alert email if so."""
     log = logger.bind(uuid=str(uuid))
 
+    email_settings = context["user_context"]["email_settings"]
+
     settings = Settings()
     assert settings.root_loen_org
     root = settings.root_loen_org
@@ -264,10 +266,14 @@ async def _check_and_alert_org_unit_without_relation(
                     log.info("Org unit has a relation outside of the Lønorganisation")
                     return
 
-    if uuid == root:
-        emails = await get_org_unit_address(mo, uuid)
+    # TODO: Change this logic, but for now reuse the config
+    if settings.alert_manager_removal_use_org_unit_emails:
+        if uuid == root:
+            emails = await get_org_unit_address(mo, uuid)
+        else:
+            emails = await get_institution_address(mo, uuid, root)
     else:
-        emails = await get_institution_address(mo, uuid, root)
+        emails = set(email_settings.receivers)
 
     user_context = context["user_context"]
     email_client = user_context["email_client"]
