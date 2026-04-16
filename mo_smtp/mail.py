@@ -35,8 +35,8 @@ class EmailClient:
         subject: str,
         body: str,
         texttype: str = "plain",
-        cc: set[str] = {""},
-        bcc: set[str] = {""},
+        cc: set[str] = set(),
+        bcc: set[str] = set(),
         allow_receiver_override=True,
     ) -> MIMEText:
         """
