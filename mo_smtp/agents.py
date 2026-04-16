@@ -233,6 +233,9 @@ async def alert_on_manager_removal(
     )
 
 
+_alerted_org_units: set[UUID] = set()
+
+
 async def _check_and_alert_org_unit_without_relation(
     context: Context,
     uuid: UUID,
@@ -264,7 +267,12 @@ async def _check_and_alert_org_unit_without_relation(
             for org_unit in relation.org_units:
                 if one(org_unit.root).uuid != root:
                     log.info("Org unit has a relation outside of the Lønorganisation")
+                    _alerted_org_units.discard(uuid)
                     return
+
+    if uuid in _alerted_org_units:
+        log.info("Alert already sent for this org unit. An email will not be sent")
+        return
 
     # TODO: Change this logic, but for now reuse the config
     if settings.alert_manager_removal_use_org_unit_emails:
@@ -288,6 +296,7 @@ async def _check_and_alert_org_unit_without_relation(
         ),
         texttype="plain",
     )
+    _alerted_org_units.add(uuid)
 
 
 @amqp_router.register("org_unit")

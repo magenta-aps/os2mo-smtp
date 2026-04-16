@@ -955,6 +955,120 @@ async def test_handle_org_unit_sends_email(
 
 
 @pytest.mark.usefixtures("minimal_valid_settings")
+async def test_handle_org_unit_deduplicates_emails(
+    context: Context, monkeypatch: pytest.MonkeyPatch
+):
+    root_loen_org = uuid4()
+    org_unit_uuid = uuid4()
+
+    with monkeypatch.context() as con:
+        con.setenv("ROOT_LOEN_ORG", str(root_loen_org))
+        con.setenv("ALERT_MANAGER_REMOVAL_USE_ORG_UNIT_EMAILS", "true")
+
+        mo = AsyncMock()
+        mo.org_unit_relations.return_value = OrgUnitRelationsOrgUnits.parse_obj(
+            {
+                "objects": [
+                    {
+                        "current": {
+                            "name": "org-unit-name",
+                            "root": [{"uuid": root_loen_org}],
+                            "engagements": [
+                                {"uuid": uuid4()},
+                            ],
+                            "related_units": [],
+                        },
+                    }
+                ]
+            }
+        )
+        mo.institution_address.return_value = InstitutionAddressOrgUnits.parse_obj(
+            {"objects": [{"current": {"addresses": [{"value": "test@example.com"}]}}]}
+        )
+
+        await handle_org_unit(context, org_unit_uuid, None, mo)
+        await handle_org_unit(context, org_unit_uuid, None, mo)
+
+    email_client = context["user_context"]["email_client"]
+    email_client.send_email.assert_called_once()
+
+
+@pytest.mark.usefixtures("minimal_valid_settings")
+async def test_handle_org_unit_resends_after_relation_restored(
+    context: Context, monkeypatch: pytest.MonkeyPatch
+):
+    root_loen_org = uuid4()
+    org_unit_uuid = uuid4()
+    adm_root = uuid4()
+
+    no_relation = OrgUnitRelationsOrgUnits.parse_obj(
+        {
+            "objects": [
+                {
+                    "current": {
+                        "name": "org-unit-name",
+                        "root": [{"uuid": root_loen_org}],
+                        "engagements": [{"uuid": uuid4()}],
+                        "related_units": [],
+                    },
+                }
+            ]
+        }
+    )
+    has_relation = OrgUnitRelationsOrgUnits.parse_obj(
+        {
+            "objects": [
+                {
+                    "current": {
+                        "name": "org-unit-name",
+                        "root": [{"uuid": root_loen_org}],
+                        "engagements": [{"uuid": uuid4()}],
+                        "related_units": [
+                            {
+                                "org_units": [
+                                    {
+                                        "uuid": org_unit_uuid,
+                                        "root": [{"uuid": root_loen_org}],
+                                    },
+                                    {
+                                        "uuid": uuid4(),
+                                        "root": [{"uuid": adm_root}],
+                                    },
+                                ]
+                            }
+                        ],
+                    },
+                }
+            ]
+        }
+    )
+
+    with monkeypatch.context() as con:
+        con.setenv("ROOT_LOEN_ORG", str(root_loen_org))
+        con.setenv("ALERT_MANAGER_REMOVAL_USE_ORG_UNIT_EMAILS", "true")
+
+        mo = AsyncMock()
+        mo.institution_address.return_value = InstitutionAddressOrgUnits.parse_obj(
+            {"objects": [{"current": {"addresses": [{"value": "test@example.com"}]}}]}
+        )
+
+        # 1st call: no relation → sends email
+        mo.org_unit_relations.return_value = no_relation
+        await handle_org_unit(context, org_unit_uuid, None, mo)
+
+        # 2nd call: relation restored → no email, clears alert flag
+        mo.org_unit_relations.return_value = has_relation
+        await handle_org_unit(context, org_unit_uuid, None, mo)
+
+        # 3rd call: relation removed again → sends email again
+        mo.org_unit_relations.return_value = no_relation
+        await handle_org_unit(context, org_unit_uuid, None, mo)
+
+    email_client = context["user_context"]["email_client"]
+    assert email_client.send_email.call_count == 2
+
+
+@pytest.mark.usefixtures("minimal_valid_settings")
 async def test_handle_org_unit_sends_email_falls_back_to_receivers(
     context: Context, monkeypatch: pytest.MonkeyPatch
 ):
