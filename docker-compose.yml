@@ -5,7 +5,7 @@ services:
     command: [ "uvicorn", "--factory", "mo_smtp.smtp_agent:create_app", "--host", "0.0.0.0", "--reload"]
 
     volumes:
-      - ./mo_smtp:/app/mo_smtp
+      - ./:/app/:ro
     networks:
       - os2mo_default
     environment:
