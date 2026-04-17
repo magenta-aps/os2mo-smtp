@@ -3,6 +3,8 @@ Python file with agents that send emails
 """
 
 import datetime
+import hashlib
+import json
 import os
 from uuid import UUID
 from typing import Any
@@ -18,9 +20,13 @@ from fastramqpi.ramqp.mo import PayloadUUID
 from jinja2 import Environment
 from jinja2 import FileSystemLoader
 from more_itertools import one
+from sqlalchemy import delete
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from . import depends
 from .depends import Settings
+from .models import SentAlert
 from .dataloaders import (
     get_address_data,
     get_employee_data,
@@ -233,13 +239,11 @@ async def alert_on_manager_removal(
     )
 
 
-_alerted_org_units: set[UUID] = set()
-
-
 async def _check_and_alert_org_unit_without_relation(
     context: Context,
     uuid: UUID,
     mo: depends.GraphQLClient,
+    session: AsyncSession,
 ) -> None:
     """Check if an org unit in the Lønorganisation lacks a relation to
     an Administrationsorganisation unit, and send an alert email if so."""
@@ -267,10 +271,21 @@ async def _check_and_alert_org_unit_without_relation(
             for org_unit in relation.org_units:
                 if one(org_unit.root).uuid != root:
                     log.info("Org unit has a relation outside of the Lønorganisation")
-                    _alerted_org_units.discard(uuid)
+                    await session.execute(
+                        delete(SentAlert).where(
+                            SentAlert.alert_type == "relation",
+                            SentAlert.object_uuid == uuid,
+                        )
+                    )
                     return
 
-    if uuid in _alerted_org_units:
+    existing = await session.scalar(
+        select(SentAlert).where(
+            SentAlert.alert_type == "relation",
+            SentAlert.object_uuid == uuid,
+        )
+    )
+    if existing:
         log.info("Alert already sent for this org unit. An email will not be sent")
         return
 
@@ -296,7 +311,7 @@ async def _check_and_alert_org_unit_without_relation(
         ),
         texttype="plain",
     )
-    _alerted_org_units.add(uuid)
+    session.add(SentAlert(alert_type="relation", object_uuid=uuid))
 
 
 @amqp_router.register("org_unit")
@@ -305,9 +320,10 @@ async def handle_org_unit(
     uuid: PayloadUUID,
     _: RateLimit,
     mo: depends.GraphQLClient,
+    session: depends.Session,
 ) -> None:
     logger.info("Obtained message", uuid=str(uuid))
-    await _check_and_alert_org_unit_without_relation(context, uuid, mo)
+    await _check_and_alert_org_unit_without_relation(context, uuid, mo, session)
 
 
 @amqp_router.register("related_unit")
@@ -316,6 +332,7 @@ async def handle_related_units(
     uuid: PayloadUUID,
     _: RateLimit,
     mo: depends.GraphQLClient,
+    session: depends.Session,
 ) -> None:
     """When a related_units object changes, check each lønorg unit involved
     to see if it still has a relation to an adm org.
@@ -345,11 +362,9 @@ async def handle_related_units(
                     org_unit_uuids.add(obj.uuid)
 
     for org_unit_uuid in org_unit_uuids:
-        await _check_and_alert_org_unit_without_relation(context, org_unit_uuid, mo)
-
-
-# TODO: This should be stored in a db, since a restart would throw away the last message
-_last_sent_messages: dict = {}
+        await _check_and_alert_org_unit_without_relation(
+            context, org_unit_uuid, mo, session
+        )
 
 
 @amqp_router.register("rolebinding")  # type: ignore[arg-type]
@@ -358,6 +373,7 @@ async def alert_on_rolebinding(
     uuid: PayloadUUID,
     _: RateLimit,
     mo: depends.GraphQLClient,
+    session: depends.Session,
 ) -> None:
     ituser_uuid = await get_ituser_uuid_by_rolebinding(mo, uuid=uuid)
     if not ituser_uuid:
@@ -365,7 +381,7 @@ async def alert_on_rolebinding(
             "IT-user is possibly terminated or doesn't exist. An email will not be sent"
         )
         return None
-    return await generate_ituser_email(context, ituser_uuid, mo)
+    return await generate_ituser_email(context, ituser_uuid, mo, session)
 
 
 @amqp_router.register("ituser")
@@ -374,14 +390,16 @@ async def alert_on_ituser(
     uuid: PayloadUUID,
     _: RateLimit,
     mo: depends.GraphQLClient,
+    session: depends.Session,
 ) -> None:
-    return await generate_ituser_email(context, uuid, mo)
+    return await generate_ituser_email(context, uuid, mo, session)
 
 
 async def generate_ituser_email(
     context: Context,
     ituser_uuid: UUID,
     mo: depends.GraphQLClient,
+    session: AsyncSession,
 ) -> None:
     user_context = context["user_context"]
     email_client = user_context["email_client"]
@@ -407,18 +425,28 @@ async def generate_ituser_email(
 
     template = load_template("alert_on_rolebinding.html")
 
-    context = {
+    template_context = {
         "person": person,
         "ituser": ituser.user_key,
         "itsystem": itsystem,
         "roles": roles,
     }
 
-    if context == _last_sent_messages.get(ituser_uuid):
+    content_hash = hashlib.sha256(
+        json.dumps(template_context, sort_keys=True, default=str).encode()
+    ).hexdigest()
+
+    existing = await session.scalar(
+        select(SentAlert).where(
+            SentAlert.alert_type == "ituser",
+            SentAlert.object_uuid == ituser_uuid,
+        )
+    )
+    if existing and existing.content_hash == content_hash:
         logger.info("Email is identical to the previous. An email will not be sent")
         return
 
-    message = template.render(context=context)
+    message = template.render(context=template_context)
 
     email_client.send_email(
         set(email_settings.receivers),
@@ -426,4 +454,14 @@ async def generate_ituser_email(
         message,
         "html",
     )
-    _last_sent_messages[ituser_uuid] = context
+
+    if existing:
+        existing.content_hash = content_hash
+    else:
+        session.add(
+            SentAlert(
+                alert_type="ituser",
+                object_uuid=ituser_uuid,
+                content_hash=content_hash,
+            )
+        )
