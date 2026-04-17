@@ -50,7 +50,7 @@ def test_send_email_delivers_to_mailcatcher(email_client: EmailClient):
 
     msg = messages[0]
     assert msg["subject"] == "Test subject"
-    assert "os2mo@magenta.dk" in msg["sender"]
+    assert email_client.sender in msg["sender"]
     assert "<receiver@test.net>" in msg["recipients"]
 
     body = _get_message_body(msg["id"])
