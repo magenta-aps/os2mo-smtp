@@ -1,4 +1,4 @@
-from typing import Any, Union, get_args, get_origin
+from typing import Any, Dict, Type, Union, get_args, get_origin
 
 from pydantic import BaseModel as PydanticBaseModel
 from pydantic.class_validators import validator
@@ -27,7 +27,7 @@ class BaseModel(PydanticBaseModel):
         return cls._parse_custom_scalar_value(value, field.annotation)
 
     @classmethod
-    def _parse_custom_scalar_value(cls, value: Any, type_: type[Any]) -> Any:
+    def _parse_custom_scalar_value(cls, value: Any, type_: Type[Any]) -> Any:
         origin = get_origin(type_)
         args = get_args(type_)
         if origin is list and isinstance(value, list):
@@ -43,7 +43,7 @@ class BaseModel(PydanticBaseModel):
 
         return value
 
-    def dict(self, **kwargs: Any) -> dict[str, Any]:
+    def dict(self, **kwargs: Any) -> Dict[str, Any]:
         dict_ = super().dict(**kwargs)
         return {key: self._serialize_value(value) for key, value in dict_.items()}
 

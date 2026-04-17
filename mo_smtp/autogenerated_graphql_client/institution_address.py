@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import List, Optional
 
 from .base_model import BaseModel
 
@@ -8,7 +8,7 @@ class InstitutionAddress(BaseModel):
 
 
 class InstitutionAddressOrgUnits(BaseModel):
-    objects: list["InstitutionAddressOrgUnitsObjects"]
+    objects: List["InstitutionAddressOrgUnitsObjects"]
 
 
 class InstitutionAddressOrgUnitsObjects(BaseModel):
@@ -16,7 +16,7 @@ class InstitutionAddressOrgUnitsObjects(BaseModel):
 
 
 class InstitutionAddressOrgUnitsObjectsCurrent(BaseModel):
-    addresses: list["InstitutionAddressOrgUnitsObjectsCurrentAddresses"]
+    addresses: List["InstitutionAddressOrgUnitsObjectsCurrentAddresses"]
 
 
 class InstitutionAddressOrgUnitsObjectsCurrentAddresses(BaseModel):

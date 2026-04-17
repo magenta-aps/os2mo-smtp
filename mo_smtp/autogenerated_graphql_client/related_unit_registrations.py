@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import List, Optional
 from uuid import UUID
 
 from .base_model import BaseModel
@@ -9,15 +9,15 @@ class RelatedUnitRegistrations(BaseModel):
 
 
 class RelatedUnitRegistrationsRelatedUnits(BaseModel):
-    objects: list["RelatedUnitRegistrationsRelatedUnitsObjects"]
+    objects: List["RelatedUnitRegistrationsRelatedUnitsObjects"]
 
 
 class RelatedUnitRegistrationsRelatedUnitsObjects(BaseModel):
-    registrations: list["RelatedUnitRegistrationsRelatedUnitsObjectsRegistrations"]
+    registrations: List["RelatedUnitRegistrationsRelatedUnitsObjectsRegistrations"]
 
 
 class RelatedUnitRegistrationsRelatedUnitsObjectsRegistrations(BaseModel):
-    validities: list[
+    validities: List[
         "RelatedUnitRegistrationsRelatedUnitsObjectsRegistrationsValidities"
     ]
 
@@ -29,7 +29,7 @@ class RelatedUnitRegistrationsRelatedUnitsObjectsRegistrationsValidities(BaseMod
 class RelatedUnitRegistrationsRelatedUnitsObjectsRegistrationsValiditiesOrgUnitsResponse(
     BaseModel
 ):
-    objects: list[
+    objects: List[
         "RelatedUnitRegistrationsRelatedUnitsObjectsRegistrationsValiditiesOrgUnitsResponseObjects"
     ]
 
@@ -46,14 +46,11 @@ class RelatedUnitRegistrationsRelatedUnitsObjectsRegistrationsValiditiesOrgUnits
 class RelatedUnitRegistrationsRelatedUnitsObjectsRegistrationsValiditiesOrgUnitsResponseObjectsCurrent(
     BaseModel
 ):
-    root: (
-        None
-        | (
-            list[
-                "RelatedUnitRegistrationsRelatedUnitsObjectsRegistrationsValiditiesOrgUnitsResponseObjectsCurrentRoot"
-            ]
-        )
-    )
+    root: Optional[
+        List[
+            "RelatedUnitRegistrationsRelatedUnitsObjectsRegistrationsValiditiesOrgUnitsResponseObjectsCurrentRoot"
+        ]
+    ]
 
 
 class RelatedUnitRegistrationsRelatedUnitsObjectsRegistrationsValiditiesOrgUnitsResponseObjectsCurrentRoot(

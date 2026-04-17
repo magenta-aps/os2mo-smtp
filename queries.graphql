@@ -201,3 +201,246 @@ query ituser($uuid: UUID!) {
     }
   }
 }
+
+
+# =============================================================================
+# Testing mutations — used by integration tests to create data in MO
+# =============================================================================
+
+query _Testing_GetOrgUnitType {
+  classes(filter: {facet_user_keys: "org_unit_type"}) {
+    objects {
+      uuid
+    }
+  }
+}
+
+query _Testing_GetEmailAddressType {
+  facets(filter: {user_keys: "employee_address_type"}) {
+    objects {
+      current {
+        classes(filter: {scope: "EMAIL"}) {
+          uuid
+        }
+      }
+    }
+  }
+}
+
+query _Testing_GetOrgUnitAddressType {
+  facets(filter: {user_keys: "org_unit_address_type"}) {
+    objects {
+      current {
+        classes(filter: {scope: "EMAIL"}) {
+          uuid
+        }
+      }
+    }
+  }
+}
+
+query _Testing_GetManagerLevel {
+  classes(filter: {facet_user_keys: "manager_level"}) {
+    objects {
+      uuid
+    }
+  }
+}
+
+query _Testing_GetManagerType {
+  classes(filter: {facet_user_keys: "manager_type"}) {
+    objects {
+      uuid
+    }
+  }
+}
+
+query _Testing_GetManagerResponsibility {
+  classes(filter: {facet_user_keys: "responsibility"}) {
+    objects {
+      uuid
+    }
+  }
+}
+
+query _Testing_GetEngagementType {
+  facets(filter: {user_keys: "engagement_type"}) {
+    objects {
+      current {
+        classes {
+          uuid
+        }
+      }
+    }
+  }
+}
+
+query _Testing_GetJobFunction {
+  facets(filter: {user_keys: "engagement_job_function"}) {
+    objects {
+      current {
+        classes {
+          uuid
+        }
+      }
+    }
+  }
+}
+
+mutation _Testing_CreateOrgUnitRoot($name: String!, $root_uuid: UUID!, $org_unit_type: UUID!, $from: DateTime!) {
+  org_unit_create(
+    input: {
+      uuid: $root_uuid,
+      name: $name,
+      org_unit_type: $org_unit_type,
+      validity: {from: $from},
+    },
+  ) {
+    uuid
+  }
+}
+
+mutation _Testing_CreateOrgUnit($name: String!, $parent: UUID!, $org_unit_type: UUID!, $from: DateTime!, $to: DateTime) {
+  org_unit_create(
+    input: {
+      name: $name,
+      parent: $parent,
+      org_unit_type: $org_unit_type,
+      validity: {from: $from, to: $to},
+    },
+  ) {
+    uuid
+  }
+}
+
+mutation _Testing_CreateEmployee($first_name: String!, $last_name: String!) {
+  employee_create(input: {given_name: $first_name, surname: $last_name}) {
+    uuid
+  }
+}
+
+mutation _Testing_CreateAddress($person: UUID!, $value: String!, $address_type: UUID!, $from: DateTime!) {
+  address_create(
+    input: {person: $person, value: $value, address_type: $address_type, validity: {from: $from}}
+  ) {
+    uuid
+  }
+}
+
+mutation _Testing_CreateOrgUnitAddress($org_unit: UUID!, $value: String!, $address_type: UUID!, $from: DateTime!) {
+  address_create(
+    input: {org_unit: $org_unit, value: $value, address_type: $address_type, validity: {from: $from}}
+  ) {
+    uuid
+  }
+}
+
+mutation _Testing_CreateEngagement($orgunit: UUID!, $person: UUID!, $engagement_type: UUID!, $job_function: UUID!, $from: DateTime!) {
+  engagement_create(
+    input: {org_unit: $orgunit, engagement_type: $engagement_type, job_function: $job_function, person: $person, validity: {from: $from}}
+  ) {
+    uuid
+  }
+}
+
+mutation _Testing_CreateManager(
+  $orgunit: UUID!
+  $person: UUID
+  $manager_level: UUID!
+  $manager_type: UUID!
+  $responsibility: UUID!
+  $from: DateTime!
+  $to: DateTime
+) {
+  manager_create(
+    input: {
+      org_unit: $orgunit
+      manager_level: $manager_level
+      manager_type: $manager_type
+      responsibility: [$responsibility]
+      person: $person
+      validity: { from: $from, to: $to }
+    }
+  ) {
+    uuid
+  }
+}
+
+mutation _Testing_UpdateManager($uuid: UUID!, $from: DateTime!, $to: DateTime, $person: UUID, $user_key: String) {
+  manager_update(input: {uuid: $uuid, validity: {from: $from, to: $to}, person: $person, user_key: $user_key}) {
+    uuid
+  }
+}
+
+mutation _Testing_TerminateManager($uuid: UUID!, $to: DateTime!) {
+  manager_terminate(input: {uuid: $uuid, to: $to}) {
+    uuid
+  }
+}
+
+mutation _Testing_CreateItSystem($name: String!, $from: DateTime!) {
+  itsystem_create(input: {user_key: $name, name: $name, validity: {from: $from}}) {
+    uuid
+  }
+}
+
+mutation _Testing_CreateItUser($itsystem: UUID!, $person: UUID!, $name: String!, $from: DateTime!, $engagements: [UUID!]) {
+  ituser_create(input: {user_key: $name, itsystem: $itsystem, person: $person, engagements: $engagements, validity: {from: $from}}) {
+    uuid
+  }
+}
+
+mutation _Testing_CreateRolebinding($ituser: UUID!, $role: UUID!, $from: DateTime!) {
+  rolebinding_create(input: {ituser: $ituser, role: $role, validity: {from: $from}}) {
+    uuid
+  }
+}
+
+query _Testing_GetRoleType {
+  facets(filter: {user_keys: "role"}) {
+    objects {
+      current {
+        classes {
+          uuid
+          name
+        }
+      }
+    }
+  }
+}
+
+mutation _Testing_CreateClass($name: String!, $facet_uuid: UUID!, $from: DateTime!) {
+  class_create(
+    input: {name: $name, user_key: $name, facet_uuid: $facet_uuid, validity: {from: $from}}
+  ) {
+    uuid
+  }
+}
+
+query _Testing_GetRoleFacet {
+  facets(filter: {user_keys: "role"}) {
+    objects {
+      uuid
+    }
+  }
+}
+
+query _Testing_GetRelatedUnitsForOrgUnit($org_unit: UUID!) {
+  related_units(filter: {org_unit: {uuids: [$org_unit]}}) {
+    objects {
+      uuid
+    }
+  }
+}
+
+mutation _Testing_TerminateOrgUnit($uuid: UUID!, $to: DateTime!) {
+  org_unit_terminate(input: {uuid: $uuid, to: $to}) {
+    uuid
+  }
+}
+
+mutation _Testing_CreateRelatedUnits($origin: UUID!, $destination: [UUID!]!, $from: DateTime!, $to: DateTime) {
+  related_units_update(input: {origin: $origin, destination: $destination, validity: {from: $from, to: $to}}) {
+    uuid
+  }
+}

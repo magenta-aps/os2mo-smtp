@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import List, Optional
 from uuid import UUID
 
 from .base_model import BaseModel
@@ -9,7 +9,7 @@ class Rolebinding(BaseModel):
 
 
 class RolebindingRolebindings(BaseModel):
-    objects: list["RolebindingRolebindingsObjects"]
+    objects: List["RolebindingRolebindingsObjects"]
 
 
 class RolebindingRolebindingsObjects(BaseModel):
@@ -17,7 +17,7 @@ class RolebindingRolebindingsObjects(BaseModel):
 
 
 class RolebindingRolebindingsObjectsCurrent(BaseModel):
-    ituser: list["RolebindingRolebindingsObjectsCurrentItuser"]
+    ituser: List["RolebindingRolebindingsObjectsCurrentItuser"]
 
 
 class RolebindingRolebindingsObjectsCurrentItuser(BaseModel):
