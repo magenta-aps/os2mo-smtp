@@ -1,8 +1,8 @@
 # SPDX-FileCopyrightText: Magenta ApS <https://magenta.dk>
 # SPDX-License-Identifier: MPL-2.0
 #
-# OS2mo GraphQL API schema definition (v28).
-# https://os2mo.eksempel.dk/graphql/v28/schema.graphql
+# OS2mo GraphQL API schema definition (v29).
+# https://os2mo.eksempel.dk/graphql/v29/schema.graphql
 
 "Access log entry.\n\nMostly useful for auditing purposes seeing when data-reads were done and by whom.\n"
 type AccessLog {

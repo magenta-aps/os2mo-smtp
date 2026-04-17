@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import List, Optional
 from uuid import UUID
 
 from .base_model import BaseModel
@@ -9,7 +9,7 @@ class OrgUnitData(BaseModel):
 
 
 class OrgUnitDataOrgUnits(BaseModel):
-    objects: list["OrgUnitDataOrgUnitsObjects"]
+    objects: List["OrgUnitDataOrgUnitsObjects"]
 
 
 class OrgUnitDataOrgUnitsObjects(BaseModel):
@@ -19,7 +19,7 @@ class OrgUnitDataOrgUnitsObjects(BaseModel):
 class OrgUnitDataOrgUnitsObjectsCurrent(BaseModel):
     name: str
     user_key: str
-    root: list["OrgUnitDataOrgUnitsObjectsCurrentRoot"] | None
+    root: Optional[List["OrgUnitDataOrgUnitsObjectsCurrentRoot"]]
 
 
 class OrgUnitDataOrgUnitsObjectsCurrentRoot(BaseModel):

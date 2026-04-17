@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import List, Optional
 
 from .base_model import BaseModel
 
@@ -8,7 +8,7 @@ class EmployeeData(BaseModel):
 
 
 class EmployeeDataEmployees(BaseModel):
-    objects: list["EmployeeDataEmployeesObjects"]
+    objects: List["EmployeeDataEmployeesObjects"]
 
 
 class EmployeeDataEmployeesObjects(BaseModel):
@@ -17,8 +17,8 @@ class EmployeeDataEmployeesObjects(BaseModel):
 
 class EmployeeDataEmployeesObjectsCurrent(BaseModel):
     name: str
-    addresses: list["EmployeeDataEmployeesObjectsCurrentAddresses"]
-    engagements: list["EmployeeDataEmployeesObjectsCurrentEngagements"]
+    addresses: List["EmployeeDataEmployeesObjectsCurrentAddresses"]
+    engagements: List["EmployeeDataEmployeesObjectsCurrentEngagements"]
 
 
 class EmployeeDataEmployeesObjectsCurrentAddresses(BaseModel):
@@ -26,8 +26,8 @@ class EmployeeDataEmployeesObjectsCurrentAddresses(BaseModel):
 
 
 class EmployeeDataEmployeesObjectsCurrentEngagements(BaseModel):
-    org_unit: list["EmployeeDataEmployeesObjectsCurrentEngagementsOrgUnit"]
-    managers: list["EmployeeDataEmployeesObjectsCurrentEngagementsManagers"]
+    org_unit: List["EmployeeDataEmployeesObjectsCurrentEngagementsOrgUnit"]
+    managers: List["EmployeeDataEmployeesObjectsCurrentEngagementsManagers"]
 
 
 class EmployeeDataEmployeesObjectsCurrentEngagementsOrgUnit(BaseModel):
@@ -35,13 +35,13 @@ class EmployeeDataEmployeesObjectsCurrentEngagementsOrgUnit(BaseModel):
 
 
 class EmployeeDataEmployeesObjectsCurrentEngagementsManagers(BaseModel):
-    person: (
-        None | (list["EmployeeDataEmployeesObjectsCurrentEngagementsManagersPerson"])
-    )
+    person: Optional[
+        List["EmployeeDataEmployeesObjectsCurrentEngagementsManagersPerson"]
+    ]
 
 
 class EmployeeDataEmployeesObjectsCurrentEngagementsManagersPerson(BaseModel):
-    addresses: list[
+    addresses: List[
         "EmployeeDataEmployeesObjectsCurrentEngagementsManagersPersonAddresses"
     ]
 
