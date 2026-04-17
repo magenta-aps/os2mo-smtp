@@ -1,4 +1,4 @@
-from typing import List, Optional
+from typing import Optional
 from uuid import UUID
 
 from .base_model import BaseModel
@@ -9,7 +9,7 @@ class AddressData(BaseModel):
 
 
 class AddressDataAddresses(BaseModel):
-    objects: List["AddressDataAddressesObjects"]
+    objects: list["AddressDataAddressesObjects"]
 
 
 class AddressDataAddressesObjects(BaseModel):
@@ -18,12 +18,12 @@ class AddressDataAddressesObjects(BaseModel):
 
 class AddressDataAddressesObjectsCurrent(BaseModel):
     value: str
-    employee_uuid: Optional[UUID]
+    employee_uuid: UUID | None
     address_type: "AddressDataAddressesObjectsCurrentAddressType"
 
 
 class AddressDataAddressesObjectsCurrentAddressType(BaseModel):
-    scope: Optional[str]
+    scope: str | None
 
 
 AddressData.update_forward_refs()

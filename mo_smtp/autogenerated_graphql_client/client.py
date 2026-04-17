@@ -1,5 +1,4 @@
 from datetime import datetime
-from typing import List, Optional, Union
 from uuid import UUID
 
 from ._testing__create_address import (
@@ -613,7 +612,7 @@ class GraphQLClient(AsyncBaseClient):
         parent: UUID,
         org_unit_type: UUID,
         from_: datetime,
-        to: Union[Optional[datetime], UnsetType] = UNSET,
+        to: datetime | None | UnsetType = UNSET,
     ) -> TestingCreateOrgUnitOrgUnitCreate:
         query = gql(
             """
@@ -742,8 +741,8 @@ class GraphQLClient(AsyncBaseClient):
         manager_type: UUID,
         responsibility: UUID,
         from_: datetime,
-        person: Union[Optional[UUID], UnsetType] = UNSET,
-        to: Union[Optional[datetime], UnsetType] = UNSET,
+        person: UUID | None | UnsetType = UNSET,
+        to: datetime | None | UnsetType = UNSET,
     ) -> TestingCreateManagerManagerCreate:
         query = gql(
             """
@@ -773,9 +772,9 @@ class GraphQLClient(AsyncBaseClient):
         self,
         uuid: UUID,
         from_: datetime,
-        to: Union[Optional[datetime], UnsetType] = UNSET,
-        person: Union[Optional[UUID], UnsetType] = UNSET,
-        user_key: Union[Optional[str], UnsetType] = UNSET,
+        to: datetime | None | UnsetType = UNSET,
+        person: UUID | None | UnsetType = UNSET,
+        user_key: str | None | UnsetType = UNSET,
     ) -> TestingUpdateManagerManagerUpdate:
         query = gql(
             """
@@ -839,7 +838,7 @@ class GraphQLClient(AsyncBaseClient):
         person: UUID,
         name: str,
         from_: datetime,
-        engagements: Union[Optional[List[UUID]], UnsetType] = UNSET,
+        engagements: list[UUID] | None | UnsetType = UNSET,
     ) -> TestingCreateItUserItuserCreate:
         query = gql(
             """
@@ -964,9 +963,9 @@ class GraphQLClient(AsyncBaseClient):
     async def _testing__create_related_units(
         self,
         origin: UUID,
-        destination: List[UUID],
+        destination: list[UUID],
         from_: datetime,
-        to: Union[Optional[datetime], UnsetType] = UNSET,
+        to: datetime | None | UnsetType = UNSET,
     ) -> TestingCreateRelatedUnitsRelatedUnitsUpdate:
         query = gql(
             """

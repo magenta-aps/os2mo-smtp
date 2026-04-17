@@ -1,4 +1,4 @@
-from typing import List, Optional
+from typing import Optional
 from uuid import UUID
 
 from .base_model import BaseModel
@@ -9,7 +9,7 @@ class Ituser(BaseModel):
 
 
 class ItuserItusers(BaseModel):
-    objects: List["ItuserItusersObjects"]
+    objects: list["ItuserItusersObjects"]
 
 
 class ItuserItusersObjects(BaseModel):
@@ -18,13 +18,13 @@ class ItuserItusersObjects(BaseModel):
 
 class ItuserItusersObjectsCurrent(BaseModel):
     user_key: str
-    rolebindings: List["ItuserItusersObjectsCurrentRolebindings"]
-    person: Optional[List["ItuserItusersObjectsCurrentPerson"]]
+    rolebindings: list["ItuserItusersObjectsCurrentRolebindings"]
+    person: list["ItuserItusersObjectsCurrentPerson"] | None
     itsystem: "ItuserItusersObjectsCurrentItsystem"
 
 
 class ItuserItusersObjectsCurrentRolebindings(BaseModel):
-    role: List["ItuserItusersObjectsCurrentRolebindingsRole"]
+    role: list["ItuserItusersObjectsCurrentRolebindingsRole"]
 
 
 class ItuserItusersObjectsCurrentRolebindingsRole(BaseModel):

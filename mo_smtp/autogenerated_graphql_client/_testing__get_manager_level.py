@@ -1,4 +1,3 @@
-from typing import List
 from uuid import UUID
 
 from .base_model import BaseModel
@@ -9,7 +8,7 @@ class TestingGetManagerLevel(BaseModel):
 
 
 class TestingGetManagerLevelClasses(BaseModel):
-    objects: List["TestingGetManagerLevelClassesObjects"]
+    objects: list["TestingGetManagerLevelClassesObjects"]
 
 
 class TestingGetManagerLevelClassesObjects(BaseModel):

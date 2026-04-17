@@ -1,4 +1,4 @@
-from typing import List, Optional
+from typing import Optional
 from uuid import UUID
 
 from .base_model import BaseModel
@@ -9,7 +9,7 @@ class OrgUnitRelations(BaseModel):
 
 
 class OrgUnitRelationsOrgUnits(BaseModel):
-    objects: List["OrgUnitRelationsOrgUnitsObjects"]
+    objects: list["OrgUnitRelationsOrgUnitsObjects"]
 
 
 class OrgUnitRelationsOrgUnitsObjects(BaseModel):
@@ -18,9 +18,9 @@ class OrgUnitRelationsOrgUnitsObjects(BaseModel):
 
 class OrgUnitRelationsOrgUnitsObjectsCurrent(BaseModel):
     name: str
-    root: Optional[List["OrgUnitRelationsOrgUnitsObjectsCurrentRoot"]]
-    engagements: List["OrgUnitRelationsOrgUnitsObjectsCurrentEngagements"]
-    related_units: List["OrgUnitRelationsOrgUnitsObjectsCurrentRelatedUnits"]
+    root: list["OrgUnitRelationsOrgUnitsObjectsCurrentRoot"] | None
+    engagements: list["OrgUnitRelationsOrgUnitsObjectsCurrentEngagements"]
+    related_units: list["OrgUnitRelationsOrgUnitsObjectsCurrentRelatedUnits"]
 
 
 class OrgUnitRelationsOrgUnitsObjectsCurrentRoot(BaseModel):
@@ -32,14 +32,14 @@ class OrgUnitRelationsOrgUnitsObjectsCurrentEngagements(BaseModel):
 
 
 class OrgUnitRelationsOrgUnitsObjectsCurrentRelatedUnits(BaseModel):
-    org_units: List["OrgUnitRelationsOrgUnitsObjectsCurrentRelatedUnitsOrgUnits"]
+    org_units: list["OrgUnitRelationsOrgUnitsObjectsCurrentRelatedUnitsOrgUnits"]
 
 
 class OrgUnitRelationsOrgUnitsObjectsCurrentRelatedUnitsOrgUnits(BaseModel):
     uuid: UUID
-    root: Optional[
-        List["OrgUnitRelationsOrgUnitsObjectsCurrentRelatedUnitsOrgUnitsRoot"]
-    ]
+    root: (
+        None | (list["OrgUnitRelationsOrgUnitsObjectsCurrentRelatedUnitsOrgUnitsRoot"])
+    )
 
 
 class OrgUnitRelationsOrgUnitsObjectsCurrentRelatedUnitsOrgUnitsRoot(BaseModel):

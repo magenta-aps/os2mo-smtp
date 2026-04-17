@@ -1,4 +1,4 @@
-from typing import List, Optional
+from typing import Optional
 from uuid import UUID
 
 from .base_model import BaseModel
@@ -9,7 +9,7 @@ class TestingGetJobFunction(BaseModel):
 
 
 class TestingGetJobFunctionFacets(BaseModel):
-    objects: List["TestingGetJobFunctionFacetsObjects"]
+    objects: list["TestingGetJobFunctionFacetsObjects"]
 
 
 class TestingGetJobFunctionFacetsObjects(BaseModel):
@@ -17,7 +17,7 @@ class TestingGetJobFunctionFacetsObjects(BaseModel):
 
 
 class TestingGetJobFunctionFacetsObjectsCurrent(BaseModel):
-    classes: List["TestingGetJobFunctionFacetsObjectsCurrentClasses"]
+    classes: list["TestingGetJobFunctionFacetsObjectsCurrentClasses"]
 
 
 class TestingGetJobFunctionFacetsObjectsCurrentClasses(BaseModel):

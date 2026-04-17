@@ -1,4 +1,4 @@
-from typing import List, Optional
+from typing import Optional
 from uuid import UUID
 
 from .base_model import BaseModel
@@ -9,7 +9,7 @@ class TestingGetEmailAddressType(BaseModel):
 
 
 class TestingGetEmailAddressTypeFacets(BaseModel):
-    objects: List["TestingGetEmailAddressTypeFacetsObjects"]
+    objects: list["TestingGetEmailAddressTypeFacetsObjects"]
 
 
 class TestingGetEmailAddressTypeFacetsObjects(BaseModel):
@@ -17,7 +17,7 @@ class TestingGetEmailAddressTypeFacetsObjects(BaseModel):
 
 
 class TestingGetEmailAddressTypeFacetsObjectsCurrent(BaseModel):
-    classes: List["TestingGetEmailAddressTypeFacetsObjectsCurrentClasses"]
+    classes: list["TestingGetEmailAddressTypeFacetsObjectsCurrentClasses"]
 
 
 class TestingGetEmailAddressTypeFacetsObjectsCurrentClasses(BaseModel):
