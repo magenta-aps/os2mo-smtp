@@ -1,4 +1,4 @@
-from typing import List, Optional
+from typing import Optional
 from uuid import UUID
 
 from .base_model import BaseModel
@@ -9,7 +9,7 @@ class TestingGetRoleType(BaseModel):
 
 
 class TestingGetRoleTypeFacets(BaseModel):
-    objects: List["TestingGetRoleTypeFacetsObjects"]
+    objects: list["TestingGetRoleTypeFacetsObjects"]
 
 
 class TestingGetRoleTypeFacetsObjects(BaseModel):
@@ -17,7 +17,7 @@ class TestingGetRoleTypeFacetsObjects(BaseModel):
 
 
 class TestingGetRoleTypeFacetsObjectsCurrent(BaseModel):
-    classes: List["TestingGetRoleTypeFacetsObjectsCurrentClasses"]
+    classes: list["TestingGetRoleTypeFacetsObjectsCurrentClasses"]
 
 
 class TestingGetRoleTypeFacetsObjectsCurrentClasses(BaseModel):

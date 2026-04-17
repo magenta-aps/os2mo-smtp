@@ -1,4 +1,3 @@
-from typing import List
 from uuid import UUID
 
 from .base_model import BaseModel
@@ -9,7 +8,7 @@ class TestingGetOrgUnitType(BaseModel):
 
 
 class TestingGetOrgUnitTypeClasses(BaseModel):
-    objects: List["TestingGetOrgUnitTypeClassesObjects"]
+    objects: list["TestingGetOrgUnitTypeClassesObjects"]
 
 
 class TestingGetOrgUnitTypeClassesObjects(BaseModel):

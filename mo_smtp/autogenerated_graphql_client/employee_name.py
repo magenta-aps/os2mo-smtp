@@ -1,4 +1,4 @@
-from typing import List, Optional
+from typing import Optional
 
 from .base_model import BaseModel
 
@@ -8,7 +8,7 @@ class EmployeeName(BaseModel):
 
 
 class EmployeeNameEmployees(BaseModel):
-    objects: List["EmployeeNameEmployeesObjects"]
+    objects: list["EmployeeNameEmployeesObjects"]
 
 
 class EmployeeNameEmployeesObjects(BaseModel):

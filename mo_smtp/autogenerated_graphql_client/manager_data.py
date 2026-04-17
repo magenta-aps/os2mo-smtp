@@ -1,5 +1,4 @@
 from datetime import datetime
-from typing import List, Optional
 from uuid import UUID
 
 from pydantic import Field
@@ -12,21 +11,21 @@ class ManagerData(BaseModel):
 
 
 class ManagerDataManagers(BaseModel):
-    objects: List["ManagerDataManagersObjects"]
+    objects: list["ManagerDataManagersObjects"]
 
 
 class ManagerDataManagersObjects(BaseModel):
-    validities: List["ManagerDataManagersObjectsValidities"]
+    validities: list["ManagerDataManagersObjectsValidities"]
 
 
 class ManagerDataManagersObjectsValidities(BaseModel):
-    employee_uuid: Optional[UUID]
+    employee_uuid: UUID | None
     org_unit_uuid: UUID
     validity: "ManagerDataManagersObjectsValiditiesValidity"
 
 
 class ManagerDataManagersObjectsValiditiesValidity(BaseModel):
-    to: Optional[datetime]
+    to: datetime | None
     from_: datetime = Field(alias="from")
 
 

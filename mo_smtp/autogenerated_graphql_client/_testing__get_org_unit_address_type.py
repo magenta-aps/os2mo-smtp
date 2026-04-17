@@ -1,4 +1,4 @@
-from typing import List, Optional
+from typing import Optional
 from uuid import UUID
 
 from .base_model import BaseModel
@@ -9,7 +9,7 @@ class TestingGetOrgUnitAddressType(BaseModel):
 
 
 class TestingGetOrgUnitAddressTypeFacets(BaseModel):
-    objects: List["TestingGetOrgUnitAddressTypeFacetsObjects"]
+    objects: list["TestingGetOrgUnitAddressTypeFacetsObjects"]
 
 
 class TestingGetOrgUnitAddressTypeFacetsObjects(BaseModel):
@@ -17,7 +17,7 @@ class TestingGetOrgUnitAddressTypeFacetsObjects(BaseModel):
 
 
 class TestingGetOrgUnitAddressTypeFacetsObjectsCurrent(BaseModel):
-    classes: List["TestingGetOrgUnitAddressTypeFacetsObjectsCurrentClasses"]
+    classes: list["TestingGetOrgUnitAddressTypeFacetsObjectsCurrentClasses"]
 
 
 class TestingGetOrgUnitAddressTypeFacetsObjectsCurrentClasses(BaseModel):
