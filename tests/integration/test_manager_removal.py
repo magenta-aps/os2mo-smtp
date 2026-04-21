@@ -213,3 +213,82 @@ async def test_vacant_manager_sends_email(
     email_client.send_email.assert_called_once()
     message = email_client.send_email.call_args.kwargs["body"]
     assert "Vacant manager" in message
+
+
+@pytest.mark.integration_test
+@pytest.mark.envvar({"ALERT_MANAGER_REMOVAL_USE_ORG_UNIT_EMAILS": "true"})
+async def test_terminated_manager_use_org_unit_emails(
+    context,
+    graphql_client: GraphQLClient,
+    email_client: MagicMock,
+    root_loen_org: UUID,
+):
+    """When ALERT_MANAGER_REMOVAL_USE_ORG_UNIT_EMAILS is true, the alert is
+    sent to the org unit's (institution ancestor) email address instead of
+    the configured receivers."""
+    org_unit_type = (await graphql_client._testing__get_org_unit_type()).objects[0].uuid
+    _result = (
+        await graphql_client._testing__get_org_unit_address_type()
+    ).objects[0]
+    assert _result.current is not None
+    org_unit_address_type = _result.current.classes[0].uuid
+
+    await graphql_client._testing__create_org_unit_root(
+        name="Root",
+        root_uuid=root_loen_org,
+        org_unit_type=org_unit_type,
+        from_=datetime(2010, 1, 1),
+    )
+
+    institution = await graphql_client._testing__create_org_unit(
+        name="Institution",
+        parent=root_loen_org,
+        org_unit_type=org_unit_type,
+        from_=datetime(2010, 1, 1),
+        to=None,
+    )
+
+    await graphql_client._testing__create_org_unit_address(
+        org_unit=institution.uuid,
+        value="institution@example.com",
+        address_type=org_unit_address_type,
+        from_=datetime(2010, 1, 1),
+    )
+
+    child = await graphql_client._testing__create_org_unit(
+        name="Afdeling",
+        parent=institution.uuid,
+        org_unit_type=org_unit_type,
+        from_=datetime(2010, 1, 1),
+        to=None,
+    )
+
+    employee = await graphql_client._testing__create_employee(
+        first_name="Mick", last_name="Jagger"
+    )
+
+    manager_level = (
+        await graphql_client._testing__get_manager_level()
+    ).objects[0].uuid
+    manager_type = (
+        await graphql_client._testing__get_manager_type()
+    ).objects[0].uuid
+    responsibility = (
+        await graphql_client._testing__get_manager_responsibility()
+    ).objects[0].uuid
+
+    manager = await graphql_client._testing__create_manager(
+        orgunit=child.uuid,
+        person=employee.uuid,
+        manager_level=manager_level,
+        manager_type=manager_type,
+        responsibility=responsibility,
+        from_=datetime(2015, 1, 1),
+        to=datetime(2020, 1, 1),
+    )
+
+    await alert_on_manager_removal(context, manager.uuid, None, graphql_client)
+
+    email_client.send_email.assert_called_once()
+    receiver = email_client.send_email.call_args.kwargs["receiver"]
+    assert "institution@example.com" in receiver
