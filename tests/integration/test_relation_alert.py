@@ -189,3 +189,42 @@ async def test_sends_alert_to_receivers(
     assert email_client.send_email.call_args.kwargs["receiver"] == {
         "datagruppen@silkeborg.dk"
     }
+
+
+@pytest.mark.integration_test
+@pytest.mark.envvar({"ALERT_MANAGER_REMOVAL_USE_ORG_UNIT_EMAILS": "true"})
+async def test_root_loenorg_uses_own_email(
+    context,
+    graphql_client: GraphQLClient,
+    email_client: MagicMock,
+    root_loen_org: UUID,
+):
+    """When uuid == root_loen_org and use_org_unit_emails is true,
+    the email is sent to the root org unit's own address."""
+    org_unit_type = (await graphql_client._testing__get_org_unit_type()).objects[0].uuid
+    _result = (
+        await graphql_client._testing__get_org_unit_address_type()
+    ).objects[0]
+    assert _result.current is not None
+    org_unit_address_type = _result.current.classes[0].uuid
+
+    await graphql_client._testing__create_org_unit_root(
+        name="Lønorganisation",
+        root_uuid=root_loen_org,
+        org_unit_type=org_unit_type,
+        from_=datetime(2010, 1, 1),
+    )
+
+    await graphql_client._testing__create_org_unit_address(
+        org_unit=root_loen_org,
+        value="loenorg-root@example.com",
+        address_type=org_unit_address_type,
+        from_=datetime(2010, 1, 1),
+    )
+
+    await handle_org_unit(context, root_loen_org, None, graphql_client)
+
+    email_client.send_email.assert_called_once()
+    assert email_client.send_email.call_args.kwargs["receiver"] == {
+        "loenorg-root@example.com"
+    }
