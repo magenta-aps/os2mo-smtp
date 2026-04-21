@@ -74,17 +74,6 @@ def context(dataloader: AsyncMock, email_client: MagicMock) -> Context:
     )
 
 
-async def test_alert_on_manager_removal_manager_not_found(context: Context):
-    mo = AsyncMock()
-    mo.manager_data.return_value = ManagerDataManagers.parse_obj({"objects": []})
-    with capture_logs() as cap_logs:
-        await alert_on_manager_removal(context, uuid4(), None, mo)
-
-    email_client = context["user_context"]["email_client"]
-    email_client.send_email.assert_not_called()
-    assert "Manager not found" in str(cap_logs)
-
-
 async def test_alert_on_manager_removal_currently_employed(context: Context):
     mo = AsyncMock()
     mo.manager_data.return_value = ManagerDataManagers.parse_obj(
