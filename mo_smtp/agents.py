@@ -226,10 +226,10 @@ async def alert_on_manager_removal(
         receivers = set(email_settings.receivers)
 
     email_client.send_email(
-        receivers,
-        "En medarbejder er blevet fjernet fra lederfanen",
-        message,
-        "html",
+        receiver=receivers,
+        subject="En medarbejder er blevet fjernet fra lederfanen",
+        body=message,
+        texttype="html",
     )
 
 

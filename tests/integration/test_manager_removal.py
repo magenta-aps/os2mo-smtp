@@ -86,6 +86,48 @@ async def test_currently_employed_manager_no_email(
 
 
 @pytest.mark.integration_test
+async def test_terminated_manager_past_to_date_sends_email(
+    context,
+    graphql_client: GraphQLClient,
+    email_client: MagicMock,
+    root_loen_org: UUID,
+):
+    """A manager terminated in the past triggers an alert email."""
+    org_unit_uuid, employee_uuid = await _setup_org_and_employee(
+        graphql_client, root_loen_org
+    )
+
+    manager_level = (
+        await graphql_client._testing__get_manager_level()
+    ).objects[0].uuid
+    manager_type = (
+        await graphql_client._testing__get_manager_type()
+    ).objects[0].uuid
+    responsibility = (
+        await graphql_client._testing__get_manager_responsibility()
+    ).objects[0].uuid
+
+    manager = await graphql_client._testing__create_manager(
+        orgunit=org_unit_uuid,
+        person=employee_uuid,
+        manager_level=manager_level,
+        manager_type=manager_type,
+        responsibility=responsibility,
+        from_=datetime(2015, 1, 1),
+        to=datetime(2020, 1, 1),
+    )
+
+    await alert_on_manager_removal(context, manager.uuid, None, graphql_client)
+
+    email_client.send_email.assert_called_once()
+    call_args = email_client.send_email.call_args
+    receiver = call_args.kwargs["receiver"]
+    message = call_args.kwargs["body"]
+    assert receiver == {"datagruppen@silkeborg.dk"}
+    assert "Mick Jagger" in message
+
+
+@pytest.mark.integration_test
 async def test_terminated_manager_future_to_date_no_email(
     context,
     graphql_client: GraphQLClient,
