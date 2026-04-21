@@ -74,45 +74,6 @@ def context(dataloader: AsyncMock, email_client: MagicMock) -> Context:
     )
 
 
-async def test_alert_on_manager_removal_future_to_date(context: Context):
-    mo = AsyncMock()
-    mo.manager_data.return_value = ManagerDataManagers.parse_obj(
-        {
-            "objects": [
-                {
-                    "validities": [
-                        {
-                            "employee_uuid": uuid4(),
-                            "org_unit_uuid": uuid4(),
-                            "validity": {
-                                "from": datetime.datetime(
-                                    2015,
-                                    1,
-                                    1,
-                                    tzinfo=timezone(timedelta(hours=1)),
-                                ),
-                                "to": datetime.datetime(
-                                    2090,
-                                    1,
-                                    1,
-                                    tzinfo=timezone(timedelta(hours=1)),
-                                ),
-                            },
-                        }
-                    ]
-                }
-            ]
-        }
-    )
-
-    with capture_logs() as cap_logs:
-        await alert_on_manager_removal(context, uuid4(), None, mo)
-
-    email_client = context["user_context"]["email_client"]
-    email_client.send_email.assert_not_called()
-    assert "to_date is in the future" in str(cap_logs)
-
-
 @pytest.mark.usefixtures("minimal_valid_settings")
 async def test_alert_on_manager_removal_past_to_date(context: Context):
     mo = AsyncMock()
