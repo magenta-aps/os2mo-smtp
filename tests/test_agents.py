@@ -75,42 +75,6 @@ def context(dataloader: AsyncMock, email_client: MagicMock) -> Context:
 
 
 @pytest.mark.usefixtures("minimal_valid_settings")
-async def test_handle_org_unit_not_in_loenorganisation(
-    context: Context, monkeypatch: pytest.MonkeyPatch
-):
-    root_loen_org = uuid4()
-    root_uuid = uuid4()
-
-    with monkeypatch.context() as con:
-        con.setenv("ROOT_LOEN_ORG", str(root_loen_org))
-
-        mo = AsyncMock()
-        mo.org_unit_relations.return_value = OrgUnitRelationsOrgUnits.parse_obj(
-            {
-                "objects": [
-                    {
-                        "current": {
-                            "name": "org-unit-name",
-                            "root": [{"uuid": root_uuid}],
-                            "engagements": [
-                                {"uuid": uuid4()},
-                            ],
-                            "related_units": [{"org_units": []}],
-                        },
-                    }
-                ]
-            }
-        )
-
-        with capture_logs() as cap_logs:
-            await handle_org_unit(context, uuid4(), None, mo)
-
-        email_client = context["user_context"]["email_client"]
-        email_client.send_email.assert_not_called()
-        assert "Org unit is not in the Lønorganisation" in str(cap_logs)
-
-
-@pytest.mark.usefixtures("minimal_valid_settings")
 async def test_handle_org_unit_has_external_relation(
     context: Context, monkeypatch: pytest.MonkeyPatch
 ):

@@ -1,7 +1,8 @@
 """Integration tests for the org unit relation alert flow (handle_org_unit)."""
 
+from datetime import datetime
 from unittest.mock import MagicMock
-from uuid import uuid4
+from uuid import UUID, uuid4
 
 import pytest
 
@@ -17,4 +18,33 @@ async def test_nonexistent_org_unit_no_email(
 ):
     """When the org unit UUID doesn't exist, no email is sent."""
     await handle_org_unit(context, uuid4(), None, graphql_client)
+    email_client.send_email.assert_not_called()
+
+
+@pytest.mark.integration_test
+async def test_org_unit_outside_loenorg_no_email(
+    context,
+    graphql_client: GraphQLClient,
+    email_client: MagicMock,
+):
+    """An org unit under a different root (not lønorganisation) is skipped."""
+    org_unit_type = (await graphql_client._testing__get_org_unit_type()).objects[0].uuid
+
+    other_root = uuid4()
+    await graphql_client._testing__create_org_unit_root(
+        name="Administrationsorganisation",
+        root_uuid=other_root,
+        org_unit_type=org_unit_type,
+        from_=datetime(2010, 1, 1),
+    )
+
+    child = await graphql_client._testing__create_org_unit(
+        name="Adm-enhed",
+        parent=other_root,
+        org_unit_type=org_unit_type,
+        from_=datetime(2010, 1, 1),
+        to=None,
+    )
+
+    await handle_org_unit(context, child.uuid, None, graphql_client)
     email_client.send_email.assert_not_called()
