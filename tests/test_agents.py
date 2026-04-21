@@ -75,22 +75,6 @@ def context(dataloader: AsyncMock, email_client: MagicMock) -> Context:
 
 
 @pytest.mark.usefixtures("minimal_valid_settings")
-async def test_rolebinding_events_ituser_not_found(context: Context) -> None:
-    mo = AsyncMock()
-    mo.rolebinding.return_value = RolebindingRolebindings.parse_obj(
-        {"objects": [{"current": None}]}
-    )
-    mo.ituser.return_value = ItuserItusers.parse_obj({"objects": []})
-
-    with capture_logs() as cap_logs:
-        await alert_on_rolebinding(context, uuid4(), None, mo)
-
-    email_client = context["user_context"]["email_client"]
-    email_client.send_email.assert_not_called()
-    assert "IT-user is possibly terminated or doesn't exist." in str(cap_logs)
-
-
-@pytest.mark.usefixtures("minimal_valid_settings")
 async def test_rolebinding_events_ituser_default_userkey(context: Context) -> None:
     rolebinding_uuid = uuid4()
     ituser_test_data = ItuserItusersObjectsCurrent.parse_obj(

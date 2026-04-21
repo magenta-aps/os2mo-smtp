@@ -123,3 +123,14 @@ async def test_ituser_default_userkey_is_skipped(
 
     await alert_on_ituser(context, ituser_uuid, None, graphql_client)
     email_client.send_email.assert_not_called()
+
+
+@pytest.mark.integration_test
+async def test_rolebinding_not_found(
+    context,
+    graphql_client: GraphQLClient,
+    email_client: MagicMock,
+):
+    """When the rolebinding UUID doesn't exist, no email is sent."""
+    await alert_on_rolebinding(context, uuid4(), None, graphql_client)
+    email_client.send_email.assert_not_called()
