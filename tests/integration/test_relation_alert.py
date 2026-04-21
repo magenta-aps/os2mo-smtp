@@ -155,3 +155,37 @@ async def test_sends_alert_to_org_unit_email(
     assert email_client.send_email.call_args.kwargs["receiver"] == {
         "institution@example.com"
     }
+
+
+@pytest.mark.integration_test
+async def test_sends_alert_to_receivers(
+    context,
+    graphql_client: GraphQLClient,
+    email_client: MagicMock,
+    root_loen_org: UUID,
+):
+    """When use_org_unit_emails is false (default), alert is sent to the
+    configured receivers."""
+    org_unit_type = (await graphql_client._testing__get_org_unit_type()).objects[0].uuid
+
+    await graphql_client._testing__create_org_unit_root(
+        name="Lønorganisation",
+        root_uuid=root_loen_org,
+        org_unit_type=org_unit_type,
+        from_=datetime(2010, 1, 1),
+    )
+
+    child = await graphql_client._testing__create_org_unit(
+        name="Løn-enhed uden relation",
+        parent=root_loen_org,
+        org_unit_type=org_unit_type,
+        from_=datetime(2010, 1, 1),
+        to=None,
+    )
+
+    await handle_org_unit(context, child.uuid, None, graphql_client)
+
+    email_client.send_email.assert_called_once()
+    assert email_client.send_email.call_args.kwargs["receiver"] == {
+        "datagruppen@silkeborg.dk"
+    }
