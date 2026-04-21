@@ -358,6 +358,65 @@ async def test_terminated_manager_on_root_uses_root_email(
 
 
 @pytest.mark.integration_test
+async def test_manager_with_multiple_validities_picks_correct_one(
+    context,
+    graphql_client: GraphQLClient,
+    email_client: MagicMock,
+    root_loen_org: UUID,
+):
+    """When a manager has multiple validity periods (e.g. was updated),
+    the handler picks the current or latest one via extract_current_or_latest_validity."""
+    org_unit_uuid, employee_uuid = await _setup_org_and_employee(
+        graphql_client, root_loen_org
+    )
+
+    manager_level = (
+        await graphql_client._testing__get_manager_level()
+    ).objects[0].uuid
+    manager_type = (
+        await graphql_client._testing__get_manager_type()
+    ).objects[0].uuid
+    responsibility = (
+        await graphql_client._testing__get_manager_responsibility()
+    ).objects[0].uuid
+
+    manager = await graphql_client._testing__create_manager(
+        orgunit=org_unit_uuid,
+        person=employee_uuid,
+        manager_level=manager_level,
+        manager_type=manager_type,
+        responsibility=responsibility,
+        from_=datetime(2015, 1, 1),
+        to=None,
+    )
+
+    # Trivial update to create a second validity period.
+    # The user_key change is irrelevant — we just need multiple validities
+    # so extract_current_or_latest_validity has to pick one.
+    await graphql_client._testing__update_manager(
+        uuid=manager.uuid,
+        from_=datetime(2018, 1, 1),
+        to=None,
+        person=employee_uuid,
+        user_key="updated",
+    )
+
+    # Terminate in the past — ends the latest validity
+    await graphql_client._testing__terminate_manager(
+        uuid=manager.uuid,
+        to=datetime(2020, 1, 1),
+    )
+
+    # extract_current_or_latest_validity picks from multiple validities.
+    # The latest has to_date=2020-01-01 (in the past) → email is sent.
+    await alert_on_manager_removal(context, manager.uuid, None, graphql_client)
+
+    email_client.send_email.assert_called_once()
+    message = email_client.send_email.call_args.kwargs["body"]
+    assert "Mick Jagger" in message
+
+
+@pytest.mark.integration_test
 async def test_terminated_org_unit_skips_alert(
     context,
     graphql_client: GraphQLClient,
