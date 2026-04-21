@@ -48,3 +48,55 @@ async def test_org_unit_outside_loenorg_no_email(
 
     await handle_org_unit(context, child.uuid, None, graphql_client)
     email_client.send_email.assert_not_called()
+
+
+@pytest.mark.integration_test
+async def test_no_alert_when_org_unit_has_relation(
+    context,
+    graphql_client: GraphQLClient,
+    email_client: MagicMock,
+    root_loen_org: UUID,
+):
+    """When an org unit has a relation to another org unit outside the
+    lønorganisation (i.e. in the administrationsorganisation), no alert is sent."""
+    org_unit_type = (await graphql_client._testing__get_org_unit_type()).objects[0].uuid
+
+    await graphql_client._testing__create_org_unit_root(
+        name="Lønorganisation",
+        root_uuid=root_loen_org,
+        org_unit_type=org_unit_type,
+        from_=datetime(2010, 1, 1),
+    )
+
+    adm_root = uuid4()
+    await graphql_client._testing__create_org_unit_root(
+        name="Administrationsorganisation",
+        root_uuid=adm_root,
+        org_unit_type=org_unit_type,
+        from_=datetime(2010, 1, 1),
+    )
+
+    loen_child = await graphql_client._testing__create_org_unit(
+        name="Løn-enhed",
+        parent=root_loen_org,
+        org_unit_type=org_unit_type,
+        from_=datetime(2010, 1, 1),
+        to=None,
+    )
+    adm_child = await graphql_client._testing__create_org_unit(
+        name="Adm-enhed",
+        parent=adm_root,
+        org_unit_type=org_unit_type,
+        from_=datetime(2010, 1, 1),
+        to=None,
+    )
+
+    await graphql_client._testing__create_related_units(
+        origin=loen_child.uuid,
+        destination=[adm_child.uuid],
+        from_=datetime(2010, 1, 1),
+        to=None,
+    )
+
+    await handle_org_unit(context, loen_child.uuid, None, graphql_client)
+    email_client.send_email.assert_not_called()
