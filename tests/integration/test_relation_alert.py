@@ -100,3 +100,58 @@ async def test_no_alert_when_org_unit_has_relation(
 
     await handle_org_unit(context, loen_child.uuid, None, graphql_client)
     email_client.send_email.assert_not_called()
+
+
+@pytest.mark.integration_test
+@pytest.mark.envvar({"ALERT_MANAGER_REMOVAL_USE_ORG_UNIT_EMAILS": "true"})
+async def test_sends_alert_to_org_unit_email(
+    context,
+    graphql_client: GraphQLClient,
+    email_client: MagicMock,
+    root_loen_org: UUID,
+):
+    """When use_org_unit_emails is true, alert is sent to the org unit's
+    institution email address."""
+    org_unit_type = (await graphql_client._testing__get_org_unit_type()).objects[0].uuid
+    _result = (
+        await graphql_client._testing__get_org_unit_address_type()
+    ).objects[0]
+    assert _result.current is not None
+    org_unit_address_type = _result.current.classes[0].uuid
+
+    await graphql_client._testing__create_org_unit_root(
+        name="Lønorganisation",
+        root_uuid=root_loen_org,
+        org_unit_type=org_unit_type,
+        from_=datetime(2010, 1, 1),
+    )
+
+    institution = await graphql_client._testing__create_org_unit(
+        name="Institution",
+        parent=root_loen_org,
+        org_unit_type=org_unit_type,
+        from_=datetime(2010, 1, 1),
+        to=None,
+    )
+
+    await graphql_client._testing__create_org_unit_address(
+        org_unit=institution.uuid,
+        value="institution@example.com",
+        address_type=org_unit_address_type,
+        from_=datetime(2010, 1, 1),
+    )
+
+    child = await graphql_client._testing__create_org_unit(
+        name="Løn-enhed",
+        parent=institution.uuid,
+        org_unit_type=org_unit_type,
+        from_=datetime(2010, 1, 1),
+        to=None,
+    )
+
+    await handle_org_unit(context, child.uuid, None, graphql_client)
+
+    email_client.send_email.assert_called_once()
+    assert email_client.send_email.call_args.kwargs["receiver"] == {
+        "institution@example.com"
+    }

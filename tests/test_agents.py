@@ -75,50 +75,6 @@ def context(dataloader: AsyncMock, email_client: MagicMock) -> Context:
 
 
 @pytest.mark.usefixtures("minimal_valid_settings")
-async def test_handle_org_unit_sends_email(
-    context: Context, monkeypatch: pytest.MonkeyPatch
-):
-    root_loen_org = uuid4()
-
-    with monkeypatch.context() as con:
-        con.setenv("ROOT_LOEN_ORG", str(root_loen_org))
-        con.setenv("ALERT_MANAGER_REMOVAL_USE_ORG_UNIT_EMAILS", "true")
-
-        mo = AsyncMock()
-        mo.org_unit_relations.return_value = OrgUnitRelationsOrgUnits.parse_obj(
-            {
-                "objects": [
-                    {
-                        "current": {
-                            "name": "org-unit-name",
-                            "root": [{"uuid": root_loen_org}],
-                            "engagements": [
-                                {"uuid": uuid4()},
-                            ],
-                            "related_units": [],
-                        },
-                    }
-                ]
-            }
-        )
-        mo.institution_address.return_value = InstitutionAddressOrgUnits.parse_obj(
-            {"objects": [{"current": {"addresses": [{"value": "test@example.com"}]}}]}
-        )
-
-        await handle_org_unit(context, uuid4(), None, mo)
-
-    email_client = context["user_context"]["email_client"]
-
-    email_client.send_email.assert_called_once_with(
-        receiver={"test@example.com"},
-        subject="Manglende relation i Lønorganisation",
-        body="Denne besked er sendt som en påmindelse om at enheden: org-unit-name "
-        "ikke er relateret til en enhed i Administrationsorganisationen.",
-        texttype="plain",
-    )
-
-
-@pytest.mark.usefixtures("minimal_valid_settings")
 async def test_handle_org_unit_sends_email_falls_back_to_receivers(
     context: Context, monkeypatch: pytest.MonkeyPatch
 ):
