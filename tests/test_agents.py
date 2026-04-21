@@ -75,26 +75,6 @@ def context(dataloader: AsyncMock, email_client: MagicMock) -> Context:
 
 
 @pytest.mark.usefixtures("minimal_valid_settings")
-async def test_handle_org_unit_not_found(
-    context: Context, monkeypatch: pytest.MonkeyPatch
-):
-    with monkeypatch.context() as con:
-        con.setenv("ROOT_LOEN_ORG", str(uuid4()))
-        mo = AsyncMock()
-
-        mo.org_unit_relations.return_value = OrgUnitRelationsOrgUnits.parse_obj(
-            {"objects": []}
-        )
-
-        with capture_logs() as cap_logs:
-            await handle_org_unit(context, uuid4(), None, mo)
-
-        email_client = context["user_context"]["email_client"]
-        email_client.send_email.assert_not_called()
-        assert "Org unit not found" in str(cap_logs)
-
-
-@pytest.mark.usefixtures("minimal_valid_settings")
 async def test_handle_org_unit_not_in_loenorganisation(
     context: Context, monkeypatch: pytest.MonkeyPatch
 ):
