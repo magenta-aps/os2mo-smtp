@@ -74,32 +74,6 @@ def context(dataloader: AsyncMock, email_client: MagicMock) -> Context:
     )
 
 
-async def test_inform_manager_on_employee_address_creation_not_email(
-    context: Context,
-) -> None:
-    mo = AsyncMock()
-    mo.address_data.return_value = AddressDataAddresses.parse_obj(
-        {
-            "objects": [
-                {
-                    "current": {
-                        "value": "not_an_email",
-                        "employee_uuid": uuid4(),
-                        "address_type": {"scope": "PHONE"},
-                    }
-                }
-            ]
-        }
-    )
-
-    with capture_logs() as cap_logs:
-        await inform_manager_on_employee_address_creation(context, uuid4(), None, mo)
-
-    email_client = context["user_context"]["email_client"]
-    email_client.send_email.assert_not_called()
-    assert "The address type is not EMAIL" in str(cap_logs)
-
-
 async def test_alert_on_manager_removal_manager_not_found(context: Context):
     mo = AsyncMock()
     mo.manager_data.return_value = ManagerDataManagers.parse_obj({"objects": []})

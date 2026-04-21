@@ -59,6 +59,33 @@ async def test_no_address(
 
 
 @pytest.mark.integration_test
+async def test_non_email_address_is_skipped(
+    context,
+    graphql_client: GraphQLClient,
+    email_client: MagicMock,
+):
+    """An employee address whose type has non-EMAIL scope (e.g. PHONE) is skipped."""
+    _phone_result = (await graphql_client._testing__get_phone_address_type()).objects[0]
+    assert _phone_result.current is not None
+    phone_address_type = _phone_result.current.classes[0].uuid
+
+    employee = await graphql_client._testing__create_employee(
+        first_name="Mick", last_name="Jagger"
+    )
+    addr = await graphql_client._testing__create_address(
+        person=employee.uuid,
+        value="+4512345678",
+        address_type=phone_address_type,
+        from_=datetime(2010, 1, 1),
+    )
+
+    await inform_manager_on_employee_address_creation(
+        context, addr.uuid, None, graphql_client
+    )
+    email_client.send_email.assert_not_called()
+
+
+@pytest.mark.integration_test
 async def test_employee_with_multiple_emails_is_skipped(
     context,
     graphql_client: GraphQLClient,
