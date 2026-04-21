@@ -126,52 +126,6 @@ async def test_inform_manager_on_employee_address_creation_not_email(
     assert "The address type is not EMAIL" in str(cap_logs)
 
 
-async def test_inform_manager_on_employee_address_creation_no_engagements(
-    context: Context,
-):
-    employee_uuid = uuid4()
-    mo = AsyncMock()
-    mo.address_data.return_value = AddressDataAddresses.parse_obj(
-        {
-            "objects": [
-                {
-                    "current": {
-                        "value": "test@example.com",
-                        "employee_uuid": employee_uuid,
-                        "address_type": {"scope": "EMAIL"},
-                    }
-                }
-            ]
-        }
-    )
-
-    mo.employee_data.return_value = EmployeeDataEmployees.parse_obj(
-        {
-            "objects": [
-                {
-                    "current": {
-                        "name": "Mick Jagger",
-                        "addresses": [
-                            {"value": "test@example.com"},
-                        ],
-                        "engagements": [],
-                    }
-                }
-            ]
-        }
-    )
-
-    await inform_manager_on_employee_address_creation(context, uuid4(), None, mo)
-
-    email_client = context["user_context"]["email_client"]
-    email_client.send_email.assert_called_once_with(
-        receiver={"test@example.com"},
-        subject="Registrering i MO",
-        body="Denne besked er sendt som bekræftelse på at Mick Jagger er registreret i OS2MO.",
-        texttype="plain",
-    )
-
-
 async def test_inform_manager_on_employee_address_creation(
     context: Context,
 ):

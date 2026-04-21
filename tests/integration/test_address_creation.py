@@ -55,3 +55,39 @@ async def test_employee_with_multiple_emails_is_skipped(
         context, addr1.uuid, None, graphql_client
     )
     email_client.send_email.assert_not_called()
+
+
+@pytest.mark.integration_test
+async def test_sends_email_no_engagements(
+    context,
+    graphql_client: GraphQLClient,
+    email_client: MagicMock,
+):
+    """Employee with one email and no engagements gets a basic notification."""
+    _email_result = (
+        await graphql_client._testing__get_email_address_type()
+    ).objects[0]
+    assert _email_result.current is not None
+    email_address_type = _email_result.current.classes[0].uuid
+
+    employee = await graphql_client._testing__create_employee(
+        first_name="Mick", last_name="Jagger"
+    )
+
+    addr = await graphql_client._testing__create_address(
+        person=employee.uuid,
+        value="mick@example.com",
+        address_type=email_address_type,
+        from_=datetime(2010, 1, 1),
+    )
+
+    await inform_manager_on_employee_address_creation(
+        context, addr.uuid, None, graphql_client
+    )
+
+    email_client.send_email.assert_called_once_with(
+        receiver={"mick@example.com"},
+        subject="Registrering i MO",
+        body="Denne besked er sendt som bekræftelse på at Mick Jagger er registreret i OS2MO.",
+        texttype="plain",
+    )
