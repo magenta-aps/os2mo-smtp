@@ -134,3 +134,58 @@ async def test_sends_alert_when_relation_deleted(
     assert email_client.send_email.call_args.kwargs["receiver"] == {
         "datagruppen@silkeborg.dk"
     }
+
+
+@pytest.mark.integration_test
+async def test_no_alert_when_relation_exists(
+    context,
+    graphql_client: GraphQLClient,
+    email_client: MagicMock,
+    root_loen_org: UUID,
+):
+    """When the lønorg unit still has a relation, no email is sent."""
+    org_unit_type = (await graphql_client._testing__get_org_unit_type()).objects[0].uuid
+
+    await graphql_client._testing__create_org_unit_root(
+        name="Lønorganisation",
+        root_uuid=root_loen_org,
+        org_unit_type=org_unit_type,
+        from_=datetime(2010, 1, 1),
+    )
+
+    adm_root = uuid4()
+    await graphql_client._testing__create_org_unit_root(
+        name="Administrationsorganisation",
+        root_uuid=adm_root,
+        org_unit_type=org_unit_type,
+        from_=datetime(2010, 1, 1),
+    )
+
+    loen_child = await graphql_client._testing__create_org_unit(
+        name="Løn-enhed",
+        parent=root_loen_org,
+        org_unit_type=org_unit_type,
+        from_=datetime(2010, 1, 1),
+        to=None,
+    )
+    adm_child = await graphql_client._testing__create_org_unit(
+        name="Adm-enhed",
+        parent=adm_root,
+        org_unit_type=org_unit_type,
+        from_=datetime(2010, 1, 1),
+        to=None,
+    )
+
+    await graphql_client._testing__create_related_units(
+        origin=loen_child.uuid,
+        destination=[adm_child.uuid],
+        from_=datetime(2010, 1, 1),
+        to=None,
+    )
+    related = (
+        await graphql_client._testing__get_related_units_for_org_unit(loen_child.uuid)
+    ).objects[0]
+
+    await handle_related_units(context, related.uuid, None, graphql_client)
+
+    email_client.send_email.assert_not_called()
