@@ -91,3 +91,100 @@ async def test_sends_email_no_engagements(
         body="Denne besked er sendt som bekræftelse på at Mick Jagger er registreret i OS2MO.",
         texttype="plain",
     )
+
+
+@pytest.mark.integration_test
+async def test_sends_email_with_engagement_and_manager_cc(
+    context,
+    graphql_client: GraphQLClient,
+    email_client: MagicMock,
+    root_loen_org: UUID,
+):
+    """Employee with engagement gets notification mentioning the org unit,
+    and the manager is CC'd."""
+    org_unit_type = (await graphql_client._testing__get_org_unit_type()).objects[0].uuid
+    _email_result = (
+        await graphql_client._testing__get_email_address_type()
+    ).objects[0]
+    assert _email_result.current is not None
+    email_address_type = _email_result.current.classes[0].uuid
+    _engagement_result = (
+        await graphql_client._testing__get_engagement_type()
+    ).objects[0]
+    assert _engagement_result.current is not None
+    engagement_type = _engagement_result.current.classes[0].uuid
+    _job_result = (await graphql_client._testing__get_job_function()).objects[0]
+    assert _job_result.current is not None
+    job_function = _job_result.current.classes[0].uuid
+    manager_level = (
+        await graphql_client._testing__get_manager_level()
+    ).objects[0].uuid
+    manager_type = (
+        await graphql_client._testing__get_manager_type()
+    ).objects[0].uuid
+    manager_responsibility = (
+        await graphql_client._testing__get_manager_responsibility()
+    ).objects[0].uuid
+
+    await graphql_client._testing__create_org_unit_root(
+        name="Root",
+        root_uuid=root_loen_org,
+        org_unit_type=org_unit_type,
+        from_=datetime(2010, 1, 1),
+    )
+
+    org_unit = await graphql_client._testing__create_org_unit(
+        name="Stones",
+        parent=root_loen_org,
+        org_unit_type=org_unit_type,
+        from_=datetime(2010, 1, 1),
+        to=None,
+    )
+
+    manager = await graphql_client._testing__create_employee(
+        first_name="Keith", last_name="Richards"
+    )
+    await graphql_client._testing__create_address(
+        person=manager.uuid,
+        value="keith@example.com",
+        address_type=email_address_type,
+        from_=datetime(2010, 1, 1),
+    )
+    await graphql_client._testing__create_manager(
+        orgunit=org_unit.uuid,
+        person=manager.uuid,
+        manager_level=manager_level,
+        manager_type=manager_type,
+        responsibility=manager_responsibility,
+        from_=datetime(2010, 1, 1),
+        to=None,
+    )
+
+    employee = await graphql_client._testing__create_employee(
+        first_name="Mick", last_name="Jagger"
+    )
+    addr = await graphql_client._testing__create_address(
+        person=employee.uuid,
+        value="mick@example.com",
+        address_type=email_address_type,
+        from_=datetime(2010, 1, 1),
+    )
+    await graphql_client._testing__create_engagement(
+        orgunit=org_unit.uuid,
+        person=employee.uuid,
+        engagement_type=engagement_type,
+        job_function=job_function,
+        from_=datetime(2010, 1, 1),
+    )
+
+    await inform_manager_on_employee_address_creation(
+        context, addr.uuid, None, graphql_client
+    )
+
+    email_client.send_email.assert_called_once_with(
+        receiver={"mick@example.com"},
+        cc={"keith@example.com"},
+        subject="Registrering i MO",
+        body="Denne besked er sendt som bekræftelse på at Mick Jagger er registreret i Stones",
+        texttype="plain",
+    )
