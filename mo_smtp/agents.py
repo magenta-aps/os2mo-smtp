@@ -412,9 +412,9 @@ async def generate_ituser_email(
     message = template.render(context=context)
 
     email_client.send_email(
-        set(email_settings.receivers),
-        "En IT-bruger er blevet oprettet i MO",
-        message,
-        "html",
+        receiver=set(email_settings.receivers),
+        subject="En IT-bruger er blevet oprettet i MO",
+        body=message,
+        texttype="html",
     )
     _last_sent_messages[ituser_uuid] = context

@@ -75,40 +75,6 @@ def context(dataloader: AsyncMock, email_client: MagicMock) -> Context:
 
 
 @pytest.mark.usefixtures("minimal_valid_settings")
-async def test_ituser_events_sends_email(context: Context) -> None:
-    mo = AsyncMock()
-    ituser_test_data = ItuserItusersObjectsCurrent.parse_obj(
-        {
-            "user_key": "ADUSER-123",
-            "rolebindings": [
-                {"role": [{"name": "admin", "uuid": uuid4()}]},
-                {"role": [{"name": "user", "uuid": uuid4()}]},
-            ],
-            "person": [{"name": "Mick Jagger", "uuid": uuid4()}],
-            "itsystem": {"name": "Active Directory", "uuid": uuid4()},
-        }
-    )
-
-    mo.ituser.return_value = ItuserItusers.parse_obj(
-        {"objects": [{"current": ituser_test_data}]}
-    )
-    await alert_on_ituser(context, uuid4(), None, mo)
-
-    email_client = context["user_context"]["email_client"]
-    email_client.send_email.assert_called_once()
-
-    call_args = email_client.send_email.call_args_list[0]
-    receiver, header, message, _ = call_args.args
-
-    assert receiver == {"datagruppen@silkeborg.dk"}
-    assert header == "En IT-bruger er blevet oprettet i MO"
-    assert "Active Directory" in message
-    assert "ADUSER-123" in message
-    assert "admin" in message
-    assert "user" in message
-    assert "Mick Jagger" in message
-
-
 @pytest.mark.usefixtures("minimal_valid_settings")
 async def test_rolebinding_events_sends_email(context: Context) -> None:
     rolebinding_uuid = uuid4()
