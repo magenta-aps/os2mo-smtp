@@ -106,47 +106,6 @@ def _make_registration_response(org_unit_uuids: list):
 
 
 @pytest.mark.usefixtures("minimal_valid_settings")
-async def test_handle_related_units_org_unit_not_in_loenorg(
-    context: Context, monkeypatch: pytest.MonkeyPatch
-):
-    """If the related_units only contains org_units outside the lønorg, no email."""
-    root_loen_org = uuid4()
-    other_root = uuid4()
-    org_unit_uuid = uuid4()
-
-    with monkeypatch.context() as con:
-        con.setenv("ROOT_LOEN_ORG", str(root_loen_org))
-        mo = AsyncMock()
-
-        mo.related_unit_registrations.return_value = _make_registration_response(
-            [(org_unit_uuid, {"root": [{"uuid": other_root}]})]
-        )
-
-        # The helper will be called but the org unit is not in lønorg
-        mo.org_unit_relations.return_value = OrgUnitRelationsOrgUnits.parse_obj(
-            {
-                "objects": [
-                    {
-                        "current": {
-                            "name": "Adm-enhed",
-                            "root": [{"uuid": other_root}],
-                            "engagements": [{"uuid": uuid4()}],
-                            "related_units": [],
-                        },
-                    }
-                ]
-            }
-        )
-
-        with capture_logs() as cap_logs:
-            await handle_related_units(context, uuid4(), None, mo)
-
-        email_client = context["user_context"]["email_client"]
-        email_client.send_email.assert_not_called()
-        assert "Org unit is not in the Lønorganisation" in str(cap_logs)
-
-
-@pytest.mark.usefixtures("minimal_valid_settings")
 async def test_handle_related_units_sends_email(
     context: Context, monkeypatch: pytest.MonkeyPatch
 ):

@@ -2,7 +2,7 @@
 
 from datetime import datetime
 from unittest.mock import MagicMock
-from uuid import uuid4
+from uuid import UUID, uuid4
 
 import pytest
 
@@ -18,4 +18,51 @@ async def test_related_units_not_found(
 ):
     """When the related_unit UUID doesn't exist, no email is sent."""
     await handle_related_units(context, uuid4(), None, graphql_client)
+    email_client.send_email.assert_not_called()
+
+
+@pytest.mark.integration_test
+async def test_org_unit_not_in_loenorg_is_skipped(
+    context,
+    graphql_client: GraphQLClient,
+    email_client: MagicMock,
+):
+    """Org units outside the lønorganisation are skipped."""
+    org_unit_type = (await graphql_client._testing__get_org_unit_type()).objects[0].uuid
+
+    # No lønorg root — only adm
+    adm_root = uuid4()
+    await graphql_client._testing__create_org_unit_root(
+        name="Administrationsorganisation",
+        root_uuid=adm_root,
+        org_unit_type=org_unit_type,
+        from_=datetime(2010, 1, 1),
+    )
+
+    adm_child1 = await graphql_client._testing__create_org_unit(
+        name="Adm-enhed-1",
+        parent=adm_root,
+        org_unit_type=org_unit_type,
+        from_=datetime(2010, 1, 1),
+        to=None,
+    )
+    adm_child2 = await graphql_client._testing__create_org_unit(
+        name="Adm-enhed-2",
+        parent=adm_root,
+        org_unit_type=org_unit_type,
+        from_=datetime(2010, 1, 1),
+        to=None,
+    )
+
+    await graphql_client._testing__create_related_units(
+        origin=adm_child1.uuid,
+        destination=[adm_child2.uuid],
+        from_=datetime(2010, 1, 1),
+        to=None,
+    )
+    related = (
+        await graphql_client._testing__get_related_units_for_org_unit(adm_child1.uuid)
+    ).objects[0]
+
+    await handle_related_units(context, related.uuid, None, graphql_client)
     email_client.send_email.assert_not_called()
