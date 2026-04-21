@@ -1,7 +1,8 @@
 """Integration tests for inform_manager_on_employee_address_creation."""
 
+from datetime import datetime
 from unittest.mock import MagicMock
-from uuid import uuid4
+from uuid import UUID, uuid4
 
 import pytest
 
@@ -18,5 +19,39 @@ async def test_no_address(
     """When the address UUID doesn't exist, no email is sent."""
     await inform_manager_on_employee_address_creation(
         context, uuid4(), None, graphql_client
+    )
+    email_client.send_email.assert_not_called()
+
+
+@pytest.mark.integration_test
+async def test_employee_with_multiple_emails_is_skipped(
+    context,
+    graphql_client: GraphQLClient,
+    email_client: MagicMock,
+):
+    """When an employee already has a previous email, no notification is sent."""
+    _email_result = (await graphql_client._testing__get_email_address_type()).objects[0]
+    assert _email_result.current is not None
+    email_address_type = _email_result.current.classes[0].uuid
+
+    employee = await graphql_client._testing__create_employee(
+        first_name="Test", last_name="Person"
+    )
+
+    addr1 = await graphql_client._testing__create_address(
+        person=employee.uuid,
+        value="first@example.com",
+        address_type=email_address_type,
+        from_=datetime(2010, 1, 1),
+    )
+    await graphql_client._testing__create_address(
+        person=employee.uuid,
+        value="second@example.com",
+        address_type=email_address_type,
+        from_=datetime(2010, 1, 1),
+    )
+
+    await inform_manager_on_employee_address_creation(
+        context, addr1.uuid, None, graphql_client
     )
     email_client.send_email.assert_not_called()
