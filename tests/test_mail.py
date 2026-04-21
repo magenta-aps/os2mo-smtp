@@ -1,198 +1,140 @@
-from email.mime.text import MIMEText
-from smtplib import SMTPNotSupportedError
-from unittest.mock import MagicMock
-from unittest.mock import patch
-from mo_smtp.config import SMTPSecurity
+"""Integration tests for EmailClient using the real mailcatcher SMTP server."""
 
+import httpx
 import pytest
 from fastramqpi.context import Context
 
+from mo_smtp.config import EmailSettings, SMTPSecurity
 from mo_smtp.mail import EmailClient
 
+pytestmark = pytest.mark.integration_test
 
-@pytest.fixture
-def email_settings() -> MagicMock:
-    email_settings = MagicMock()
-    email_settings.smtp_host = "0.0.0.0"
-    email_settings.smtp_port = 1025
-    email_settings.smtp_security = "none"
-    email_settings.sender = "sender@test.net"
-    email_settings.dry_run = False
-    email_settings.receiver_override = ""
-    return email_settings
+MAILCATCHER_API = "http://mailcatcher:1080"
 
 
 @pytest.fixture
-async def email_client(email_settings: MagicMock) -> EmailClient:
-    context = Context({"user_context": {"email_settings": email_settings}})
-
-    with patch("mo_smtp.mail.SMTP", return_value=MagicMock()):
-        return EmailClient(context)
-
-
-async def test_send_message_dry_run_false(email_client: EmailClient) -> None:
-    """
-    Test that sent email reflects input accurately
-    """
-
-    receiver = {"receiver1@test.net", "receiver2@test.net"}
-    cc = {"cc1@test.net", "cc2@test.net"}
-    bcc = {"bcc1@test.net", "bcc2@test.net"}
-    subject = "A very important message"
-    body = "The body of the very important message with a, ø, and å"
-    texttype = "plain"
-
-    # Retrieve MIMEText object from send_email
-
-    smtpmock = MagicMock()
-    with patch("mo_smtp.mail.SMTP", return_value=smtpmock):
-        message = email_client.send_email(
-            receiver=receiver,
-            cc=cc,
-            bcc=bcc,
-            subject=subject,
-            body=body,
-            texttype=texttype,
-        )
-
-        expected_message = MIMEText(body, texttype, _charset="utf-8")
-        expected_message["Subject"] = subject
-        expected_message["From"] = "sender@test.net"
-        expected_message["To"] = ", ".join(receiver)
-        expected_message["CC"] = ", ".join(cc)
-        expected_message["BCC"] = ", ".join(bcc)
-
-        # Assert correct return type
-        assert type(message) is MIMEText
-
-        # Assert correct field mapping
-        for key in message.keys():
-            assert message[key] == expected_message[key]
-
-        smtpmock.send_message.assert_called_once()  # type: ignore
+def email_client(monkeypatch, load_settings_overrides) -> EmailClient:
+    monkeypatch.setenv("DRY_RUN", "False")
+    settings = EmailSettings()
+    context = Context({"user_context": {"email_settings": settings}})
+    return EmailClient(context)
 
 
-async def test_send_message_dry_run_true(email_client: EmailClient) -> None:
-    """
-    Test that sent email reflects input accurately
-    """
-
-    receiver = {"receiver1@test.net", "receiver2@test.net"}
-    cc = {"cc1@test.net", "cc2@test.net"}
-    bcc = {"bcc1@test.net", "bcc2@test.net"}
-    subject = "A very important message"
-    body = "The body of the very important message"
-    texttype = "plain"
-
-    # Retrieve MIMEText object from send_email
-    email_client.dry_run = True
-
-    smtpmock = MagicMock()
-    with patch("mo_smtp.mail.SMTP", return_value=smtpmock):
-        message = email_client.send_email(
-            receiver=receiver,
-            cc=cc,
-            bcc=bcc,
-            subject=subject,
-            body=body,
-            texttype=texttype,
-        )
-
-        expected_message = MIMEText(body, texttype, _charset="utf-8")
-        expected_message["Subject"] = subject
-        expected_message["From"] = "sender@test.net"
-        expected_message["To"] = ", ".join(receiver)
-        expected_message["CC"] = ", ".join(cc)
-        expected_message["BCC"] = ", ".join(bcc)
-
-        # Assert correct return type
-        assert type(message) is MIMEText
-
-        # Assert correct field mapping
-        for key in message.keys():
-            assert message[key] == expected_message[key]
-
-        smtpmock.send_message.assert_not_called()  # type: ignore
+@pytest.fixture(autouse=True)
+def clear_mailcatcher(respx_mock):
+    """Allow HTTP to mailcatcher and clear messages before/after each test."""
+    respx_mock.route(host="mailcatcher").pass_through()
+    httpx.delete(f"{MAILCATCHER_API}/messages")
+    yield
+    httpx.delete(f"{MAILCATCHER_API}/messages")
 
 
-async def test_send_message_tls_error(email_client: EmailClient) -> None:
-    """
-    Test that sent email reflects input accurately
-    """
+def _get_messages() -> list[dict]:
+    return httpx.get(f"{MAILCATCHER_API}/messages").json()
 
-    receiver = {"receiver1@test.net", "receiver2@test.net"}
-    cc = {"cc1@test.net", "cc2@test.net"}
-    bcc = {"bcc1@test.net", "bcc2@test.net"}
-    subject = "A very important message"
-    body = "The body of the very important message with a, ø, and å"
-    texttype = "plain"
 
-    smtpmock = MagicMock()
-    smtpmock.starttls.side_effect = SMTPNotSupportedError(
-        "TLS not supported by SMTP server"
+def _get_message_body(message_id: int) -> str:
+    return httpx.get(f"{MAILCATCHER_API}/messages/{message_id}.plain").text
+
+
+def test_send_email_delivers_to_mailcatcher(email_client: EmailClient):
+    """Verify a real email is delivered through SMTP to mailcatcher."""
+    email_client.send_email(
+        receiver={"receiver@test.net"},
+        subject="Test subject",
+        body="Test body with æ, ø, and å",
+        texttype="plain",
     )
 
-    with patch("mo_smtp.mail.SMTP", return_value=smtpmock):
-        # Retrieve MIMEText object from send_email
-        message = email_client.send_email(
-            receiver=receiver,
-            cc=cc,
-            bcc=bcc,
-            subject=subject,
-            body=body,
-            texttype=texttype,
-        )
+    messages = _get_messages()
+    assert len(messages) == 1
 
-        expected_message = MIMEText(body, texttype, _charset="utf-8")
-        expected_message["Subject"] = subject
-        expected_message["From"] = "sender@test.net"
-        expected_message["To"] = ", ".join(receiver)
-        expected_message["CC"] = ", ".join(cc)
-        expected_message["BCC"] = ", ".join(bcc)
+    msg = messages[0]
+    assert msg["subject"] == "Test subject"
+    assert email_client.sender in msg["sender"]
+    assert "<receiver@test.net>" in msg["recipients"]
 
-        # Assert correct return type
-        assert type(message) is MIMEText
-
-        # Assert correct field mapping
-        for key in message.keys():
-            assert message[key] == expected_message[key]
+    body = _get_message_body(msg["id"])
+    assert "Test body with æ, ø, and å" in body
 
 
-async def test_send_message_receiver_override(email_client: EmailClient):
-    receiver = {"receiver1@test.net", "receiver2@test.net"}
-    cc = {"cc1@test.net", "cc2@test.net"}
-    bcc = {"bcc1@test.net", "bcc2@test.net"}
-    subject = "A very important message"
-    body = "The body of the very important message with a, ø, and å"
-    texttype = "plain"
+def test_send_email_with_cc(email_client: EmailClient):
+    """CC recipients receive the email."""
+    email_client.send_email(
+        receiver={"receiver@test.net"},
+        cc={"cc@test.net"},
+        subject="CC test",
+        body="Body",
+        texttype="plain",
+    )
 
-    # Retrieve MIMEText object from send_email
-    smtpmock = MagicMock()
-    with patch("mo_smtp.mail.SMTP", return_value=smtpmock):
-        email_client.receiver_override = "mail@test.com"
-        message = email_client.send_email(
-            receiver=receiver,
-            cc=cc,
-            bcc=bcc,
-            subject=subject,
-            body=body,
-            texttype=texttype,
-        )
-
-        assert "CC" not in message
-        assert "BCC" not in message
-        assert message["To"] == "mail@test.com"
+    messages = _get_messages()
+    assert len(messages) == 1
+    recipients = messages[0]["recipients"]
+    assert "<receiver@test.net>" in recipients
+    assert "<cc@test.net>" in recipients
 
 
-def test_send_message_starttls_not_implemented(email_client: EmailClient):
+def test_send_email_with_bcc(email_client: EmailClient):
+    """BCC recipients receive the email but aren't in headers."""
+    email_client.send_email(
+        receiver={"receiver@test.net"},
+        bcc={"bcc@test.net"},
+        subject="BCC test",
+        body="Body",
+        texttype="plain",
+    )
+
+    messages = _get_messages()
+    assert len(messages) == 1
+    recipients = messages[0]["recipients"]
+    assert "<receiver@test.net>" in recipients
+    assert "<bcc@test.net>" in recipients
+
+
+def test_dry_run_does_not_send(email_client: EmailClient):
+    """When dry_run is True, no email is actually sent."""
+    email_client.dry_run = True
+
+    email_client.send_email(
+        receiver={"receiver@test.net"},
+        subject="Should not arrive",
+        body="Body",
+        texttype="plain",
+    )
+
+    messages = _get_messages()
+    assert len(messages) == 0
+
+
+def test_receiver_override(email_client: EmailClient):
+    """When receiver_override is set, email goes to the override address only."""
+    email_client.receiver_override = "override@test.net"
+
+    email_client.send_email(
+        receiver={"original@test.net"},
+        cc={"cc@test.net"},
+        subject="Override test",
+        body="Body",
+        texttype="plain",
+    )
+
+    messages = _get_messages()
+    assert len(messages) == 1
+    recipients = messages[0]["recipients"]
+    assert "<override@test.net>" in recipients
+    assert "<original@test.net>" not in recipients
+    assert "<cc@test.net>" not in recipients
+
+
+def test_starttls_not_implemented(email_client: EmailClient):
+    """STARTTLS raises NotImplementedError."""
     email_client.smtp_security = SMTPSecurity.STARTTLS
     with pytest.raises(
         NotImplementedError, match="STARTTLS support has not been implemented"
     ):
         email_client.send_email(
             receiver={"a@test.com"},
-            cc=set(),
-            bcc=set(),
             subject="Subject",
             body="Body",
         )
