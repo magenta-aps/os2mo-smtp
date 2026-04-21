@@ -2,7 +2,7 @@
 
 from datetime import datetime
 from unittest.mock import MagicMock
-from uuid import UUID
+from uuid import UUID, uuid4
 
 import pytest
 
@@ -99,3 +99,14 @@ async def test_ituser_dedup_identical_email(
     await alert_on_ituser(context, ituser_uuid, None, graphql_client)
 
     email_client.send_email.assert_called_once()
+
+
+@pytest.mark.integration_test
+async def test_ituser_not_found(
+    context,
+    graphql_client: GraphQLClient,
+    email_client: MagicMock,
+):
+    """When the ituser UUID doesn't exist, no email is sent."""
+    await alert_on_ituser(context, uuid4(), None, graphql_client)
+    email_client.send_email.assert_not_called()
