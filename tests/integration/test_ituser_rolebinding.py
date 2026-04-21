@@ -110,3 +110,16 @@ async def test_ituser_not_found(
     """When the ituser UUID doesn't exist, no email is sent."""
     await alert_on_ituser(context, uuid4(), None, graphql_client)
     email_client.send_email.assert_not_called()
+
+
+@pytest.mark.integration_test
+async def test_ituser_default_userkey_is_skipped(
+    context,
+    graphql_client: GraphQLClient,
+    email_client: MagicMock,
+):
+    """IT users with the default user_key 'nanoq-brugernavn' are skipped."""
+    ituser_uuid, _ = await _setup_ituser(graphql_client, user_key="nanoq-brugernavn")
+
+    await alert_on_ituser(context, ituser_uuid, None, graphql_client)
+    email_client.send_email.assert_not_called()

@@ -75,35 +75,6 @@ def context(dataloader: AsyncMock, email_client: MagicMock) -> Context:
 
 
 @pytest.mark.usefixtures("minimal_valid_settings")
-async def test_ituser_events_ituser_default_userkey(context: Context) -> None:
-    mo = AsyncMock()
-    ituser_uuid = uuid4()
-    ituser_test_data = ItuserItusersObjectsCurrent.parse_obj(
-        {
-            "user_key": "nanoq-brugernavn",
-            "rolebindings": [
-                {"role": [{"name": "admin", "uuid": uuid4()}]},
-                {"role": [{"name": "user", "uuid": uuid4()}]},
-            ],
-            "person": [{"name": "Mick Jagger", "uuid": uuid4()}],
-            "itsystem": {"name": "Active Directory", "uuid": uuid4()},
-        }
-    )
-
-    mo.ituser.return_value = ItuserItusers.parse_obj(
-        {"objects": [{"current": ituser_test_data}]}
-    )
-    await alert_on_ituser(context, ituser_uuid, None, mo)
-
-    with capture_logs() as cap_logs:
-        await alert_on_ituser(context, uuid4(), None, mo)
-
-    email_client = context["user_context"]["email_client"]
-    email_client.send_email.assert_not_called()
-    assert "IT-user has default user_key 'nanoq-brugernavn'." in str(cap_logs)
-
-
-@pytest.mark.usefixtures("minimal_valid_settings")
 async def test_rolebinding_events_ituser_not_found(context: Context) -> None:
     mo = AsyncMock()
     mo.rolebinding.return_value = RolebindingRolebindings.parse_obj(
