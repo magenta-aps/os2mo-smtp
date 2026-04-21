@@ -433,3 +433,120 @@ async def test_manager_with_multiple_validities_current_is_picked(
     # Current validity exists → manager is still employed → no email
     await alert_on_manager_removal(context, manager.uuid, None, graphql_client)
     email_client.send_email.assert_not_called()
+
+
+EXCLUDED_UUID = UUID("00000000-0000-0000-0000-000000000042")
+
+
+async def _terminated_manager_in_org_unit(
+    graphql_client: GraphQLClient, org_unit_uuid: UUID
+) -> UUID:
+    """Helper: create a terminated manager in the given org unit, return manager UUID."""
+    employee = await graphql_client._testing__create_employee(
+        first_name="Mick", last_name="Jagger"
+    )
+    manager_level = (await graphql_client._testing__get_manager_level()).objects[0].uuid
+    manager_type = (await graphql_client._testing__get_manager_type()).objects[0].uuid
+    responsibility = (
+        (await graphql_client._testing__get_manager_responsibility()).objects[0].uuid
+    )
+    manager = await graphql_client._testing__create_manager(
+        orgunit=org_unit_uuid,
+        person=employee.uuid,
+        manager_level=manager_level,
+        manager_type=manager_type,
+        responsibility=responsibility,
+        from_=datetime(2015, 1, 1),
+        to=datetime(2020, 1, 1),
+    )
+    return manager.uuid
+
+
+@pytest.mark.integration_test
+@pytest.mark.envvar(
+    {
+        "ALERT_MANAGER_REMOVAL_USE_ORG_UNIT_EMAILS": "false",
+        "ALERT_MANAGER_REMOVAL_EXCLUDE_ORG_UNITS": f'["{EXCLUDED_UUID}"]',
+    }
+)
+async def test_excluded_ancestor_is_skipped(
+    context,
+    graphql_client: GraphQLClient,
+    email_client: MagicMock,
+    root_loen_org: UUID,
+):
+    """When the manager's org unit has an ancestor in the exclude list,
+    no alert is sent."""
+    org_unit_type = (await graphql_client._testing__get_org_unit_type()).objects[0].uuid
+
+    await graphql_client._testing__create_org_unit_root(
+        name="ExcludedRoot",
+        root_uuid=EXCLUDED_UUID,
+        org_unit_type=org_unit_type,
+        from_=datetime(2010, 1, 1),
+    )
+    child = await graphql_client._testing__create_org_unit(
+        name="Child under excluded",
+        parent=EXCLUDED_UUID,
+        org_unit_type=org_unit_type,
+        from_=datetime(2010, 1, 1),
+        to=None,
+    )
+    manager_uuid = await _terminated_manager_in_org_unit(graphql_client, child.uuid)
+
+    await alert_on_manager_removal(context, manager_uuid, None, graphql_client)
+    email_client.send_email.assert_not_called()
+
+
+@pytest.mark.integration_test
+@pytest.mark.envvar(
+    {
+        "ALERT_MANAGER_REMOVAL_USE_ORG_UNIT_EMAILS": "false",
+        "ALERT_MANAGER_REMOVAL_EXCLUDE_ORG_UNITS": f'["{EXCLUDED_UUID}"]',
+    }
+)
+async def test_excluded_direct_match_is_skipped(
+    context,
+    graphql_client: GraphQLClient,
+    email_client: MagicMock,
+    root_loen_org: UUID,
+):
+    """When the manager's own org unit UUID is in the exclude list,
+    no alert is sent."""
+    org_unit_type = (await graphql_client._testing__get_org_unit_type()).objects[0].uuid
+
+    # The excluded UUID IS the manager's org unit (not an ancestor)
+    await graphql_client._testing__create_org_unit_root(
+        name="ExcludedRoot",
+        root_uuid=EXCLUDED_UUID,
+        org_unit_type=org_unit_type,
+        from_=datetime(2010, 1, 1),
+    )
+    manager_uuid = await _terminated_manager_in_org_unit(graphql_client, EXCLUDED_UUID)
+
+    await alert_on_manager_removal(context, manager_uuid, None, graphql_client)
+    email_client.send_email.assert_not_called()
+
+
+@pytest.mark.integration_test
+@pytest.mark.envvar(
+    {
+        "ALERT_MANAGER_REMOVAL_USE_ORG_UNIT_EMAILS": "false",
+        "ALERT_MANAGER_REMOVAL_EXCLUDE_ORG_UNITS": f'["{EXCLUDED_UUID}"]',
+    }
+)
+async def test_exclude_list_set_but_no_match_sends_email(
+    context,
+    graphql_client: GraphQLClient,
+    email_client: MagicMock,
+    root_loen_org: UUID,
+):
+    """When the exclude list is set but doesn't match the manager's org unit
+    or any ancestor, the alert is still sent."""
+    org_unit_uuid, employee_uuid = await _setup_org_and_employee(
+        graphql_client, root_loen_org
+    )
+    manager_uuid = await _terminated_manager_in_org_unit(graphql_client, org_unit_uuid)
+
+    await alert_on_manager_removal(context, manager_uuid, None, graphql_client)
+    email_client.send_email.assert_called_once()
