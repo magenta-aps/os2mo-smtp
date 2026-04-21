@@ -61,15 +61,11 @@ async def test_currently_employed_manager_no_email(
         graphql_client, root_loen_org
     )
 
-    manager_level = (
-        await graphql_client._testing__get_manager_level()
-    ).objects[0].uuid
-    manager_type = (
-        await graphql_client._testing__get_manager_type()
-    ).objects[0].uuid
+    manager_level = (await graphql_client._testing__get_manager_level()).objects[0].uuid
+    manager_type = (await graphql_client._testing__get_manager_type()).objects[0].uuid
     responsibility = (
-        await graphql_client._testing__get_manager_responsibility()
-    ).objects[0].uuid
+        (await graphql_client._testing__get_manager_responsibility()).objects[0].uuid
+    )
 
     manager = await graphql_client._testing__create_manager(
         orgunit=org_unit_uuid,
@@ -97,15 +93,11 @@ async def test_terminated_manager_past_to_date_sends_email(
         graphql_client, root_loen_org
     )
 
-    manager_level = (
-        await graphql_client._testing__get_manager_level()
-    ).objects[0].uuid
-    manager_type = (
-        await graphql_client._testing__get_manager_type()
-    ).objects[0].uuid
+    manager_level = (await graphql_client._testing__get_manager_level()).objects[0].uuid
+    manager_type = (await graphql_client._testing__get_manager_type()).objects[0].uuid
     responsibility = (
-        await graphql_client._testing__get_manager_responsibility()
-    ).objects[0].uuid
+        (await graphql_client._testing__get_manager_responsibility()).objects[0].uuid
+    )
 
     manager = await graphql_client._testing__create_manager(
         orgunit=org_unit_uuid,
@@ -139,15 +131,11 @@ async def test_terminated_manager_future_to_date_no_email(
         graphql_client, root_loen_org
     )
 
-    manager_level = (
-        await graphql_client._testing__get_manager_level()
-    ).objects[0].uuid
-    manager_type = (
-        await graphql_client._testing__get_manager_type()
-    ).objects[0].uuid
+    manager_level = (await graphql_client._testing__get_manager_level()).objects[0].uuid
+    manager_type = (await graphql_client._testing__get_manager_type()).objects[0].uuid
     responsibility = (
-        await graphql_client._testing__get_manager_responsibility()
-    ).objects[0].uuid
+        (await graphql_client._testing__get_manager_responsibility()).objects[0].uuid
+    )
 
     manager = await graphql_client._testing__create_manager(
         orgunit=org_unit_uuid,
@@ -188,15 +176,11 @@ async def test_vacant_manager_sends_email(
         to=None,
     )
 
-    manager_level = (
-        await graphql_client._testing__get_manager_level()
-    ).objects[0].uuid
-    manager_type = (
-        await graphql_client._testing__get_manager_type()
-    ).objects[0].uuid
+    manager_level = (await graphql_client._testing__get_manager_level()).objects[0].uuid
+    manager_type = (await graphql_client._testing__get_manager_type()).objects[0].uuid
     responsibility = (
-        await graphql_client._testing__get_manager_responsibility()
-    ).objects[0].uuid
+        (await graphql_client._testing__get_manager_responsibility()).objects[0].uuid
+    )
 
     manager = await graphql_client._testing__create_manager(
         orgunit=org_unit.uuid,
@@ -227,9 +211,7 @@ async def test_terminated_manager_use_org_unit_emails(
     sent to the org unit's (institution ancestor) email address instead of
     the configured receivers."""
     org_unit_type = (await graphql_client._testing__get_org_unit_type()).objects[0].uuid
-    _result = (
-        await graphql_client._testing__get_org_unit_address_type()
-    ).objects[0]
+    _result = (await graphql_client._testing__get_org_unit_address_type()).objects[0]
     assert _result.current is not None
     org_unit_address_type = _result.current.classes[0].uuid
 
@@ -267,15 +249,11 @@ async def test_terminated_manager_use_org_unit_emails(
         first_name="Mick", last_name="Jagger"
     )
 
-    manager_level = (
-        await graphql_client._testing__get_manager_level()
-    ).objects[0].uuid
-    manager_type = (
-        await graphql_client._testing__get_manager_type()
-    ).objects[0].uuid
+    manager_level = (await graphql_client._testing__get_manager_level()).objects[0].uuid
+    manager_type = (await graphql_client._testing__get_manager_type()).objects[0].uuid
     responsibility = (
-        await graphql_client._testing__get_manager_responsibility()
-    ).objects[0].uuid
+        (await graphql_client._testing__get_manager_responsibility()).objects[0].uuid
+    )
 
     manager = await graphql_client._testing__create_manager(
         orgunit=child.uuid,
@@ -305,9 +283,7 @@ async def test_terminated_manager_on_root_uses_root_email(
     """When use_org_unit_emails is true and the manager is on the root org unit,
     the email goes to the root's own address (get_org_unit_address path)."""
     org_unit_type = (await graphql_client._testing__get_org_unit_type()).objects[0].uuid
-    _result = (
-        await graphql_client._testing__get_org_unit_address_type()
-    ).objects[0]
+    _result = (await graphql_client._testing__get_org_unit_address_type()).objects[0]
     assert _result.current is not None
     org_unit_address_type = _result.current.classes[0].uuid
 
@@ -329,15 +305,11 @@ async def test_terminated_manager_on_root_uses_root_email(
         first_name="Mick", last_name="Jagger"
     )
 
-    manager_level = (
-        await graphql_client._testing__get_manager_level()
-    ).objects[0].uuid
-    manager_type = (
-        await graphql_client._testing__get_manager_type()
-    ).objects[0].uuid
+    manager_level = (await graphql_client._testing__get_manager_level()).objects[0].uuid
+    manager_type = (await graphql_client._testing__get_manager_type()).objects[0].uuid
     responsibility = (
-        await graphql_client._testing__get_manager_responsibility()
-    ).objects[0].uuid
+        (await graphql_client._testing__get_manager_responsibility()).objects[0].uuid
+    )
 
     # Manager directly on root org unit
     manager = await graphql_client._testing__create_manager(
@@ -370,15 +342,11 @@ async def test_manager_with_multiple_validities_picks_correct_one(
         graphql_client, root_loen_org
     )
 
-    manager_level = (
-        await graphql_client._testing__get_manager_level()
-    ).objects[0].uuid
-    manager_type = (
-        await graphql_client._testing__get_manager_type()
-    ).objects[0].uuid
+    manager_level = (await graphql_client._testing__get_manager_level()).objects[0].uuid
+    manager_type = (await graphql_client._testing__get_manager_type()).objects[0].uuid
     responsibility = (
-        await graphql_client._testing__get_manager_responsibility()
-    ).objects[0].uuid
+        (await graphql_client._testing__get_manager_responsibility()).objects[0].uuid
+    )
 
     manager = await graphql_client._testing__create_manager(
         orgunit=org_unit_uuid,
@@ -441,15 +409,11 @@ async def test_terminated_org_unit_skips_alert(
         to=datetime(2015, 1, 1),
     )
 
-    manager_level = (
-        await graphql_client._testing__get_manager_level()
-    ).objects[0].uuid
-    manager_type = (
-        await graphql_client._testing__get_manager_type()
-    ).objects[0].uuid
+    manager_level = (await graphql_client._testing__get_manager_level()).objects[0].uuid
+    manager_type = (await graphql_client._testing__get_manager_type()).objects[0].uuid
     responsibility = (
-        await graphql_client._testing__get_manager_responsibility()
-    ).objects[0].uuid
+        (await graphql_client._testing__get_manager_responsibility()).objects[0].uuid
+    )
 
     # Vacant manager (no person) on a terminated org unit. The vacant branch
     # uses from_date as the effective to_date, so the handler proceeds past

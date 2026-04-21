@@ -19,9 +19,7 @@ async def test_org_unit_address_is_ignored(
 ):
     """When the address belongs to an org unit (not an employee), no email is sent."""
     org_unit_type = (await graphql_client._testing__get_org_unit_type()).objects[0].uuid
-    _result = (
-        await graphql_client._testing__get_org_unit_address_type()
-    ).objects[0]
+    _result = (await graphql_client._testing__get_org_unit_address_type()).objects[0]
     assert _result.current is not None
     org_unit_address_type = _result.current.classes[0].uuid
 
@@ -126,9 +124,7 @@ async def test_sends_email_no_engagements(
     email_client: MagicMock,
 ):
     """Employee with one email and no engagements gets a basic notification."""
-    _email_result = (
-        await graphql_client._testing__get_email_address_type()
-    ).objects[0]
+    _email_result = (await graphql_client._testing__get_email_address_type()).objects[0]
     assert _email_result.current is not None
     email_address_type = _email_result.current.classes[0].uuid
 
@@ -165,28 +161,22 @@ async def test_sends_email_with_engagement_and_manager_cc(
     """Employee with engagement gets notification mentioning the org unit,
     and the manager is CC'd."""
     org_unit_type = (await graphql_client._testing__get_org_unit_type()).objects[0].uuid
-    _email_result = (
-        await graphql_client._testing__get_email_address_type()
-    ).objects[0]
+    _email_result = (await graphql_client._testing__get_email_address_type()).objects[0]
     assert _email_result.current is not None
     email_address_type = _email_result.current.classes[0].uuid
-    _engagement_result = (
-        await graphql_client._testing__get_engagement_type()
-    ).objects[0]
+    _engagement_result = (await graphql_client._testing__get_engagement_type()).objects[
+        0
+    ]
     assert _engagement_result.current is not None
     engagement_type = _engagement_result.current.classes[0].uuid
     _job_result = (await graphql_client._testing__get_job_function()).objects[0]
     assert _job_result.current is not None
     job_function = _job_result.current.classes[0].uuid
-    manager_level = (
-        await graphql_client._testing__get_manager_level()
-    ).objects[0].uuid
-    manager_type = (
-        await graphql_client._testing__get_manager_type()
-    ).objects[0].uuid
+    manager_level = (await graphql_client._testing__get_manager_level()).objects[0].uuid
+    manager_type = (await graphql_client._testing__get_manager_type()).objects[0].uuid
     manager_responsibility = (
-        await graphql_client._testing__get_manager_responsibility()
-    ).objects[0].uuid
+        (await graphql_client._testing__get_manager_responsibility()).objects[0].uuid
+    )
 
     await graphql_client._testing__create_org_unit_root(
         name="Root",
@@ -262,28 +252,22 @@ async def test_sends_email_with_multiple_engagements(
     """Employee with 2 engagements in different org units gets a notification
     mentioning both units via 'de følgende enheder'."""
     org_unit_type = (await graphql_client._testing__get_org_unit_type()).objects[0].uuid
-    _email_result = (
-        await graphql_client._testing__get_email_address_type()
-    ).objects[0]
+    _email_result = (await graphql_client._testing__get_email_address_type()).objects[0]
     assert _email_result.current is not None
     email_address_type = _email_result.current.classes[0].uuid
-    _engagement_result = (
-        await graphql_client._testing__get_engagement_type()
-    ).objects[0]
+    _engagement_result = (await graphql_client._testing__get_engagement_type()).objects[
+        0
+    ]
     assert _engagement_result.current is not None
     engagement_type = _engagement_result.current.classes[0].uuid
     _job_result = (await graphql_client._testing__get_job_function()).objects[0]
     assert _job_result.current is not None
     job_function = _job_result.current.classes[0].uuid
-    manager_level = (
-        await graphql_client._testing__get_manager_level()
-    ).objects[0].uuid
-    manager_type = (
-        await graphql_client._testing__get_manager_type()
-    ).objects[0].uuid
+    manager_level = (await graphql_client._testing__get_manager_level()).objects[0].uuid
+    manager_type = (await graphql_client._testing__get_manager_type()).objects[0].uuid
     manager_responsibility = (
-        await graphql_client._testing__get_manager_responsibility()
-    ).objects[0].uuid
+        (await graphql_client._testing__get_manager_responsibility()).objects[0].uuid
+    )
 
     await graphql_client._testing__create_org_unit_root(
         name="Root",

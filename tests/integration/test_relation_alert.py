@@ -113,9 +113,7 @@ async def test_sends_alert_to_org_unit_email(
     """When use_org_unit_emails is true, alert is sent to the org unit's
     institution email address."""
     org_unit_type = (await graphql_client._testing__get_org_unit_type()).objects[0].uuid
-    _result = (
-        await graphql_client._testing__get_org_unit_address_type()
-    ).objects[0]
+    _result = (await graphql_client._testing__get_org_unit_address_type()).objects[0]
     assert _result.current is not None
     org_unit_address_type = _result.current.classes[0].uuid
 
@@ -202,9 +200,7 @@ async def test_root_loenorg_uses_own_email(
     """When uuid == root_loen_org and use_org_unit_emails is true,
     the email is sent to the root org unit's own address."""
     org_unit_type = (await graphql_client._testing__get_org_unit_type()).objects[0].uuid
-    _result = (
-        await graphql_client._testing__get_org_unit_address_type()
-    ).objects[0]
+    _result = (await graphql_client._testing__get_org_unit_address_type()).objects[0]
     assert _result.current is not None
     org_unit_address_type = _result.current.classes[0].uuid
 
