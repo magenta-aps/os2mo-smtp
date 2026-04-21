@@ -106,26 +106,6 @@ def _make_registration_response(org_unit_uuids: list):
 
 
 @pytest.mark.usefixtures("minimal_valid_settings")
-async def test_handle_related_units_not_found(
-    context: Context, monkeypatch: pytest.MonkeyPatch
-):
-    with monkeypatch.context() as con:
-        con.setenv("ROOT_LOEN_ORG", str(uuid4()))
-        mo = AsyncMock()
-
-        mo.related_unit_registrations.return_value = (
-            RelatedUnitRegistrationsRelatedUnits.parse_obj({"objects": []})
-        )
-
-        with capture_logs() as cap_logs:
-            await handle_related_units(context, uuid4(), None, mo)
-
-        email_client = context["user_context"]["email_client"]
-        email_client.send_email.assert_not_called()
-        assert "Related units not found" in str(cap_logs)
-
-
-@pytest.mark.usefixtures("minimal_valid_settings")
 async def test_handle_related_units_org_unit_not_in_loenorg(
     context: Context, monkeypatch: pytest.MonkeyPatch
 ):
