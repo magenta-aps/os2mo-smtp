@@ -84,3 +84,18 @@ async def test_rolebinding_sends_email(
     message = email_client.send_email.call_args.kwargs["body"]
     assert "Active Directory" in message
     assert "ADUSER-123" in message
+
+
+@pytest.mark.integration_test
+async def test_ituser_dedup_identical_email(
+    context,
+    graphql_client: GraphQLClient,
+    email_client: MagicMock,
+):
+    """Sending the same ituser event twice should only produce one email."""
+    ituser_uuid, _ = await _setup_ituser(graphql_client)
+
+    await alert_on_ituser(context, ituser_uuid, None, graphql_client)
+    await alert_on_ituser(context, ituser_uuid, None, graphql_client)
+
+    email_client.send_email.assert_called_once()
