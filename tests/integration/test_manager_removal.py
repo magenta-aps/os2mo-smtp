@@ -355,3 +355,55 @@ async def test_terminated_manager_on_root_uses_root_email(
     email_client.send_email.assert_called_once()
     receiver = email_client.send_email.call_args.kwargs["receiver"]
     assert "root@example.com" in receiver
+
+
+@pytest.mark.integration_test
+async def test_terminated_org_unit_skips_alert(
+    context,
+    graphql_client: GraphQLClient,
+    email_client: MagicMock,
+    root_loen_org: UUID,
+):
+    """When the manager's org unit has been terminated, get_org_unit_data
+    returns None for the current state and the handler skips sending an alert."""
+    org_unit_type = (await graphql_client._testing__get_org_unit_type()).objects[0].uuid
+
+    await graphql_client._testing__create_org_unit_root(
+        name="Root",
+        root_uuid=root_loen_org,
+        org_unit_type=org_unit_type,
+        from_=datetime(2010, 1, 1),
+    )
+    org_unit = await graphql_client._testing__create_org_unit(
+        name="Terminated",
+        parent=root_loen_org,
+        org_unit_type=org_unit_type,
+        from_=datetime(2010, 1, 1),
+        to=datetime(2015, 1, 1),
+    )
+
+    manager_level = (
+        await graphql_client._testing__get_manager_level()
+    ).objects[0].uuid
+    manager_type = (
+        await graphql_client._testing__get_manager_type()
+    ).objects[0].uuid
+    responsibility = (
+        await graphql_client._testing__get_manager_responsibility()
+    ).objects[0].uuid
+
+    # Vacant manager (no person) on a terminated org unit. The vacant branch
+    # uses from_date as the effective to_date, so the handler proceeds past
+    # the time check and then skips when the org unit's current state is None.
+    manager = await graphql_client._testing__create_manager(
+        orgunit=org_unit.uuid,
+        person=None,
+        manager_level=manager_level,
+        manager_type=manager_type,
+        responsibility=responsibility,
+        from_=datetime(2012, 1, 1),
+        to=None,
+    )
+
+    await alert_on_manager_removal(context, manager.uuid, None, graphql_client)
+    email_client.send_email.assert_not_called()
