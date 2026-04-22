@@ -385,6 +385,52 @@ async def test_manager_with_multiple_validities_picks_correct_one(
 
 
 @pytest.mark.integration_test
+async def test_manager_with_multiple_validities_current_is_picked(
+    context,
+    graphql_client: GraphQLClient,
+    email_client: MagicMock,
+    root_loen_org: UUID,
+):
+    """When a manager has multiple validities and one is currently active
+    (open-ended), extract_current_or_latest_validity picks the current one
+    and no email is sent because the manager is still employed."""
+    org_unit_uuid, employee_uuid = await _setup_org_and_employee(
+        graphql_client, root_loen_org
+    )
+
+    manager_level = (await graphql_client._testing__get_manager_level()).objects[0].uuid
+    manager_type = (await graphql_client._testing__get_manager_type()).objects[0].uuid
+    responsibility = (
+        (await graphql_client._testing__get_manager_responsibility()).objects[0].uuid
+    )
+
+    manager = await graphql_client._testing__create_manager(
+        orgunit=org_unit_uuid,
+        person=employee_uuid,
+        manager_level=manager_level,
+        manager_type=manager_type,
+        responsibility=responsibility,
+        from_=datetime(2015, 1, 1),
+        to=None,
+    )
+
+    # Update to create a second validity — manager is still active (no to_date)
+    await graphql_client._testing__update_manager(
+        uuid=manager.uuid,
+        from_=datetime(2018, 1, 1),
+        to=None,
+        person=employee_uuid,
+        user_key="updated",
+    )
+
+    # One validity is open-ended and in the past → is_current returns True for
+    # it, and extract_current_or_latest_validity returns it (the manager is
+    # currently employed, so no email).
+    await alert_on_manager_removal(context, manager.uuid, None, graphql_client)
+    email_client.send_email.assert_not_called()
+
+
+@pytest.mark.integration_test
 async def test_terminated_org_unit_skips_alert(
     context,
     graphql_client: GraphQLClient,
