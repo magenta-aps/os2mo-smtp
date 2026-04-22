@@ -5,7 +5,7 @@ services:
     command: [ "uvicorn", "--factory", "mo_smtp.smtp_agent:create_app", "--host", "0.0.0.0", "--reload"]
 
     volumes:
-      - ./mo_smtp:/app/mo_smtp
+      - ./:/app/:ro
     networks:
       - os2mo_default
     environment:
@@ -27,7 +27,6 @@ services:
 
       ACTIVE_AGENTS: '["inform_manager_on_employee_address_creation", "alert_on_manager_removal","alert_on_rolebinding","alert_on_ituser","handle_org_unit", "handle_related_units"]'
       ROOT_LOEN_ORG: "fb2d158f-114e-5f67-8365-2c520cf10b58"
-      ALERT_MANAGER_REMOVAL_USE_ORG_UNIT_EMAILS: "true"
 
     extra_hosts:
       - "host.docker.internal:host-gateway"
