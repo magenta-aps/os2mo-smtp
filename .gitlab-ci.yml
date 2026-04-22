@@ -20,6 +20,7 @@ variables:
   PRECOMMIT_USE_POETRY: "true"
   PRODUCT: os2mo
   COMPONENT: smtp
+  OS2MO_INIT_CONFIG: "/builds/$CI_PROJECT_PATH/init.config.yml"
 
 
 # Conditions
@@ -68,3 +69,13 @@ include:
   - project: rammearkitektur/os2mo
     file:
       - gitlab-ci-templates/integration-test-meta.v1.yml
+
+Integration-test:
+  extends:
+    - .integration-test:mo
+  services:
+    - !reference [.integration-test:mo, services]
+    - name: dockage/mailcatcher:0.8.2
+      alias: mailcatcher
+  rules:
+    - <<: *if-merge-request
