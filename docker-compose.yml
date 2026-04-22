@@ -28,6 +28,11 @@ services:
       ACTIVE_AGENTS: '["inform_manager_on_employee_address_creation", "alert_on_manager_removal","alert_on_rolebinding","alert_on_ituser","handle_org_unit", "handle_related_units"]'
       ROOT_LOEN_ORG: "fb2d158f-114e-5f67-8365-2c520cf10b58"
 
+      FASTRAMQPI__DATABASE__USER: "fastramqpi"
+      FASTRAMQPI__DATABASE__PASSWORD: "fastramqpi"
+      FASTRAMQPI__DATABASE__HOST: "db"
+      FASTRAMQPI__DATABASE__NAME: "fastramqpi"
+
     extra_hosts:
       - "host.docker.internal:host-gateway"
     ports:
@@ -39,6 +44,15 @@ services:
     ports:
     - "1080:1080"
     - "1025:1025"
+    networks:
+      - os2mo_default
+
+  db:
+    image: postgres:18
+    environment:
+      POSTGRES_USER: "fastramqpi"
+      POSTGRES_PASSWORD: "fastramqpi"
+      POSTGRES_DB: "fastramqpi"
     networks:
       - os2mo_default
 
