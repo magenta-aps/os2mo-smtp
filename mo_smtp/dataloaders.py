@@ -102,6 +102,17 @@ async def get_org_unit_location(mo: GraphQLClient, uuid: UUID):
     return org_unit_location
 
 
+async def get_org_unit_ancestor_uuids(mo: GraphQLClient, uuid: UUID) -> set[UUID]:
+    """Returns the set of ancestor UUIDs (including the org unit itself)."""
+    gql_response = await mo.org_unit_ancestors(uuid)
+    current = one(gql_response.objects).current
+    if not current:  # pragma: no cover
+        # Defensive: if the org unit has no current state, treat as no match.
+        # The handler's later get_org_unit_data check then short-circuits.
+        return set()
+    return {current.uuid} | {ancestor.uuid for ancestor in current.ancestors}
+
+
 async def get_org_unit_relations(mo: GraphQLClient, org_unit_uuid: UUID):
     gql_response = await mo.org_unit_relations(org_unit_uuid)
     return gql_response.objects

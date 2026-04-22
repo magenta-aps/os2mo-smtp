@@ -203,7 +203,9 @@ class GraphQLClient(AsyncBaseClient):
               org_units(filter: {uuids: [$uuid]}) {
                 objects {
                   current {
+                    uuid
                     ancestors {
+                      uuid
                       name
                     }
                     name
