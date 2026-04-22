@@ -33,6 +33,7 @@ from .dataloaders import (
     get_employee_name,
     get_manager_data,
     get_org_unit_address,
+    get_org_unit_ancestor_uuids,
     get_org_unit_data,
     get_org_unit_location,
 )
@@ -154,6 +155,8 @@ async def alert_on_manager_removal(
     """
     logger.info("Listening on a manager event with uuid:", uuid=uuid)
 
+    settings = Settings()
+
     user_context = context["user_context"]
     email_client = user_context["email_client"]
     email_settings = user_context["email_settings"]
@@ -167,6 +170,18 @@ async def alert_on_manager_removal(
     to_date = manager.validity.to
     employee_uuid = manager.employee_uuid
     org_unit_uuid = manager.org_unit_uuid
+
+    if settings.alert_manager_removal_exclude_org_units:
+        ancestor_uuids = await get_org_unit_ancestor_uuids(mo, org_unit_uuid)
+        excluded = ancestor_uuids & set(
+            settings.alert_manager_removal_exclude_org_units
+        )
+        if excluded:
+            logger.info(
+                "Org unit or ancestor is excluded from manager removal alerts",
+                excluded=excluded,
+            )
+            return
 
     if not to_date and employee_uuid:
         logger.info("Manager is currently employed. No message will be sent")
@@ -220,7 +235,6 @@ async def alert_on_manager_removal(
 
     message = template.render(context=context)
 
-    settings = Settings()
     if settings.alert_manager_removal_use_org_unit_emails:
         root = one(org_unit.root).uuid
         # if org_unit_uuid == root, we just use the address from the root

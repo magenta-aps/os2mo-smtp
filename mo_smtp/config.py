@@ -38,6 +38,13 @@ class Settings(BaseSettings):
     )
     root_loen_org: UUID | None = None
     alert_manager_removal_use_org_unit_emails: bool = False
+    alert_manager_removal_exclude_org_units: list[UUID] = Field(
+        [],
+        description=(
+            "Org unit UUIDs to exclude from the manager removal alert. "
+            "Events for these org units and their descendants are ignored."
+        ),
+    )
 
 
 class EmailSettings(BaseSettings):
