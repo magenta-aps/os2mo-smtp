@@ -77,7 +77,10 @@ async def get_org_unit_data(mo: GraphQLClient, uuid: UUID) -> Any:
         Dictionary with queried org unit data
     """
     gql_response = await mo.org_unit_data(uuid)
-    if not gql_response.objects:
+    if not gql_response.objects:  # pragma: no cover
+        # Only reached when the org unit UUID doesn't exist in MO. Can't be
+        # reached via the manager handler because MO rejects creating a
+        # manager on a nonexistent org unit.
         return None
     return one(gql_response.objects).current
 
@@ -129,7 +132,11 @@ async def get_ituser_uuid_by_rolebinding(mo: GraphQLClient, uuid: UUID) -> UUID 
     try:
         gql_response = await mo.rolebinding(uuid)
         current = one(gql_response.objects).current
-        if current is None:
+        if current is None:  # pragma: no cover
+            # Reached when a rolebinding exists but has no current state
+            # (terminated rolebinding). Hard to reproduce in tests —
+            # there is no rolebinding_terminate mutation in the GraphQL
+            # schema that we can invoke from the test helpers.
             return None
         ituser_uuid = one(current.ituser).uuid
         return ituser_uuid

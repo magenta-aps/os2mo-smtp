@@ -70,9 +70,12 @@ def create_fastramqpi(**kwargs: Any) -> FastRAMQPI:
     app.contact["email"] = "info@magenta.dk"  # type: ignore
 
     @app.post("/send_test_email", status_code=202, tags=["Test"])
-    async def send_test_mail(receiver: str):
+    async def send_test_mail(receiver: str):  # pragma: no cover
         """
-        Send a test email using the settings in config.py
+        Send a test email using the settings in config.py.
+
+        Dev-only debug endpoint. Not worth a test — the underlying
+        send_email is covered by test_mail.py.
         """
         email_client.send_email(
             receiver={receiver},

@@ -100,7 +100,9 @@ class EmailClient:
             )
         smtp_cls = SMTP_SSL if self.smtp_security is SMTPSecurity.TLS else SMTP
         smtp = smtp_cls(host=self.smtp_host, port=self.smtp_port)
-        if self.smtp_user and self.smtp_password:
+        if self.smtp_user and self.smtp_password:  # pragma: no cover
+            # mailcatcher (used in integration tests) doesn't support AUTH,
+            # so this branch can't be exercised without a real SMTP server.
             smtp.login(user=self.smtp_user, password=self.smtp_password)
 
         if not self.dry_run:
